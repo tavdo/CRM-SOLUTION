@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { ensureDbInitialized } from "@/lib/db-init";
 import { verifyPassword } from "@/lib/crypto";
 import {
   createSession,
@@ -18,7 +19,6 @@ import {
   verifyEmail,
 } from "@/lib/services/onboarding";
 import { acceptInvitation } from "@/lib/services/members";
-import { ensureDemoData } from "@/lib/demo-seed";
 import { isAppError } from "@/lib/errors";
 
 function formString(formData: FormData, key: string) {
@@ -27,6 +27,7 @@ function formString(formData: FormData, key: string) {
 
 export async function signUpAction(_prev: unknown, formData: FormData) {
   try {
+    await ensureDbInitialized();
     const schema = z.object({
       companyName: z.string().min(1),
       adminName: z.string().min(1),
@@ -51,6 +52,7 @@ export async function signUpAction(_prev: unknown, formData: FormData) {
 
 export async function signInAction(_prev: unknown, formData: FormData) {
   try {
+    await ensureDbInitialized();
     const email = formString(formData, "email").toLowerCase();
     const password = formString(formData, "password");
     const locale = formString(formData, "locale") || "en";
@@ -71,10 +73,16 @@ export async function signInAction(_prev: unknown, formData: FormData) {
     const destLocale = user.preferredLocale === "ka" ? "ka" : locale;
     const fallback = `/${destLocale}/dashboard`;
     const normalized =
-      next.startsWith(`/${destLocale}/`) || next.startsWith("/en/") || next.startsWith("/ka/")
+      next.startsWith(`/${destLocale}/`) ||
+      next.startsWith("/en/") ||
+      next.startsWith("/ka/")
         ? next.replace(/^\/(en|ka)/, `/${destLocale}`)
         : fallback;
-    redirect(normalized === `/${destLocale}` || normalized === "/" ? fallback : normalized);
+    redirect(
+      normalized === `/${destLocale}` || normalized === "/"
+        ? fallback
+        : normalized,
+    );
   } catch (err) {
     if (isRedirect(err)) throw err;
     return { error: "Unable to sign in" };
@@ -88,6 +96,7 @@ export async function signOutAction() {
 }
 
 export async function forgotPasswordAction(_prev: unknown, formData: FormData) {
+  await ensureDbInitialized();
   const email = formString(formData, "email");
   const locale = formString(formData, "locale") || "en";
   await requestPasswordReset(email, locale);
@@ -96,6 +105,7 @@ export async function forgotPasswordAction(_prev: unknown, formData: FormData) {
 
 export async function resetPasswordAction(_prev: unknown, formData: FormData) {
   try {
+    await ensureDbInitialized();
     const token = formString(formData, "token");
     const password = formString(formData, "password");
     const locale = formString(formData, "locale") || "en";
@@ -109,6 +119,7 @@ export async function resetPasswordAction(_prev: unknown, formData: FormData) {
 
 export async function verifyEmailAction(token: string) {
   try {
+    await ensureDbInitialized();
     await verifyEmail(token);
     return { ok: true };
   } catch (err) {
@@ -118,6 +129,7 @@ export async function verifyEmailAction(token: string) {
 
 export async function acceptInviteAction(_prev: unknown, formData: FormData) {
   try {
+    await ensureDbInitialized();
     const token = formString(formData, "token");
     const name = formString(formData, "name");
     const password = formString(formData, "password");
@@ -133,6 +145,7 @@ export async function acceptInviteAction(_prev: unknown, formData: FormData) {
 }
 
 export async function switchWorkspaceAction(companyId: string, locale: string) {
+  await ensureDbInitialized();
   const user = await getSessionUser();
   if (!user) redirect(`/${locale}/sign-in`);
   const membership = await prisma.membership.findUnique({
@@ -144,19 +157,22 @@ export async function switchWorkspaceAction(companyId: string, locale: string) {
 }
 
 export async function setLocalePreferenceAction(locale: "en" | "ka") {
+  await ensureDbInitialized();
   const user = await getSessionUser();
   if (!user) return;
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { preferredLocale: locale },
-  });
+  await prisma.user
+    .update({
+      where: { id: user.id },
+      data: { preferredLocale: locale },
+    })
+    .catch(() => {});
 }
 
 export async function demoLoginAction(formData: FormData) {
   const email = formString(formData, "email") || "admin@demo-alpha.local";
   const locale = (formString(formData, "locale") || "en") as "en" | "ka";
 
-  await ensureDemoData(prisma);
+  await ensureDbInitialized();
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {

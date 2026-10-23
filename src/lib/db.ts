@@ -7,13 +7,15 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 function resolveDatabaseUrl(): string {
   const envUrl = process.env.DATABASE_URL;
 
-  // On Vercel serverless runtime, copy the bundled pre-seeded SQLite DB into writable /tmp
+  // On Vercel serverless runtime, always use writable /tmp/crm-demo-v2.db
+  // unless an external cloud database URL (postgres/libsql) is provided.
   if (process.env.VERCEL && (!envUrl || envUrl.startsWith("file:"))) {
-    const tmpDbPath = "/tmp/crm-demo.db";
+    const tmpDbPath = "/tmp/crm-demo-v2.db";
     try {
       if (!fs.existsSync(tmpDbPath)) {
         const candidates = [
           path.join(process.cwd(), "prisma", "demo-seed.db"),
+          path.join(process.cwd(), "demo-seed.db"),
           path.join(process.cwd(), "prisma", "dev.db"),
         ];
         for (const src of candidates) {
@@ -25,7 +27,7 @@ function resolveDatabaseUrl(): string {
       }
       return `file:${tmpDbPath}`;
     } catch {
-      // Fallback during static build phase
+      // Fallback if /tmp is unavailable during build
     }
   }
 
@@ -33,9 +35,7 @@ function resolveDatabaseUrl(): string {
 }
 
 const resolvedUrl = resolveDatabaseUrl();
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = resolvedUrl;
-}
+process.env.DATABASE_URL = resolvedUrl;
 
 export const prisma =
   globalForPrisma.prisma ??

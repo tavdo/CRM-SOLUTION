@@ -5,7 +5,7 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
-    "/*": ["./prisma/demo-seed.db"],
+    "/**": ["./prisma/demo-seed.db"],
   },
   experimental: {
     serverActions: {

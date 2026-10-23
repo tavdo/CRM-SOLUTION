@@ -1,5 +1,6 @@
 import type { Company, Membership, Role, Subscription, Plan } from "@prisma/client";
 import { prisma } from "../db";
+import { ensureDbInitialized } from "../db-init";
 import { AppError } from "../errors";
 import { can, type Capability } from "../permissions";
 import {
@@ -18,6 +19,7 @@ export type WorkspaceContext = {
 };
 
 export async function requireUser(): Promise<SessionUser> {
+  await ensureDbInitialized();
   const user = await getSessionUser();
   if (!user) throw new AppError("Unauthorized", "UNAUTHORIZED", 401);
   return user;
@@ -40,11 +42,19 @@ export async function requireWorkspace(): Promise<WorkspaceContext> {
   }
 
   const activeId = await getActiveWorkspaceId();
-  let membership = memberships.find((m) => m.companyId === activeId);
+  let membership = memberships.find(
+    (m) => m.companyId === activeId || m.company.slug === activeId,
+  );
 
   if (!membership) {
     membership = memberships[0];
-    await setActiveWorkspace(membership.companyId);
+    // Note: cookies().set() throws if called inside a Server Component render.
+    // Ignore safely during render; Server Actions set the cookie explicitly.
+    try {
+      await setActiveWorkspace(membership.companyId);
+    } catch {
+      // Safe no-op during Server Component render
+    }
   }
 
   return {
@@ -77,6 +87,7 @@ export function assertSameTenant(
 }
 
 export async function listUserWorkspaces(userId: string) {
+  await ensureDbInitialized();
   return prisma.membership.findMany({
     where: { userId },
     include: { company: true },

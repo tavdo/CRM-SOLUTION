@@ -23,6 +23,7 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
 
   const plans = [
     {
+      id: "plan_starter",
       code: "starter",
       name: "Starter",
       description: "Placeholder starter plan — prices not commercially approved",
@@ -35,6 +36,7 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
       sortOrder: 0,
     },
     {
+      id: "plan_growth",
       code: "growth",
       name: "Growth",
       description: "Placeholder growth plan — prices not commercially approved",
@@ -59,6 +61,7 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
   const passwordHash = await bcrypt.hash("Password123!", 10);
 
   await seedCompany(prisma, passwordHash, {
+    prefix: "alpha",
     companyName: "Demo Alpha Technologies",
     slug: "demo-alpha",
     demoLabel: "DEMO-ALPHA",
@@ -99,6 +102,7 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
   });
 
   await seedCompany(prisma, passwordHash, {
+    prefix: "beta",
     companyName: "დემო ბეტა სერვისები",
     slug: "demo-beta",
     demoLabel: "DEMO-BETA",
@@ -134,6 +138,7 @@ async function seedCompany(
   prisma: PrismaClient,
   passwordHash: string,
   opts: {
+    prefix: string;
     companyName: string;
     slug: string;
     demoLabel: string;
@@ -146,10 +151,12 @@ async function seedCompany(
   },
 ) {
   const starter = await prisma.plan.findUniqueOrThrow({ where: { code: "starter" } });
+  const p = opts.prefix;
 
   const admin = await prisma.user.upsert({
     where: { email: opts.admin.email },
     create: {
+      id: `user_${p}_admin`,
       email: opts.admin.email,
       name: opts.admin.name,
       passwordHash,
@@ -162,6 +169,7 @@ async function seedCompany(
   const manager = await prisma.user.upsert({
     where: { email: opts.manager.email },
     create: {
+      id: `user_${p}_manager`,
       email: opts.manager.email,
       name: opts.manager.name,
       passwordHash,
@@ -174,6 +182,7 @@ async function seedCompany(
   const employee = await prisma.user.upsert({
     where: { email: opts.employee.email },
     create: {
+      id: `user_${p}_employee`,
       email: opts.employee.email,
       name: opts.employee.name,
       passwordHash,
@@ -186,6 +195,7 @@ async function seedCompany(
   const company = await prisma.company.upsert({
     where: { slug: opts.slug },
     create: {
+      id: `company_${p}`,
       name: opts.companyName,
       slug: opts.slug,
       timezone: "Asia/Tbilisi",
@@ -202,21 +212,36 @@ async function seedCompany(
   ] as const) {
     await prisma.membership.upsert({
       where: { companyId_userId: { companyId: company.id, userId: u.id } },
-      create: { companyId: company.id, userId: u.id, role },
+      create: {
+        id: `mem_${p}_${role.toLowerCase()}`,
+        companyId: company.id,
+        userId: u.id,
+        role,
+      },
       update: { role },
     });
   }
 
   const stageCount = await prisma.pipelineStage.count({ where: { companyId: company.id } });
   if (stageCount === 0) {
-    await prisma.pipelineStage.createMany({
-      data: STAGES.map((s) => ({ ...s, companyId: company.id })),
-    });
+    for (const s of STAGES) {
+      await prisma.pipelineStage.create({
+        data: {
+          id: `stage_${p}_${s.sortOrder}`,
+          companyId: company.id,
+          name: s.name,
+          sortOrder: s.sortOrder,
+          isWon: s.isWon,
+          isLost: s.isLost,
+        },
+      });
+    }
   }
 
   await prisma.subscription.upsert({
     where: { companyId: company.id },
     create: {
+      id: `sub_${p}`,
       companyId: company.id,
       planId: starter.id,
       status: "TRIALING",
@@ -235,9 +260,11 @@ async function seedCompany(
   const existingCustomers = await prisma.customer.count({ where: { companyId: company.id } });
   if (existingCustomers === 0) {
     const createdCustomers = [];
-    for (const c of opts.customers) {
+    for (let i = 0; i < opts.customers.length; i++) {
+      const c = opts.customers[i];
       const cust = await prisma.customer.create({
         data: {
+          id: `cust_${p}_${i}`,
           companyId: company.id,
           name: c.name,
           email: c.email,
@@ -252,6 +279,7 @@ async function seedCompany(
 
     await prisma.contact.create({
       data: {
+        id: `contact_${p}_0`,
         companyId: company.id,
         customerId: createdCustomers[0].id,
         firstName: "Nino",
@@ -263,11 +291,13 @@ async function seedCompany(
     });
 
     const createdDeals = [];
-    for (const d of opts.deals) {
+    for (let i = 0; i < opts.deals.length; i++) {
+      const d = opts.deals[i];
       const stage = stages[d.stageIdx] ?? stages[0];
       const cust = createdCustomers[d.custIdx] ?? createdCustomers[0];
       const deal = await prisma.deal.create({
         data: {
+          id: `deal_${p}_${i}`,
           companyId: company.id,
           title: d.title,
           customerId: cust.id,
@@ -283,6 +313,7 @@ async function seedCompany(
       createdDeals.push(deal);
       await prisma.dealActivity.create({
         data: {
+          id: `act_${p}_${i}`,
           companyId: company.id,
           dealId: deal.id,
           actorId: admin.id,
@@ -294,6 +325,7 @@ async function seedCompany(
 
     await prisma.task.create({
       data: {
+        id: `task_${p}_0`,
         companyId: company.id,
         title: "Follow up call with decision maker",
         description: "DEMO seed task — review proposal scope and timeline",
@@ -307,6 +339,7 @@ async function seedCompany(
 
     await prisma.task.create({
       data: {
+        id: `task_${p}_1`,
         companyId: company.id,
         title: "Send commercial proposal & SLA",
         dueAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
@@ -319,6 +352,7 @@ async function seedCompany(
 
     await prisma.customFieldDefinition.create({
       data: {
+        id: `cf_${p}_industry`,
         companyId: company.id,
         name: "Industry",
         key: "industry",
@@ -329,6 +363,7 @@ async function seedCompany(
 
     await prisma.note.create({
       data: {
+        id: `note_${p}_0`,
         companyId: company.id,
         customerId: createdCustomers[0].id,
         authorId: admin.id,
@@ -341,6 +376,7 @@ async function seedCompany(
   await prisma.invitation.upsert({
     where: { tokenHash: hashToken(inviteToken) },
     create: {
+      id: `inv_${p}_0`,
       companyId: company.id,
       email: `pending@${opts.slug}.example`,
       role: "EMPLOYEE",

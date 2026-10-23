@@ -1,5 +1,4 @@
 import { Zap, Shield, Briefcase, UserCheck, Globe2 } from "lucide-react";
-import { demoLoginAction } from "@/app/actions/auth";
 
 export function QuickDemoLogin({
   locale,
@@ -87,36 +86,34 @@ export function QuickDemoLogin({
       >
         {personas.map((p) => {
           const Icon = p.icon;
+          const href = `/api/demo-login?email=${encodeURIComponent(p.email)}&locale=${encodeURIComponent(p.targetLocale)}`;
           return (
-            <form key={p.email} action={demoLoginAction}>
-              <input type="hidden" name="email" value={p.email} />
-              <input type="hidden" name="locale" value={p.targetLocale} />
-              <button
-                type="submit"
-                className={`btn ${p.primary ? "btn-primary" : "btn-secondary"}`}
-                style={{
-                  width: "100%",
-                  justifyContent: "flex-start",
-                  textAlign: "left",
-                  padding: "0.6rem 0.8rem",
-                  height: "100%",
-                }}
-              >
-                <Icon size={16} />
-                <span style={{ display: "grid", lineHeight: 1.2 }}>
-                  <span style={{ fontWeight: 700, fontSize: "0.82rem" }}>{p.title}</span>
-                  <span
-                    style={{
-                      fontSize: "0.69rem",
-                      opacity: 0.78,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {p.sub}
-                  </span>
+            <a
+              key={p.email}
+              href={href}
+              className={`btn ${p.primary ? "btn-primary" : "btn-secondary"}`}
+              style={{
+                width: "100%",
+                justifyContent: "flex-start",
+                textAlign: "left",
+                padding: "0.6rem 0.8rem",
+                height: "100%",
+              }}
+            >
+              <Icon size={16} />
+              <span style={{ display: "grid", lineHeight: 1.2 }}>
+                <span style={{ fontWeight: 700, fontSize: "0.82rem" }}>{p.title}</span>
+                <span
+                  style={{
+                    fontSize: "0.69rem",
+                    opacity: 0.78,
+                    fontWeight: 500,
+                  }}
+                >
+                  {p.sub}
                 </span>
-              </button>
-            </form>
+              </span>
+            </a>
           );
         })}
       </div>
