@@ -1,0 +1,10 @@
+{
+  "env": {
+    "DATABASE_URL": "file:./demo-seed.db",
+    "SESSION_SECRET": "vercel-owner-demo-session-secret-change-before-live",
+    "SEED_DEMO_DATA": "true",
+    "EMAIL_TRANSPORT": "console",
+    "BILLING_PROVIDER": "dev",
+    "BILLING_WEBHOOK_SECRET": "dev-webhook-secret"
+  }
+}

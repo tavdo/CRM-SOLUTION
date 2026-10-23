@@ -1,0 +1,443 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum DealStatus {
+  OPEN
+  WON
+  LOST
+}
+
+enum TaskStatus {
+  OPEN
+  DONE
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  SELECT
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String
+  name              String
+  preferredLocale   String    @default("en") // en | ka
+  emailVerifiedAt   DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  memberships           Membership[]
+  sessions              Session[]
+  passwordResetTokens   PasswordResetToken[]
+  emailVerifyTokens     EmailVerifyToken[]
+  ownedCustomers        Customer[]           @relation("CustomerOwner")
+  ownedContacts         Contact[]            @relation("ContactOwner")
+  ownedDeals            Deal[]               @relation("DealOwner")
+  ownedTasks            Task[]               @relation("TaskOwner")
+  createdTasks          Task[]               @relation("TaskCreator")
+  notes                 Note[]
+  auditEvents           AuditEvent[]         @relation("AuditActor")
+  invitationsSent       Invitation[]         @relation("InviteSender")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userAgent String?
+  ip        String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailVerifyToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Company {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  timezone     String   @default("Asia/Tbilisi")
+  defaultLocale String  @default("ka")
+  currency     String   @default("GEL")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships      Membership[]
+  invitations      Invitation[]
+  customers        Customer[]
+  contacts         Contact[]
+  pipelineStages   PipelineStage[]
+  deals            Deal[]
+  tasks            Task[]
+  customFields     CustomFieldDefinition[]
+  notes            Note[]
+  auditEvents      AuditEvent[]
+  subscription     Subscription?
+  dealActivities   DealActivity[]
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  companyId String
+  userId    String
+  role      Role     @default(EMPLOYEE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+  @@index([userId])
+}
+
+model Invitation {
+  id          String       @id @default(cuid())
+  companyId   String
+  email       String
+  role        Role         @default(EMPLOYEE)
+  tokenHash   String       @unique
+  status      InviteStatus @default(PENDING)
+  invitedById String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime     @default(now())
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invitedBy User    @relation("InviteSender", fields: [invitedById], references: [id])
+
+  @@index([companyId, email])
+  @@index([expiresAt])
+}
+
+model Customer {
+  id          String    @id @default(cuid())
+  companyId   String
+  name        String
+  email       String?
+  phone       String?
+  website     String?
+  address     String?
+  ownerId     String?
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company      Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  owner        User?               @relation("CustomerOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  contacts     Contact[]
+  deals        Deal[]
+  tasks        Task[]
+  notes        Note[]
+  customValues CustomFieldValue[]
+
+  @@index([companyId, name])
+  @@index([companyId, archivedAt])
+  @@index([companyId, ownerId])
+}
+
+model Contact {
+  id          String    @id @default(cuid())
+  companyId   String
+  customerId  String?
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  title       String?
+  ownerId     String?
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  owner    User?     @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  notes    Note[]
+  deals    Deal[]    @relation("DealPrimaryContact")
+
+  @@index([companyId, lastName, firstName])
+  @@index([companyId, customerId])
+  @@index([companyId, ownerId])
+}
+
+model CustomFieldDefinition {
+  id        String          @id @default(cuid())
+  companyId String
+  name      String
+  key       String
+  fieldType CustomFieldType
+  options   String? // JSON array for SELECT
+  required  Boolean         @default(false)
+  sortOrder Int             @default(0)
+  archivedAt DateTime?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  company Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  values  CustomFieldValue[]
+
+  @@unique([companyId, key])
+  @@index([companyId, sortOrder])
+}
+
+model CustomFieldValue {
+  id         String @id @default(cuid())
+  companyId  String
+  fieldId    String
+  customerId String
+  valueText  String?
+  valueNumber Float?
+  valueDate  DateTime?
+
+  field    CustomFieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  customer Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([fieldId, customerId])
+  @@index([companyId, customerId])
+}
+
+model Note {
+  id         String   @id @default(cuid())
+  companyId  String
+  body       String
+  authorId   String
+  customerId String?
+  contactId  String?
+  dealId     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  contact  Contact?  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  deal     Deal?     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, customerId])
+  @@index([companyId, dealId])
+}
+
+model PipelineStage {
+  id        String    @id @default(cuid())
+  companyId String
+  name      String
+  sortOrder Int
+  isWon     Boolean   @default(false)
+  isLost    Boolean   @default(false)
+  archivedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deals   Deal[]
+
+  @@index([companyId, sortOrder])
+}
+
+model Deal {
+  id               String     @id @default(cuid())
+  companyId        String
+  title            String
+  customerId       String?
+  contactId        String?
+  stageId          String
+  ownerId          String?
+  // Monetary amount stored as integer minor units (e.g. tetri/cents)
+  amountMinor      Int        @default(0)
+  currency         String     @default("GEL")
+  expectedCloseAt  DateTime?
+  status           DealStatus @default(OPEN)
+  lossReason       String?
+  closedAt         DateTime?
+  archivedAt       DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  company  Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  contact  Contact?      @relation("DealPrimaryContact", fields: [contactId], references: [id], onDelete: SetNull)
+  stage    PipelineStage @relation(fields: [stageId], references: [id])
+  owner    User?         @relation("DealOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  tasks    Task[]
+  notes    Note[]
+  activities DealActivity[]
+
+  @@index([companyId, stageId])
+  @@index([companyId, status])
+  @@index([companyId, ownerId])
+  @@index([companyId, expectedCloseAt])
+}
+
+model DealActivity {
+  id        String   @id @default(cuid())
+  companyId String
+  dealId    String
+  actorId   String?
+  action    String
+  detail    String? // JSON metadata, no secrets
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deal    Deal    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, dealId, createdAt])
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  companyId   String
+  title       String
+  description String?
+  status      TaskStatus @default(OPEN)
+  dueAt       DateTime?
+  completedAt DateTime?
+  ownerId     String
+  creatorId   String
+  customerId  String?
+  dealId      String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  owner    User      @relation("TaskOwner", fields: [ownerId], references: [id])
+  creator  User      @relation("TaskCreator", fields: [creatorId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  deal     Deal?     @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, ownerId, status])
+  @@index([companyId, dueAt])
+  @@index([companyId, dealId])
+}
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  companyId String
+  actorId   String?
+  action    String
+  entityType String
+  entityId  String?
+  detail    String? // JSON, never passwords/tokens
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  actor   User?   @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([companyId, entityType, entityId])
+}
+
+model Plan {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  description     String?
+  // Prices are configurable placeholders — not approved commercial terms
+  priceMinor      Int      @default(0)
+  currency        String   @default("GEL")
+  interval        String   @default("month") // month | year
+  maxUsers        Int      @default(5)
+  maxCustomers    Int      @default(100)
+  maxDeals        Int      @default(200)
+  trialDays       Int      @default(14)
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  companyId            String             @unique
+  planId               String
+  status               SubscriptionStatus @default(TRIALING)
+  trialEndsAt          DateTime?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  externalCustomerId   String?
+  externalSubscriptionId String?
+  lastPaymentFailureAt DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan    Plan    @relation(fields: [planId], references: [id])
+  events  BillingEvent[]
+}
+
+model BillingEvent {
+  id               String   @id @default(cuid())
+  subscriptionId   String
+  provider         String   @default("dev")
+  externalEventId  String
+  eventType        String
+  payload          String // JSON
+  processedAt      DateTime @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, externalEventId])
+  @@index([subscriptionId])
+}
