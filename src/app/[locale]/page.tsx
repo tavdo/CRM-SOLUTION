@@ -68,11 +68,11 @@ export default async function LandingPage({
           <h1 className="landing-title">{t("headline")}</h1>
           <p className="landing-subtitle">{t("heroBody")}</p>
           <div className="landing-cta">
-            <Link href={`/${locale}/sign-up`} className="btn btn-primary" style={{ padding: "0.75rem 1.35rem" }}>
+            <Link href={`/${locale}/sign-up`} className="btn btn-primary" style={{ minHeight: 44, padding: "0.7rem 1.35rem", fontSize: "0.9rem" }}>
               <span>{t("cta")}</span>
               <ArrowRight size={16} />
             </Link>
-            <Link href={`/${locale}/sign-in`} className="btn btn-secondary" style={{ padding: "0.75rem 1.25rem" }}>
+            <Link href={`/${locale}/sign-in`} className="btn btn-secondary" style={{ minHeight: 44, padding: "0.7rem 1.25rem", fontSize: "0.9rem" }}>
               {t("signin")}
             </Link>
           </div>
