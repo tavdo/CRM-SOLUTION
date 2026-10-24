@@ -691,6 +691,156 @@ a {
     0 0 22px rgba(16, 185, 129, 0.16);
 }
 
+.pipeline-card-dragging {
+  opacity: 0.45;
+  cursor: grabbing;
+}
+
+.pipeline-col-over {
+  border-color: rgba(16, 185, 129, 0.65) !important;
+  background: rgba(16, 185, 129, 0.06) !important;
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.25);
+}
+
+/* —— Month calendar —— */
+.month-cal {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.month-cal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.month-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.month-cal-dow {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: var(--ink-muted);
+  padding: 0.35rem 0;
+}
+
+.month-cal-cell {
+  min-height: 92px;
+  padding: 0.4rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.month-cal-cell.is-outside {
+  opacity: 0.4;
+}
+
+.month-cal-cell.is-today {
+  border-color: rgba(16, 185, 129, 0.55);
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.month-cal-daynum {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.25rem;
+}
+
+.month-cal-events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.month-cal-ev {
+  display: block;
+  font-size: 0.65rem;
+  line-height: 1.25;
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.month-cal-ev-task {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+}
+
+.month-cal-ev-deal {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+}
+
+.month-cal-ev-leave {
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
+}
+
+.month-cal-legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+}
+
+.month-cal-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  margin-right: 5px;
+}
+
+.month-cal-dot.task {
+  background: #f59e0b;
+}
+
+.month-cal-dot.deal {
+  background: #10b981;
+}
+
+.month-cal-dot.leave {
+  background: #38bdf8;
+}
+
+.funnel-bars {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.funnel-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 140px) 1fr auto;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.funnel-track {
+  height: 10px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.funnel-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #059669, #34d399);
+  min-width: 2px;
+}
+}
+
 /* —— App Shell — Sidebar + Workspace —— */
 .app-frame {
   min-height: 100vh;

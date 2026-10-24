@@ -457,7 +457,7 @@ model Invoice {
   invoiceNumber   String
   customerId      String
   dealId          String?
-  status          String    @default("SENT") // DRAFT | SENT | PAID | OVERDUE
+  status          String    @default("SENT") // QUOTE | DRAFT | SENT | PAID | OVERDUE
   issueDate       DateTime  @default(now())
   dueDate         DateTime?
   subtotalMinor   Int       @default(0)

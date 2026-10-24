@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { LayoutGrid, List, Plus } from "lucide-react";
 import { Badge, EmptyState, Surface } from "@/components/ui";
-import { MoveDealSelect } from "@/components/MoveDealSelect";
+import { DealPipelineBoard } from "@/components/DealPipelineBoard";
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { listDeals, listStages } from "@/lib/services/deals";
 import { formatMoney, sumByCurrency } from "@/lib/money";
@@ -28,6 +28,29 @@ export default async function DealsPage({
   const orderedStages = stages
     .filter((s) => !s.isWon && !s.isLost)
     .concat(stages.filter((s) => s.isWon || s.isLost));
+
+  const boardStages = orderedStages.map((stage) => {
+    const columnDeals = deals.filter((d) => d.stageId === stage.id);
+    const totals = Object.entries(sumByCurrency(columnDeals));
+    return {
+      id: stage.id,
+      name: stage.name,
+      isWon: stage.isWon,
+      isLost: stage.isLost,
+      totalLabel:
+        totals.length > 0
+          ? totals.map(([c, m]) => formatMoney(m, c, locale)).join(" · ")
+          : null,
+      deals: columnDeals.map((d) => ({
+        id: d.id,
+        title: d.title,
+        stageId: d.stageId,
+        amountLabel: formatMoney(d.amountMinor, d.currency, locale),
+        customerName: d.customer?.name ?? "—",
+        ownerName: d.owner?.name ?? "—",
+      })),
+    };
+  });
 
   return (
     <div style={{ display: "grid", gap: "1.2rem" }}>
@@ -116,66 +139,7 @@ export default async function DealsPage({
           </table>
         </Surface>
       ) : (
-        <div className="pipeline" role="list">
-          {orderedStages.map((stage) => {
-            const columnDeals = deals.filter((d) => d.stageId === stage.id);
-            const totals = Object.entries(sumByCurrency(columnDeals));
-            return (
-              <section
-                key={stage.id}
-                className="pipeline-col"
-                aria-label={stage.name}
-                role="listitem"
-              >
-                <div className="pipeline-col-header">
-                  <div>
-                    <strong style={{ fontSize: "0.88rem", color: "#fff" }}>{stage.name}</strong>
-                    {totals.length > 0 ? (
-                      <div className="muted" style={{ fontSize: "0.72rem", marginTop: 2 }}>
-                        {totals.map(([c, m]) => formatMoney(m, c, locale)).join(" · ")}
-                      </div>
-                    ) : null}
-                  </div>
-                  <Badge
-                    tone={stage.isWon ? "ok" : stage.isLost ? "danger" : "default"}
-                  >
-                    {columnDeals.length}
-                  </Badge>
-                </div>
-
-                {columnDeals.map((d) => (
-                  <div key={d.id} className="pipeline-card">
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 6, alignItems: "flex-start" }}>
-                      <Link href={`/${locale}/deals/${d.id}`}>
-                        <strong style={{ color: "#fff", fontSize: "0.9rem" }}>{d.title}</strong>
-                      </Link>
-                    </div>
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        fontSize: "0.88rem",
-                        color: "var(--brand)",
-                        marginTop: 6,
-                      }}
-                    >
-                      {formatMoney(d.amountMinor, d.currency, locale)}
-                    </div>
-                    <div className="muted" style={{ fontSize: "0.76rem", marginTop: 4 }}>
-                      {d.customer?.name ?? "—"} · {d.owner?.name ?? "—"}
-                    </div>
-                    <MoveDealSelect
-                      locale={locale}
-                      dealId={d.id}
-                      stageId={d.stageId}
-                      stages={stages.map((s) => ({ id: s.id, name: s.name }))}
-                      label={t("move")}
-                    />
-                  </div>
-                ))}
-              </section>
-            );
-          })}
-        </div>
+        <DealPipelineBoard locale={locale} stages={boardStages} />
       )}
     </div>
   );

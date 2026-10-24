@@ -9,6 +9,7 @@ import {
   Users,
   Kanban,
   FileSpreadsheet,
+  Package,
   CheckSquare,
   CalendarDays,
   MessageSquare,
@@ -34,6 +35,7 @@ type NavLabels = {
   customers: string;
   deals: string;
   invoices: string;
+  products: string;
   tasks: string;
   calendar: string;
   feed: string;
@@ -80,6 +82,7 @@ export function AppShell({
     { href: `/${locale}/deals`, label: labels.deals, icon: Kanban },
     { href: `/${locale}/customers`, label: labels.customers, icon: Users },
     { href: `/${locale}/invoices`, label: labels.invoices, icon: FileSpreadsheet },
+    { href: `/${locale}/products`, label: labels.products, icon: Package },
     { href: `/${locale}/tasks`, label: labels.tasks, icon: CheckSquare },
     { href: `/${locale}/calendar`, label: labels.calendar, icon: CalendarDays },
     { href: `/${locale}/feed`, label: labels.feed, icon: MessageSquare },

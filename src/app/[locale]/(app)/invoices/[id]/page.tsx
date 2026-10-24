@@ -4,7 +4,10 @@ import { setRequestLocale } from "next-intl/server";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Badge, Button, Surface } from "@/components/ui";
 import { PrintInvoiceButton } from "@/components/PrintInvoiceButton";
-import { updateInvoiceStatusAction } from "@/app/actions/crm";
+import {
+  convertQuoteToInvoiceAction,
+  updateInvoiceStatusAction,
+} from "@/app/actions/crm";
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { prisma } from "@/lib/db";
 import { formatMoney } from "@/lib/money";
@@ -46,7 +49,17 @@ export default async function InvoiceDetailPage({
 
         <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
           <PrintInvoiceButton label={isKa ? "ბეჭდვა / PDF შენახვა" : "Print / Save PDF"} />
-          {invoice.status !== "PAID" ? (
+          {invoice.status === "QUOTE" ? (
+            <form action={convertQuoteToInvoiceAction}>
+              <input type="hidden" name="locale" value={locale} />
+              <input type="hidden" name="id" value={invoice.id} />
+              <Button type="submit">
+                <CheckCircle2 size={15} />
+                <span>{isKa ? "ინვოისად გადაქცევა" : "Convert quote → Invoice"}</span>
+              </Button>
+            </form>
+          ) : null}
+          {invoice.status !== "PAID" && invoice.status !== "QUOTE" ? (
             <form action={updateInvoiceStatusAction}>
               <input type="hidden" name="locale" value={locale} />
               <input type="hidden" name="id" value={invoice.id} />
@@ -74,7 +87,13 @@ export default async function InvoiceDetailPage({
           }}
         >
           <div>
-            <span className="kicker">ინვოისი / TAX INVOICE</span>
+            <span className="kicker">
+              {invoice.status === "QUOTE"
+                ? isKa
+                  ? "შეთავაზება / QUOTE"
+                  : "QUOTE / შეთავაზება"
+                : "ინვოისი / TAX INVOICE"}
+            </span>
             <h1 className="page-title" style={{ marginTop: 4 }}>
               {invoice.invoiceNumber}
             </h1>

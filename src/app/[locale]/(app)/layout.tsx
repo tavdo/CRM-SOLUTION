@@ -63,6 +63,7 @@ export default async function AppLayout({
         customers: t("customers"),
         deals: t("deals"),
         invoices: t("invoices"),
+        products: t("products"),
         tasks: t("tasks"),
         calendar: t("calendar"),
         feed: t("feed"),

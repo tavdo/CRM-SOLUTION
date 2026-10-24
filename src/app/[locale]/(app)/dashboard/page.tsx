@@ -97,6 +97,62 @@ export default async function DashboardPage({
       </div>
 
       <div
+        className="grid-stats rise rise-delay-1"
+        style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}
+      >
+        <Surface className="stat-card">
+          <span className="muted" style={{ fontSize: "0.8rem" }}>{t("lostMonth")}</span>
+          <strong style={{ color: "#fda4af" }}>{data.lostThisMonth}</strong>
+        </Surface>
+        <Surface className="stat-card">
+          <span className="muted" style={{ fontSize: "0.8rem" }}>{t("winRate")}</span>
+          <strong>{data.winRate == null ? "—" : `${data.winRate}%`}</strong>
+        </Surface>
+        <Surface className="stat-card">
+          <span className="muted" style={{ fontSize: "0.8rem" }}>{t("overdue")}</span>
+          <strong style={{ color: data.overdueCount > 0 ? "#fda4af" : undefined }}>
+            {data.overdueCount}
+          </strong>
+        </Surface>
+      </div>
+
+      <Surface className="rise rise-delay-2" style={{ padding: "1.2rem" }}>
+        <h2 className="section-title" style={{ marginBottom: "0.85rem" }}>
+          {t("funnel")}
+        </h2>
+        {data.funnel.length === 0 ? (
+          <EmptyState>{t("empty")}</EmptyState>
+        ) : (
+          <div className="funnel-bars">
+            {(() => {
+              const max = Math.max(1, ...data.funnel.map((f) => f.count));
+              return data.funnel.map((f) => (
+                <div key={f.stageId} className="funnel-row">
+                  <span style={{ fontSize: "0.82rem", color: "#fff" }}>{f.name}</span>
+                  <div className="funnel-track">
+                    <div
+                      className="funnel-fill"
+                      style={{
+                        width: `${Math.round((f.count / max) * 100)}%`,
+                        background: f.isWon
+                          ? "linear-gradient(90deg,#059669,#34d399)"
+                          : f.isLost
+                            ? "linear-gradient(90deg,#be123c,#fb7185)"
+                            : undefined,
+                      }}
+                    />
+                  </div>
+                  <strong style={{ fontSize: "0.85rem", minWidth: 28, textAlign: "right" }}>
+                    {f.count}
+                  </strong>
+                </div>
+              ));
+            })()}
+          </div>
+        )}
+      </Surface>
+
+      <div
         className="rise rise-delay-2"
         style={{
           display: "grid",

@@ -178,7 +178,15 @@ export default async function InvoicesPage({
                         <Printer size={13} />
                         <span>{isKa ? "ნახვა / PDF" : "View / PDF"}</span>
                       </Link>
-                      {inv.status !== "PAID" ? (
+                      {inv.status === "QUOTE" ? (
+                        <Link
+                          href={`/${locale}/invoices/${inv.id}`}
+                          className="btn btn-secondary"
+                          style={{ padding: "0.35rem 0.7rem", fontSize: "0.76rem" }}
+                        >
+                          {isKa ? "შეთავაზება" : "Quote"}
+                        </Link>
+                      ) : inv.status !== "PAID" ? (
                         <form action={updateInvoiceStatusAction}>
                           <input type="hidden" name="locale" value={locale} />
                           <input type="hidden" name="id" value={inv.id} />
@@ -214,7 +222,7 @@ export default async function InvoicesPage({
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.9rem" }}>
             <FileSpreadsheet size={16} color="#10b981" />
             <h2 className="section-title">
-              {isKa ? "ახალი ქართული ინვოისის გამოწერა (დღგ 18%)" : "Issue New Georgian VAT Invoice"}
+              {isKa ? "შეთავაზება ან ინვოისი (დღგ 18%)" : "Quote or Invoice (18% VAT)"}
             </h2>
           </div>
           <form action={createInvoiceAction} style={{ display: "grid", gap: "0.75rem" }}>
@@ -236,6 +244,18 @@ export default async function InvoicesPage({
                     {d.title}
                   </option>
                 ))}
+              </select>
+            </Field>
+            <Field label={isKa ? "კატალოგიდან პროდუქტი" : "Catalog product"} htmlFor="productId">
+              <select id="productId" name="productId" className="select" defaultValue="">
+                <option value="">{isKa ? "— თავისუფალი ტექსტი —" : "— free text —"}</option>
+                {products
+                  .filter((p) => p.isActive)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
               </select>
             </Field>
             <Field label={isKa ? "მომსახურების / პროდუქტის დასახელება" : "Item / Service Description"} htmlFor="description">
@@ -268,19 +288,36 @@ export default async function InvoicesPage({
                 <Input id="rsGeWaybillRef" name="rsGeWaybillRef" placeholder="RS-0749..." />
               </Field>
             </div>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: "0.85rem",
+                color: "var(--ink-secondary)",
+              }}
+            >
+              <input type="checkbox" name="asQuote" value="1" />
+              {isKa ? "შეინახე როგორც შეთავაზება (QTE) — არა ინვოისი" : "Save as Quote (QTE) — not an invoice yet"}
+            </label>
             <Button type="submit">
               <Plus size={15} />
-              <span>{isKa ? "ინვოისის გენერირება" : "Generate Invoice"}</span>
+              <span>{isKa ? "გენერირება" : "Generate"}</span>
             </Button>
           </form>
         </Surface>
 
         <Surface style={{ padding: "1.25rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.9rem" }}>
-            <Package size={16} color="#38bdf8" />
-            <h2 className="section-title">
-              {isKa ? "პროდუქტების და სერვისების კატალოგი" : "Products & Services Catalog"}
-            </h2>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: "0.9rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Package size={16} color="#38bdf8" />
+              <h2 className="section-title">
+                {isKa ? "პროდუქტების კატალოგი" : "Products catalog"}
+              </h2>
+            </div>
+            <Link href={`/${locale}/products`} className="btn btn-secondary" style={{ padding: "0.35rem 0.75rem", fontSize: "0.78rem" }}>
+              {isKa ? "სრული კატალოგი" : "Full catalog"}
+            </Link>
           </div>
           <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1rem", display: "grid", gap: "0.5rem" }}>
             {products.map((p) => (

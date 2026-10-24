@@ -251,6 +251,31 @@ export async function moveDealStage(
           category: stage.isWon ? "WIN" : "UPDATE",
         },
       });
+    } else if (rule.actionType === "SEND_SMS") {
+      // Demo-honest SMS: no real gateway — log to audit + feed as "sent"
+      await writeAudit({
+        companyId: ctx.company.id,
+        actorId: ctx.user.id,
+        action: "automation.sms_logged",
+        entityType: "deal",
+        entityId: deal.id,
+        detail: {
+          ruleId: rule.id,
+          ruleName: rule.name,
+          template: rule.actionDetail,
+          simulated: true,
+          toOwnerId: deal.ownerId,
+        },
+      });
+      await prisma.feedPost.create({
+        data: {
+          companyId: ctx.company.id,
+          authorId: ctx.user.id,
+          title: `SMS logged (demo): ${deal.title}`,
+          body: `[Simulated SMS — not sent to a carrier]\n${rule.actionDetail}`,
+          category: "UPDATE",
+        },
+      });
     }
   }
 

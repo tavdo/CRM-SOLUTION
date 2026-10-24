@@ -13,12 +13,15 @@ import {
 } from "lucide-react";
 import { Badge, Button, EmptyState, Field, Input, Surface, Textarea } from "@/components/ui";
 import {
+  assignLeadOwnerAction,
   convertLeadAction,
   createLeadAction,
   updateLeadStatusAction,
 } from "@/app/actions/crm";
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { prisma } from "@/lib/db";
+import { can } from "@/lib/permissions";
+import { leadStatusCounts, listLeads } from "@/lib/services/leads";
 import { formatMoney } from "@/lib/money";
 import { isLocale } from "@/i18n/config";
 
@@ -27,7 +30,7 @@ export default async function LeadsPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; error?: string }>;
 }) {
   const { locale } = await params;
   const sp = await searchParams;
@@ -35,24 +38,21 @@ export default async function LeadsPage({
   setRequestLocale(locale);
   const ctx = await requireWorkspace();
   const isKa = locale === "ka";
+  const canAssign = can(ctx.role, "crm.assign");
 
   const whereStatus = sp.status && sp.status !== "ALL" ? sp.status : undefined;
 
-  const leads = await prisma.lead.findMany({
-    where: {
-      companyId: ctx.company.id,
-      ...(whereStatus ? { status: whereStatus } : {}),
-    },
-    include: { owner: { select: { name: true } } },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const counts = await prisma.lead.groupBy({
-    by: ["status"],
-    where: { companyId: ctx.company.id },
-    _count: { _all: true },
-  });
-  const countMap = Object.fromEntries(counts.map((c) => [c.status, c._count._all]));
+  const [leads, countMap, members] = await Promise.all([
+    listLeads(ctx, { status: whereStatus }),
+    leadStatusCounts(ctx),
+    canAssign
+      ? prisma.membership.findMany({
+          where: { companyId: ctx.company.id },
+          include: { user: { select: { id: true, name: true } } },
+          orderBy: { createdAt: "asc" },
+        })
+      : Promise.resolve([]),
+  ]);
 
   return (
     <div style={{ display: "grid", gap: "1.35rem" }}>
@@ -96,6 +96,28 @@ export default async function LeadsPage({
           })}
         </div>
       </div>
+
+      {sp.error ? (
+        <Surface
+          style={{
+            padding: "0.85rem 1rem",
+            borderColor: "rgba(251, 191, 36, 0.45)",
+            background: "rgba(245, 158, 11, 0.08)",
+          }}
+        >
+          <strong style={{ color: "#fcd34d" }}>
+            {isKa ? "შესაძლო დუბლიკატი" : "Possible duplicate"}
+          </strong>
+          <p className="muted" style={{ margin: "0.35rem 0 0.65rem", fontSize: "0.85rem" }}>
+            {sp.error}
+          </p>
+          <p className="muted" style={{ margin: 0, fontSize: "0.78rem" }}>
+            {isKa
+              ? "თუ მაინც გსურთ შექმნა — ჩართეთ „იძულებითი შექმნა“ ფორმაში."
+              : "To create anyway, check “Force create” on the form."}
+          </p>
+        </Surface>
+      ) : null}
 
       <div
         style={{
@@ -195,24 +217,48 @@ export default async function LeadsPage({
                     flexWrap: "wrap",
                   }}
                 >
-                  <form action={updateLeadStatusAction} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <input type="hidden" name="locale" value={locale} />
-                    <input type="hidden" name="leadId" value={lead.id} />
-                    <select
-                      name="status"
-                      className="select"
-                      defaultValue={lead.status}
-                      style={{ width: "auto", padding: "0.38rem 0.65rem", fontSize: "0.78rem" }}
-                    >
-                      <option value="NEW">NEW</option>
-                      <option value="CONTACTED">CONTACTED</option>
-                      <option value="QUALIFIED">QUALIFIED</option>
-                      <option value="JUNK">JUNK</option>
-                    </select>
-                    <Button type="submit" variant="secondary" style={{ padding: "0.38rem 0.75rem", fontSize: "0.78rem" }}>
-                      {isKa ? "განახლება" : "Update"}
-                    </Button>
-                  </form>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                    <form action={updateLeadStatusAction} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input type="hidden" name="locale" value={locale} />
+                      <input type="hidden" name="leadId" value={lead.id} />
+                      <select
+                        name="status"
+                        className="select"
+                        defaultValue={lead.status}
+                        style={{ width: "auto", padding: "0.38rem 0.65rem", fontSize: "0.78rem" }}
+                      >
+                        <option value="NEW">NEW</option>
+                        <option value="CONTACTED">CONTACTED</option>
+                        <option value="QUALIFIED">QUALIFIED</option>
+                        <option value="JUNK">JUNK</option>
+                      </select>
+                      <Button type="submit" variant="secondary" style={{ padding: "0.38rem 0.75rem", fontSize: "0.78rem" }}>
+                        {isKa ? "განახლება" : "Update"}
+                      </Button>
+                    </form>
+                    {canAssign ? (
+                      <form action={assignLeadOwnerAction} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <input type="hidden" name="locale" value={locale} />
+                        <input type="hidden" name="leadId" value={lead.id} />
+                        <select
+                          name="ownerId"
+                          className="select"
+                          defaultValue={lead.ownerId ?? ""}
+                          style={{ width: "auto", padding: "0.38rem 0.65rem", fontSize: "0.78rem" }}
+                          required
+                        >
+                          {members.map((m) => (
+                            <option key={m.userId} value={m.userId}>
+                              {m.user.name}
+                            </option>
+                          ))}
+                        </select>
+                        <Button type="submit" variant="secondary" style={{ padding: "0.38rem 0.75rem", fontSize: "0.78rem" }}>
+                          {isKa ? "მინიჭება" : "Assign"}
+                        </Button>
+                      </form>
+                    ) : null}
+                  </div>
 
                   {lead.status === "CONVERTED" && lead.convertedDealId ? (
                     <Link
@@ -290,9 +336,35 @@ export default async function LeadsPage({
             <Field label={isKa ? "სავარაუდო ბიუჯეტი (GEL)" : "Estimated Value (GEL)"} htmlFor="amount">
               <Input id="amount" name="amount" type="number" step="0.01" defaultValue="1500" />
             </Field>
+            <Field label={isKa ? "ელფოსტა" : "Email"} htmlFor="email">
+              <Input id="email" name="email" type="email" />
+            </Field>
+            {canAssign ? (
+              <Field label={isKa ? "პასუხისმგებელი" : "Owner"} htmlFor="ownerId">
+                <select id="ownerId" name="ownerId" className="select" defaultValue={ctx.user.id}>
+                  {members.map((m) => (
+                    <option key={m.userId} value={m.userId}>
+                      {m.user.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ) : null}
             <Field label={isKa ? "შენიშვნა" : "Notes"} htmlFor="notes">
               <Textarea id="notes" name="notes" style={{ minHeight: 68 }} />
             </Field>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: "0.8rem",
+                color: "var(--ink-muted)",
+              }}
+            >
+              <input type="checkbox" name="forceDuplicate" value="1" />
+              {isKa ? "იძულებითი შექმნა (დუბლიკატის იგნორი)" : "Force create (ignore duplicate)"}
+            </label>
             <Button type="submit">
               <Inbox size={15} />
               <span>{isKa ? "ლიდის შენახვა" : "Save Lead"}</span>

@@ -158,6 +158,11 @@ export default async function AutomationsPage({
                 <option value="POST_FEED">
                   {isKa ? "სიახლეების ლენტაში გამოქვეყნება" : "Post Announcement to Company Feed"}
                 </option>
+                <option value="SEND_SMS">
+                  {isKa
+                    ? "SMS ლოგი (დემო — რეალური გაგზავნა არა)"
+                    : "Log SMS (demo — not sent to carrier)"}
+                </option>
               </select>
             </Field>
             <Field label={isKa ? "დავალების / შეტყობინების ტექსტი" : "Task Title / Message"} htmlFor="actionDetail">

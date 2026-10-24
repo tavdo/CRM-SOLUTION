@@ -16,8 +16,11 @@ const PUBLIC = [
   /^\/(en|ka)\/reset-password/,
   /^\/(en|ka)\/verify-email/,
   /^\/(en|ka)\/invite\//,
+  /^\/(en|ka)\/f\//,
   /^\/api\/health/,
   /^\/api\/billing\/webhook/,
+  /^\/api\/inbound\//,
+  /^\/api\/demo-login/,
 ];
 
 export default function middleware(req: NextRequest) {
