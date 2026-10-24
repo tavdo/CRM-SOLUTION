@@ -206,69 +206,117 @@ a {
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
-/* —— Next-Gen Buttons with Sheen & Glow —— */
+/* —— Segmented Language Pill —— */
+.lang-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 36px;
+  padding: 3px 4px 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.lang-pill-icon {
+  color: var(--ink-muted);
+  margin-right: 3px;
+  flex-shrink: 0;
+}
+
+.lang-pill-btn {
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 0.74rem;
+  font-weight: 650;
+  padding: 0 0.62rem;
+  height: 28px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lang-pill-btn:hover {
+  color: #fff;
+}
+
+.lang-pill-btn.active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(16, 185, 129, 0.42);
+}
+
+/* —— Sleek Capsule Buttons with Specular Rim & Hover Sheen —— */
 .btn {
   position: relative;
   overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  border-radius: 11px;
-  padding: 0.6rem 1.15rem;
-  font-size: 0.875rem;
-  font-weight: 650;
+  gap: 0.45rem;
+  min-height: 36px;
+  border-radius: 999px;
+  padding: 0.48rem 1.05rem;
+  font-size: 0.82rem;
+  font-weight: 600;
   letter-spacing: -0.01em;
+  line-height: 1.2;
   border: 1px solid transparent;
   cursor: pointer;
   white-space: nowrap;
   isolation: isolate;
   transition:
-    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
-    background 200ms ease,
-    border-color 200ms ease,
-    box-shadow 220ms ease,
-    color 200ms ease;
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 200ms ease,
+    color 180ms ease;
 }
 
-/* Animated diagonal light sweep on all buttons */
+/* Subtle diagonal light sweep on hover */
 .btn::before {
   content: "";
   position: absolute;
   top: 0;
-  left: -120%;
-  width: 75%;
+  left: -130%;
+  width: 65%;
   height: 100%;
   background: linear-gradient(
     110deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.22) 50%,
     transparent 100%
   );
-  transform: skewX(-20deg);
-  transition: left 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform: skewX(-22deg);
+  transition: left 480ms cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;
   z-index: 1;
 }
 
 .btn:hover::before {
-  left: 140%;
+  left: 145%;
 }
 
 .btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1.5px);
 }
 
 .btn:active {
-  transform: translateY(0) scale(0.98);
+  transform: translateY(0) scale(0.985);
 }
 
 .btn svg {
-  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  flex-shrink: 0;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .btn:hover svg {
-  transform: translateX(2px) scale(1.06);
+  transform: translateX(1.5px);
 }
 
 .btn:disabled {
@@ -286,62 +334,56 @@ a {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #10b981 0%, #059669 55%, #0891b2 100%);
-  color: #02110b;
+  background: linear-gradient(180deg, #16c78e 0%, #0d9f6e 100%);
+  color: #03150e;
   font-weight: 700;
-  border-color: rgba(110, 231, 183, 0.45);
+  border-color: rgba(110, 231, 183, 0.38);
   box-shadow:
-    0 10px 26px -4px rgba(16, 185, 129, 0.42),
-    0 0 0 1px rgba(16, 185, 129, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 8px 20px -4px rgba(16, 185, 129, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #06b6d4 100%);
-  border-color: rgba(167, 243, 208, 0.75);
+  background: linear-gradient(180deg, #27d69e 0%, #10b981 100%);
+  border-color: rgba(167, 243, 208, 0.65);
   box-shadow:
-    0 14px 34px -4px rgba(16, 185, 129, 0.62),
-    0 0 22px rgba(6, 182, 212, 0.35),
+    0 12px 26px -4px rgba(16, 185, 129, 0.52),
     inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .btn-secondary {
-  background: linear-gradient(135deg, rgba(15, 23, 36, 0.78) 0%, rgba(8, 14, 24, 0.88) 100%);
-  border-color: rgba(56, 189, 248, 0.38);
-  color: #e2e8f0;
-  backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  backdrop-filter: blur(12px);
   box-shadow:
-    0 8px 22px rgba(0, 0, 0, 0.42),
-    0 0 14px rgba(6, 182, 212, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    0 2px 8px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
 }
 
 .btn-secondary:hover {
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.16) 0%, rgba(6, 182, 212, 0.08) 100%);
-  border-color: rgba(16, 185, 129, 0.55);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(16, 185, 129, 0.45);
   color: #fff;
   box-shadow:
-    0 10px 26px rgba(0, 0, 0, 0.45),
-    0 0 20px rgba(16, 185, 129, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    0 6px 18px rgba(0, 0, 0, 0.38),
+    0 0 16px rgba(16, 185, 129, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .btn-danger {
-  background: linear-gradient(180deg, rgba(244, 63, 94, 0.18) 0%, rgba(244, 63, 94, 0.08) 100%);
-  border-color: rgba(244, 63, 94, 0.38);
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.3);
   color: #fecdd3;
-  box-shadow:
-    0 6px 18px rgba(244, 63, 94, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .btn-danger:hover {
-  background: linear-gradient(180deg, rgba(244, 63, 94, 0.3) 0%, rgba(225, 29, 72, 0.18) 100%);
-  border-color: rgba(251, 113, 133, 0.7);
+  background: rgba(244, 63, 94, 0.22);
+  border-color: rgba(251, 113, 133, 0.55);
   color: #fff;
-  box-shadow:
-    0 12px 28px rgba(244, 63, 94, 0.35),
-    0 0 18px rgba(244, 63, 94, 0.25);
+  box-shadow: 0 8px 20px rgba(244, 63, 94, 0.25);
 }
 
 /* —— Inputs —— */

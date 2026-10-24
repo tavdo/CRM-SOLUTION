@@ -1,4 +1,4 @@
-import { Zap, Shield, Briefcase, UserCheck, Globe2 } from "lucide-react";
+import { Zap, Shield, Briefcase, UserCheck, Globe2, ArrowUpRight } from "lucide-react";
 
 export function QuickDemoLogin({
   locale,
@@ -48,10 +48,10 @@ export function QuickDemoLogin({
     <div
       className="surface"
       style={{
-        padding: compact ? "1rem" : "1.25rem 1.35rem",
-        border: "1px solid rgba(16, 185, 129, 0.35)",
+        padding: compact ? "1rem" : "1.15rem 1.25rem",
+        border: "1px solid rgba(16, 185, 129, 0.28)",
         background:
-          "linear-gradient(145deg, rgba(16, 185, 129, 0.1) 0%, rgba(9, 14, 23, 0.88) 100%)",
+          "linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, rgba(9, 14, 23, 0.88) 100%)",
       }}
     >
       <div
@@ -68,10 +68,10 @@ export function QuickDemoLogin({
           className="kicker"
           style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
         >
-          <Zap size={14} />
+          <Zap size={13} />
           {isKa
             ? "სწრაფი დემო შესვლა — რეგისტრაციის გარეშე"
-            : "Instant Owner Demo — 1-Click Login (No Registration)"}
+            : "Instant Owner Demo — 1-Click Login"}
         </span>
       </div>
 
@@ -81,7 +81,7 @@ export function QuickDemoLogin({
           gap: "0.55rem",
           gridTemplateColumns: compact
             ? "repeat(2, minmax(0, 1fr))"
-            : "repeat(auto-fit, minmax(175px, 1fr))",
+            : "repeat(2, minmax(0, 1fr))",
         }}
       >
         {personas.map((p) => {
@@ -91,28 +91,49 @@ export function QuickDemoLogin({
             <a
               key={p.email}
               href={href}
-              className={`btn ${p.primary ? "btn-primary" : "btn-secondary"}`}
+              className="surface-interactive"
               style={{
-                width: "100%",
-                justifyContent: "flex-start",
-                textAlign: "left",
-                padding: "0.6rem 0.8rem",
-                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "0.65rem",
+                padding: "0.65rem 0.85rem",
+                borderRadius: 12,
+                background: p.primary
+                  ? "linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(5, 150, 105, 0.12) 100%)"
+                  : "rgba(255, 255, 255, 0.04)",
+                border: p.primary
+                  ? "1px solid rgba(16, 185, 129, 0.48)"
+                  : "1px solid rgba(255, 255, 255, 0.1)",
               }}
             >
-              <Icon size={16} />
-              <span style={{ display: "grid", lineHeight: 1.2 }}>
-                <span style={{ fontWeight: 700, fontSize: "0.82rem" }}>{p.title}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
                 <span
                   style={{
-                    fontSize: "0.69rem",
-                    opacity: 0.78,
-                    fontWeight: 500,
+                    width: 30,
+                    height: 30,
+                    borderRadius: 8,
+                    display: "grid",
+                    placeItems: "center",
+                    background: p.primary
+                      ? "rgba(16, 185, 129, 0.25)"
+                      : "rgba(255, 255, 255, 0.06)",
+                    color: p.primary ? "#6ee7b7" : "#cbd5e1",
+                    flexShrink: 0,
                   }}
                 >
-                  {p.sub}
+                  <Icon size={15} />
+                </span>
+                <span style={{ display: "grid", lineHeight: 1.2 }}>
+                  <span style={{ fontWeight: 700, fontSize: "0.82rem", color: "#fff" }}>
+                    {p.title}
+                  </span>
+                  <span className="muted" style={{ fontSize: "0.7rem" }}>
+                    {p.sub}
+                  </span>
                 </span>
               </span>
+              <ArrowUpRight size={14} className="muted" />
             </a>
           );
         })}

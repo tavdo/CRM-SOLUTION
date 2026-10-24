@@ -1,30 +1,39 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { Globe } from "lucide-react";
 import { setLocalePreferenceAction } from "@/app/actions/auth";
 
 export function LanguageSwitcher({ locale }: { locale: string }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  async function onChange(next: string) {
+  async function onSwitch(next: "en" | "ka") {
+    if (next === locale) return;
     const segments = pathname.split("/");
     segments[1] = next;
-    await setLocalePreferenceAction(next as "en" | "ka");
+    await setLocalePreferenceAction(next);
     router.push(segments.join("/") || `/${next}`);
     router.refresh();
   }
 
   return (
-    <select
-      className="select"
-      aria-label="Language"
-      style={{ width: "auto", padding: "0.4rem 0.55rem" }}
-      value={locale}
-      onChange={(e) => void onChange(e.target.value)}
-    >
-      <option value="en">EN</option>
-      <option value="ka">ქარ</option>
-    </select>
+    <div className="lang-pill" role="group" aria-label="Language">
+      <Globe size={13} className="lang-pill-icon" />
+      <button
+        type="button"
+        onClick={() => void onSwitch("en")}
+        className={`lang-pill-btn ${locale === "en" ? "active" : ""}`}
+      >
+        EN
+      </button>
+      <button
+        type="button"
+        onClick={() => void onSwitch("ka")}
+        className={`lang-pill-btn ${locale === "ka" ? "active" : ""}`}
+      >
+        ქარ
+      </button>
+    </div>
   );
 }
