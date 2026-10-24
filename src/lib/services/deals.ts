@@ -217,6 +217,43 @@ export async function moveDealStage(
     detail: { stageId, status },
   });
 
+  // Execute Bitrix24-style Pipeline Automation Rules (Robots)
+  const rules = await prisma.automationRule.findMany({
+    where: {
+      companyId: ctx.company.id,
+      triggerStageId: stageId,
+      isActive: true,
+    },
+  });
+  for (const rule of rules) {
+    if (rule.actionType === "CREATE_TASK") {
+      await prisma.task.create({
+        data: {
+          companyId: ctx.company.id,
+          title: `[Auto] ${rule.actionDetail}`,
+          description: `Triggered automatically by pipeline rule: ${rule.name}`,
+          priority: "HIGH",
+          boardStage: "TODO",
+          dueAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          ownerId: deal.ownerId ?? ctx.user.id,
+          creatorId: ctx.user.id,
+          customerId: deal.customerId,
+          dealId: deal.id,
+        },
+      });
+    } else if (rule.actionType === "POST_FEED") {
+      await prisma.feedPost.create({
+        data: {
+          companyId: ctx.company.id,
+          authorId: ctx.user.id,
+          title: `Deal Update: ${deal.title} → ${stage.name}`,
+          body: rule.actionDetail,
+          category: stage.isWon ? "WIN" : "UPDATE",
+        },
+      });
+    }
+  }
+
   return updated;
 }
 

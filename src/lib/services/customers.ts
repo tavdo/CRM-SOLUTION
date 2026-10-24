@@ -86,6 +86,9 @@ export async function createCustomer(
   ctx: WorkspaceContext,
   input: {
     name: string;
+    taxId?: string;
+    legalForm?: string;
+    bankIban?: string;
     email?: string;
     phone?: string;
     website?: string;
@@ -107,6 +110,9 @@ export async function createCustomer(
     data: {
       companyId: ctx.company.id,
       name: input.name.trim(),
+      taxId: input.taxId?.trim() || null,
+      legalForm: input.legalForm?.trim() || "შპს",
+      bankIban: input.bankIban?.trim() || null,
       email: input.email?.trim() || null,
       phone: input.phone?.trim() || null,
       website: input.website?.trim() || null,
@@ -132,6 +138,9 @@ export async function updateCustomer(
   id: string,
   input: Partial<{
     name: string;
+    taxId: string | null;
+    legalForm: string | null;
+    bankIban: string | null;
     email: string | null;
     phone: string | null;
     website: string | null;
@@ -161,6 +170,15 @@ export async function updateCustomer(
     where: { id },
     data: {
       name: input.name?.trim(),
+      taxId: input.taxId === undefined ? undefined : input.taxId?.trim() || null,
+      legalForm:
+        input.legalForm === undefined
+          ? undefined
+          : input.legalForm?.trim() || "შპს",
+      bankIban:
+        input.bankIban === undefined
+          ? undefined
+          : input.bankIban?.trim() || null,
       email: input.email === undefined ? undefined : input.email?.trim() || null,
       phone: input.phone === undefined ? undefined : input.phone?.trim() || null,
       website:

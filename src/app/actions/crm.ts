@@ -13,6 +13,7 @@ import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/audit";
 import { can } from "@/lib/permissions";
 import { slugify } from "@/lib/slug";
+import { toMinor } from "@/lib/money";
 
 function s(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -28,6 +29,9 @@ export async function createCustomerAction(formData: FormData) {
     const ctx = await requireWorkspace();
     const customer = await customers.createCustomer(ctx, {
       name: s(formData, "name"),
+      taxId: s(formData, "taxId") || undefined,
+      legalForm: s(formData, "legalForm") || "შპს",
+      bankIban: s(formData, "bankIban") || undefined,
       email: s(formData, "email") || undefined,
       phone: s(formData, "phone") || undefined,
       website: s(formData, "website") || undefined,
@@ -47,6 +51,9 @@ export async function updateCustomerAction(formData: FormData) {
   const ctx = await requireWorkspace();
   await customers.updateCustomer(ctx, id, {
     name: s(formData, "name"),
+    taxId: s(formData, "taxId") || null,
+    legalForm: s(formData, "legalForm") || "შპს",
+    bankIban: s(formData, "bankIban") || null,
     email: s(formData, "email") || null,
     phone: s(formData, "phone") || null,
     website: s(formData, "website") || null,
@@ -150,11 +157,33 @@ export async function createTaskAction(formData: FormData) {
   redirect(localePath(locale, `/tasks/${task.id}`));
 }
 
+export async function moveTaskStageAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const id = s(formData, "id");
+  const boardStage = s(formData, "boardStage") || "TODO";
+  const ctx = await requireWorkspace();
+  const existing = await prisma.task.findFirst({
+    where: { id, companyId: ctx.company.id },
+  });
+  if (!existing) return;
+  const status = boardStage === "DONE" ? "DONE" : "OPEN";
+  await prisma.task.update({
+    where: { id },
+    data: {
+      boardStage,
+      status,
+      completedAt: status === "DONE" ? new Date() : null,
+    },
+  });
+  revalidatePath(localePath(locale, "/tasks"));
+}
+
 export async function completeTaskAction(formData: FormData) {
   const locale = s(formData, "locale") || "en";
   const id = s(formData, "id");
   const ctx = await requireWorkspace();
   await tasks.completeTask(ctx, id);
+  await prisma.task.update({ where: { id }, data: { boardStage: "DONE" } });
   revalidatePath(localePath(locale, "/tasks"));
   revalidatePath(localePath(locale, `/tasks/${id}`));
 }
@@ -164,8 +193,371 @@ export async function reopenTaskAction(formData: FormData) {
   const id = s(formData, "id");
   const ctx = await requireWorkspace();
   await tasks.reopenTask(ctx, id);
+  await prisma.task.update({ where: { id }, data: { boardStage: "TODO" } });
   revalidatePath(localePath(locale, "/tasks"));
   revalidatePath(localePath(locale, `/tasks/${id}`));
+}
+
+// —— Bitrix24 Leads Inbox & 1-Click Conversion ——
+export async function createLeadAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const ctx = await requireWorkspace();
+  await prisma.lead.create({
+    data: {
+      companyId: ctx.company.id,
+      title: s(formData, "title"),
+      contactName: s(formData, "contactName"),
+      companyName: s(formData, "companyName") || null,
+      taxId: s(formData, "taxId") || null,
+      phone: s(formData, "phone") || null,
+      email: s(formData, "email") || null,
+      source: s(formData, "source") || "FACEBOOK",
+      status: "NEW",
+      amountMinor: toMinor(s(formData, "amount") || "0"),
+      currency: ctx.company.currency,
+      notes: s(formData, "notes") || null,
+      ownerId: ctx.user.id,
+    },
+  });
+  revalidatePath(localePath(locale, "/leads"));
+}
+
+export async function updateLeadStatusAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const leadId = s(formData, "leadId");
+  const status = s(formData, "status");
+  const ctx = await requireWorkspace();
+  const lead = await prisma.lead.findFirst({
+    where: { id: leadId, companyId: ctx.company.id },
+  });
+  if (!lead) return;
+  await prisma.lead.update({
+    where: { id: leadId },
+    data: { status },
+  });
+  revalidatePath(localePath(locale, "/leads"));
+}
+
+export async function convertLeadAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const leadId = s(formData, "leadId");
+  const ctx = await requireWorkspace();
+
+  const lead = await prisma.lead.findFirst({
+    where: { id: leadId, companyId: ctx.company.id },
+  });
+  if (!lead) return;
+
+  const firstStage = await prisma.pipelineStage.findFirst({
+    where: { companyId: ctx.company.id, archivedAt: null, isWon: false, isLost: false },
+    orderBy: { sortOrder: "asc" },
+  });
+  if (!firstStage) return;
+
+  const customer = await prisma.customer.create({
+    data: {
+      companyId: ctx.company.id,
+      name: lead.companyName || lead.contactName,
+      taxId: lead.taxId,
+      legalForm: "შპს",
+      phone: lead.phone,
+      email: lead.email,
+      ownerId: lead.ownerId ?? ctx.user.id,
+    },
+  });
+
+  const nameParts = lead.contactName.split(" ");
+  await prisma.contact.create({
+    data: {
+      companyId: ctx.company.id,
+      customerId: customer.id,
+      firstName: nameParts[0] || lead.contactName,
+      lastName: nameParts.slice(1).join(" ") || "—",
+      phone: lead.phone,
+      email: lead.email,
+      ownerId: lead.ownerId ?? ctx.user.id,
+    },
+  });
+
+  const deal = await prisma.deal.create({
+    data: {
+      companyId: ctx.company.id,
+      title: lead.title,
+      customerId: customer.id,
+      stageId: firstStage.id,
+      ownerId: lead.ownerId ?? ctx.user.id,
+      amountMinor: lead.amountMinor,
+      currency: lead.currency,
+      expectedCloseAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  await prisma.lead.update({
+    where: { id: lead.id },
+    data: {
+      status: "CONVERTED",
+      convertedCustomerId: customer.id,
+      convertedDealId: deal.id,
+    },
+  });
+
+  await writeAudit({
+    companyId: ctx.company.id,
+    actorId: ctx.user.id,
+    action: "lead.converted",
+    entityType: "lead",
+    entityId: lead.id,
+    detail: { customerId: customer.id, dealId: deal.id },
+  });
+
+  redirect(localePath(locale, `/deals/${deal.id}`));
+}
+
+// —— Products & Georgian Invoices (დღგ 18%, ს/კ, BOG/TBC IBAN, RS.ge) ——
+export async function createProductAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const ctx = await requireWorkspace();
+  await prisma.product.create({
+    data: {
+      companyId: ctx.company.id,
+      sku: s(formData, "sku") || null,
+      name: s(formData, "name"),
+      description: s(formData, "description") || null,
+      unit: s(formData, "unit") || "ცალი",
+      priceMinor: toMinor(s(formData, "price") || "0"),
+      currency: ctx.company.currency,
+      vatIncluded: true,
+    },
+  });
+  revalidatePath(localePath(locale, "/invoices"));
+}
+
+export async function createInvoiceAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const ctx = await requireWorkspace();
+  const customerId = s(formData, "customerId");
+  const dealId = s(formData, "dealId") || null;
+  const description = s(formData, "description") || "CRM Services / მომსახურება";
+  const quantity = Math.max(1, Number(s(formData, "quantity") || "1"));
+  const unitPriceMinor = toMinor(s(formData, "unitPrice") || "0");
+  const includeVat = s(formData, "includeVat") !== "false";
+  const rsGeWaybillRef = s(formData, "rsGeWaybillRef") || null;
+
+  const subtotalMinor = quantity * unitPriceMinor;
+  const vatRate = 18;
+  const vatMinor = includeVat ? Math.round(subtotalMinor * 0.18) : 0;
+  const totalMinor = subtotalMinor + vatMinor;
+
+  const count = await prisma.invoice.count({ where: { companyId: ctx.company.id } });
+  const invoiceNumber = `INV-${new Date().getFullYear()}-${String(count + 1).padStart(3, "0")}`;
+
+  const inv = await prisma.invoice.create({
+    data: {
+      companyId: ctx.company.id,
+      invoiceNumber,
+      customerId,
+      dealId,
+      status: "SENT",
+      issueDate: new Date(),
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      subtotalMinor,
+      vatRate,
+      vatMinor,
+      totalMinor,
+      currency: ctx.company.currency,
+      includeVat,
+      rsGeWaybillRef,
+      notes: s(formData, "notes") || "გადახდა წარმოებს საქართველოს ბანკის ან თიბისი ბანკის ანგარიშზე.",
+      items: {
+        create: [
+          {
+            description,
+            quantity,
+            unit: s(formData, "unit") || "პაკეტი",
+            unitMinor: unitPriceMinor,
+            totalMinor: subtotalMinor,
+          },
+        ],
+      },
+    },
+  });
+
+  revalidatePath(localePath(locale, "/invoices"));
+  redirect(localePath(locale, `/invoices/${inv.id}`));
+}
+
+export async function updateInvoiceStatusAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const id = s(formData, "id");
+  const status = s(formData, "status") || "PAID";
+  const ctx = await requireWorkspace();
+  const inv = await prisma.invoice.findFirst({
+    where: { id, companyId: ctx.company.id },
+  });
+  if (!inv) return;
+  await prisma.invoice.update({
+    where: { id },
+    data: { status },
+  });
+  revalidatePath(localePath(locale, "/invoices"));
+  revalidatePath(localePath(locale, `/invoices/${id}`));
+}
+
+// —— Company Feed & Team Chat ——
+export async function createFeedPostAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const ctx = await requireWorkspace();
+  const title = s(formData, "title");
+  const body = s(formData, "body");
+  if (!title || !body) return;
+  await prisma.feedPost.create({
+    data: {
+      companyId: ctx.company.id,
+      authorId: ctx.user.id,
+      title,
+      body,
+      category: s(formData, "category") || "ANNOUNCEMENT",
+      pinned: s(formData, "pinned") === "on",
+    },
+  });
+  revalidatePath(localePath(locale, "/feed"));
+}
+
+export async function sendChatMessageAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const ctx = await requireWorkspace();
+  const body = s(formData, "body");
+  const channel = s(formData, "channel") || "general";
+  if (!body) return;
+  await prisma.chatMessage.create({
+    data: {
+      companyId: ctx.company.id,
+      authorId: ctx.user.id,
+      channel,
+      body,
+    },
+  });
+  revalidatePath(localePath(locale, "/feed"));
+}
+
+// —— HR, Worktime Clock-In/Out & Leave Requests ——
+export async function toggleWorkClockAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const ctx = await requireWorkspace();
+  const activeLog = await prisma.workLog.findFirst({
+    where: {
+      companyId: ctx.company.id,
+      userId: ctx.user.id,
+      status: "WORKING",
+      clockOutAt: null,
+    },
+    orderBy: { clockInAt: "desc" },
+  });
+
+  if (activeLog) {
+    await prisma.workLog.update({
+      where: { id: activeLog.id },
+      data: { status: "COMPLETED", clockOutAt: new Date() },
+    });
+  } else {
+    await prisma.workLog.create({
+      data: {
+        companyId: ctx.company.id,
+        userId: ctx.user.id,
+        status: "WORKING",
+        clockInAt: new Date(),
+        note: s(formData, "note") || "Tbilisi Office / Remote",
+      },
+    });
+  }
+  revalidatePath(localePath(locale, "/hr"));
+  revalidatePath(localePath(locale, "/dashboard"));
+}
+
+export async function createDepartmentAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const ctx = await requireWorkspace();
+  await prisma.department.create({
+    data: {
+      companyId: ctx.company.id,
+      name: s(formData, "name"),
+      headName: s(formData, "headName") || null,
+      memberCount: Math.max(1, Number(s(formData, "memberCount") || "1")),
+    },
+  });
+  revalidatePath(localePath(locale, "/hr"));
+}
+
+export async function createLeaveRequestAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const ctx = await requireWorkspace();
+  const startDate = s(formData, "startDate")
+    ? new Date(s(formData, "startDate"))
+    : new Date();
+  const endDate = s(formData, "endDate")
+    ? new Date(s(formData, "endDate"))
+    : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+  await prisma.leaveRequest.create({
+    data: {
+      companyId: ctx.company.id,
+      userId: ctx.user.id,
+      leaveType: s(formData, "leaveType") || "VACATION",
+      startDate,
+      endDate,
+      reason: s(formData, "reason") || null,
+      status: "PENDING",
+    },
+  });
+  revalidatePath(localePath(locale, "/hr"));
+}
+
+export async function updateLeaveStatusAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const id = s(formData, "id");
+  const status = s(formData, "status") || "APPROVED";
+  const ctx = await requireWorkspace();
+  const leave = await prisma.leaveRequest.findFirst({
+    where: { id, companyId: ctx.company.id },
+  });
+  if (!leave) return;
+  await prisma.leaveRequest.update({
+    where: { id },
+    data: { status },
+  });
+  revalidatePath(localePath(locale, "/hr"));
+}
+
+// —— Pipeline Automation Rules (Bitrix24 Robots) ——
+export async function createAutomationRuleAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const ctx = await requireWorkspace();
+  await prisma.automationRule.create({
+    data: {
+      companyId: ctx.company.id,
+      name: s(formData, "name"),
+      triggerStageId: s(formData, "triggerStageId"),
+      actionType: s(formData, "actionType") || "CREATE_TASK",
+      actionDetail: s(formData, "actionDetail"),
+      isActive: true,
+    },
+  });
+  revalidatePath(localePath(locale, "/automations"));
+  revalidatePath(localePath(locale, "/deals"));
+}
+
+export async function toggleAutomationRuleAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const id = s(formData, "id");
+  const ctx = await requireWorkspace();
+  const rule = await prisma.automationRule.findFirst({
+    where: { id, companyId: ctx.company.id },
+  });
+  if (!rule) return;
+  await prisma.automationRule.update({
+    where: { id },
+    data: { isActive: !rule.isActive },
+  });
+  revalidatePath(localePath(locale, "/automations"));
 }
 
 export async function inviteMemberAction(formData: FormData) {
@@ -203,6 +595,13 @@ export async function updateCompanyAction(formData: FormData) {
     where: { id: ctx.company.id },
     data: {
       name: s(formData, "name"),
+      taxId: s(formData, "taxId") || null,
+      legalForm: s(formData, "legalForm") || "შპს",
+      isVatPayer: s(formData, "isVatPayer") !== "false",
+      bogIban: s(formData, "bogIban") || null,
+      tbcIban: s(formData, "tbcIban") || null,
+      address: s(formData, "address") || null,
+      phone: s(formData, "phone") || null,
       timezone: s(formData, "timezone") || "Asia/Tbilisi",
       defaultLocale: s(formData, "defaultLocale") || "ka",
       currency: s(formData, "currency") || "GEL",
@@ -256,7 +655,15 @@ export async function addCustomFieldAction(formData: FormData) {
       name,
       key: `${key}_${Date.now().toString(36)}`,
       fieldType,
-      options: fieldType === "SELECT" ? JSON.stringify(options.split(",").map((x) => x.trim()).filter(Boolean)) : null,
+      options:
+        fieldType === "SELECT"
+          ? JSON.stringify(
+              options
+                .split(",")
+                .map((x) => x.trim())
+                .filter(Boolean),
+            )
+          : null,
       required: s(formData, "required") === "on",
     },
   });

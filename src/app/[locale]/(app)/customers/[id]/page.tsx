@@ -72,8 +72,24 @@ export default async function CustomerDetailPage({
         <form action={updateCustomerAction} style={{ display: "grid", gap: "0.85rem" }}>
           <input type="hidden" name="locale" value={locale} />
           <input type="hidden" name="id" value={customer.id} />
-          <Field label={t("name")} htmlFor="name">
-            <Input id="name" name="name" defaultValue={customer.name} required />
+          <div style={{ display: "grid", gridTemplateColumns: "130px 1fr 160px", gap: "0.75rem" }}>
+            <Field label="Legal Form / ფორმა" htmlFor="legalForm">
+              <select id="legalForm" name="legalForm" className="select" defaultValue={customer.legalForm ?? "შპს"}>
+                <option value="შპს">შპს (LLC)</option>
+                <option value="სს">სს (JSC)</option>
+                <option value="ი/მ">ი/მ (Sole Prop.)</option>
+                <option value="ფიზ. პირი">ფიზიკური პირი</option>
+              </select>
+            </Field>
+            <Field label={t("name")} htmlFor="name">
+              <Input id="name" name="name" defaultValue={customer.name} required />
+            </Field>
+            <Field label="ს/კ (Tax ID)" htmlFor="taxId">
+              <Input id="taxId" name="taxId" defaultValue={customer.taxId ?? ""} placeholder="405123456" />
+            </Field>
+          </div>
+          <Field label="Bank IBAN (GE..BG.. / GE..TB..)" htmlFor="bankIban">
+            <Input id="bankIban" name="bankIban" defaultValue={customer.bankIban ?? ""} placeholder="GE29BG0000000101904917" />
           </Field>
           <div style={{ display: "grid", gap: "0.85rem", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
             <Field label={t("email")} htmlFor="email">

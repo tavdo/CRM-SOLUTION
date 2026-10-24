@@ -5,29 +5,48 @@ import { usePathname } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
   LayoutDashboard,
+  Inbox,
   Users,
   Kanban,
+  FileSpreadsheet,
   CheckSquare,
+  CalendarDays,
+  MessageSquare,
+  UserCheck,
+  Headset,
+  Bot,
   Settings,
   LogOut,
   Menu,
   X,
   Building2,
+  Play,
+  Square,
 } from "lucide-react";
 import { signOutAction, switchWorkspaceAction } from "@/app/actions/auth";
+import { toggleWorkClockAction } from "@/app/actions/crm";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
 type Workspace = { id: string; name: string };
 type NavLabels = {
   dashboard: string;
+  leads: string;
   customers: string;
   deals: string;
+  invoices: string;
   tasks: string;
+  calendar: string;
+  feed: string;
+  hr: string;
+  contactCenter: string;
+  automations: string;
   settings: string;
   signOut: string;
   workspace: string;
   switchWorkspace: string;
   menu: string;
+  clockIn: string;
+  clockOut: string;
 };
 
 export function AppShell({
@@ -37,6 +56,8 @@ export function AppShell({
   userName,
   workspaces,
   activeCompanyId,
+  newLeadsCount = 0,
+  isClockedIn = false,
   children,
 }: {
   locale: string;
@@ -45,6 +66,8 @@ export function AppShell({
   userName: string;
   workspaces: Workspace[];
   activeCompanyId: string;
+  newLeadsCount?: number;
+  isClockedIn?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -53,9 +76,16 @@ export function AppShell({
 
   const items = [
     { href: `/${locale}/dashboard`, label: labels.dashboard, icon: LayoutDashboard },
-    { href: `/${locale}/customers`, label: labels.customers, icon: Users },
+    { href: `/${locale}/leads`, label: labels.leads, icon: Inbox, badge: newLeadsCount },
     { href: `/${locale}/deals`, label: labels.deals, icon: Kanban },
+    { href: `/${locale}/customers`, label: labels.customers, icon: Users },
+    { href: `/${locale}/invoices`, label: labels.invoices, icon: FileSpreadsheet },
     { href: `/${locale}/tasks`, label: labels.tasks, icon: CheckSquare },
+    { href: `/${locale}/calendar`, label: labels.calendar, icon: CalendarDays },
+    { href: `/${locale}/feed`, label: labels.feed, icon: MessageSquare },
+    { href: `/${locale}/hr`, label: labels.hr, icon: UserCheck },
+    { href: `/${locale}/contact-center`, label: labels.contactCenter, icon: Headset },
+    { href: `/${locale}/automations`, label: labels.automations, icon: Bot },
     { href: `/${locale}/settings`, label: labels.settings, icon: Settings },
   ];
 
@@ -64,7 +94,7 @@ export function AppShell({
   return (
     <div className="app-frame">
       {/* Desktop Command Sidebar */}
-      <aside className="app-sidebar">
+      <aside className="app-sidebar" style={{ overflowY: "auto" }}>
         <Link href={`/${locale}/dashboard`} className="app-brand-row">
           <span className="app-brand-mark">CS</span>
           <div>
@@ -113,9 +143,20 @@ export function AppShell({
                 key={item.href}
                 href={item.href}
                 className={`app-nav-link ${active ? "active" : ""}`}
+                style={{ justifyContent: "space-between" }}
               >
-                <Icon size={17} />
-                <span>{item.label}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.65rem" }}>
+                  <Icon size={16} />
+                  <span>{item.label}</span>
+                </span>
+                {item.badge && item.badge > 0 ? (
+                  <span
+                    className="badge badge-ok"
+                    style={{ padding: "0.08rem 0.45rem", fontSize: "0.68rem" }}
+                  >
+                    {item.badge}
+                  </span>
+                ) : null}
               </Link>
             );
           })}
@@ -195,21 +236,54 @@ export function AppShell({
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", flexWrap: "wrap" }}>
+            {/* Bitrix24-style Live Workday Clock-In / Clock-Out Widget */}
+            <form action={toggleWorkClockAction}>
+              <input type="hidden" name="locale" value={locale} />
+              <button
+                type="submit"
+                className={`btn ${isClockedIn ? "btn-secondary" : "btn-primary"}`}
+                style={{
+                  padding: "0.4rem 0.78rem",
+                  fontSize: "0.78rem",
+                  borderColor: isClockedIn ? "rgba(16, 185, 129, 0.55)" : undefined,
+                }}
+              >
+                {isClockedIn ? (
+                  <>
+                    <Square size={12} color="#10b981" fill="#10b981" />
+                    <span style={{ color: "#6ee7b7" }}>{labels.clockOut}</span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={12} />
+                    <span>{labels.clockIn}</span>
+                  </>
+                )}
+              </button>
+            </form>
+
             <div className="mobile-only">
               <LanguageSwitcher locale={locale} />
             </div>
             <Link
-              href={`/${locale}/customers/new`}
+              href={`/${locale}/leads`}
               className="btn btn-secondary hide-mobile"
-              style={{ padding: "0.42rem 0.75rem", fontSize: "0.8rem" }}
+              style={{ padding: "0.42rem 0.75rem", fontSize: "0.78rem" }}
             >
-              + {labels.customers}
+              + {labels.leads}
+            </Link>
+            <Link
+              href={`/${locale}/invoices`}
+              className="btn btn-secondary hide-mobile"
+              style={{ padding: "0.42rem 0.75rem", fontSize: "0.78rem" }}
+            >
+              + {labels.invoices}
             </Link>
             <Link
               href={`/${locale}/deals/new`}
               className="btn btn-primary"
-              style={{ padding: "0.42rem 0.85rem", fontSize: "0.8rem" }}
+              style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}
             >
               + {labels.deals}
             </Link>

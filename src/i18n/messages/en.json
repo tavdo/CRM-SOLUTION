@@ -5,14 +5,23 @@
   },
   "nav": {
     "dashboard": "Dashboard",
+    "leads": "Leads Inbox",
     "customers": "Customers",
-    "deals": "Sales",
-    "tasks": "Tasks",
+    "deals": "Sales Pipeline",
+    "invoices": "Invoices & VAT",
+    "tasks": "Tasks & Board",
+    "calendar": "Calendar",
+    "feed": "Feed & Chat",
+    "hr": "HR & Worktime",
+    "contactCenter": "Contact Center",
+    "automations": "Automations",
     "settings": "Settings",
     "signOut": "Sign out",
     "workspace": "Workspace",
     "switchWorkspace": "Switch workspace",
-    "menu": "Menu"
+    "menu": "Menu",
+    "clockIn": "Clock in",
+    "clockOut": "Working · Clock out"
   },
   "auth": {
     "signIn": "Sign in",

@@ -62,23 +62,59 @@ export default async function SettingsPage({
       {isAdmin ? (
         <Surface style={{ padding: "1.2rem" }}>
           <h2 style={{ marginTop: 0 }}>{t("company")}</h2>
-          <form action={updateCompanyAction} style={{ display: "grid", gap: "0.85rem", maxWidth: 520 }}>
+          <form action={updateCompanyAction} style={{ display: "grid", gap: "0.85rem", maxWidth: 680 }}>
             <input type="hidden" name="locale" value={locale} />
-            <Field label="Name" htmlFor="name">
-              <Input id="name" name="name" defaultValue={ctx.company.name} required />
-            </Field>
-            <Field label={t("timezone")} htmlFor="timezone">
-              <Input id="timezone" name="timezone" defaultValue={ctx.company.timezone} />
-            </Field>
-            <Field label={t("defaultLocale")} htmlFor="defaultLocale">
-              <select id="defaultLocale" name="defaultLocale" className="select" defaultValue={ctx.company.defaultLocale}>
-                <option value="en">English</option>
-                <option value="ka">ქართული</option>
-              </select>
-            </Field>
-            <Field label={t("currency")} htmlFor="currency">
-              <Input id="currency" name="currency" defaultValue={ctx.company.currency} />
-            </Field>
+            <div style={{ display: "grid", gridTemplateColumns: "130px 1fr 160px", gap: "0.65rem" }}>
+              <Field label="Legal Form / ფორმა" htmlFor="legalForm">
+                <select id="legalForm" name="legalForm" className="select" defaultValue={ctx.company.legalForm || "შპს"}>
+                  <option value="შპს">შპს (LLC)</option>
+                  <option value="სს">სს (JSC)</option>
+                  <option value="ი/მ">ი/მ (Sole Prop.)</option>
+                </select>
+              </Field>
+              <Field label="Company Name / სახელი" htmlFor="name">
+                <Input id="name" name="name" defaultValue={ctx.company.name} required />
+              </Field>
+              <Field label="ს/კ (9-digit Tax ID)" htmlFor="taxId">
+                <Input id="taxId" name="taxId" defaultValue={ctx.company.taxId ?? "405318921"} />
+              </Field>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.65rem" }}>
+              <Field label="Bank of Georgia IBAN (BAGAGE22)" htmlFor="bogIban">
+                <Input id="bogIban" name="bogIban" defaultValue={ctx.company.bogIban ?? "GE29BG0000000101904917"} />
+              </Field>
+              <Field label="TBC Bank IBAN (TBCBGE22)" htmlFor="tbcIban">
+                <Input id="tbcIban" name="tbcIban" defaultValue={ctx.company.tbcIban ?? "GE83TB7000000365123456"} />
+              </Field>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 160px", gap: "0.65rem" }}>
+              <Field label="Address / მისამართი" htmlFor="address">
+                <Input id="address" name="address" defaultValue={ctx.company.address ?? ""} />
+              </Field>
+              <Field label="Phone / ტელეფონი" htmlFor="phone">
+                <Input id="phone" name="phone" defaultValue={ctx.company.phone ?? ""} />
+              </Field>
+              <Field label="VAT / დღგ (18%)" htmlFor="isVatPayer">
+                <select id="isVatPayer" name="isVatPayer" className="select" defaultValue={ctx.company.isVatPayer ? "true" : "false"}>
+                  <option value="true">დღგ-ს გადამხდელი (18%)</option>
+                  <option value="false">დღგ-ს გარეშე (0%)</option>
+                </select>
+              </Field>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 140px", gap: "0.65rem" }}>
+              <Field label={t("timezone")} htmlFor="timezone">
+                <Input id="timezone" name="timezone" defaultValue={ctx.company.timezone} />
+              </Field>
+              <Field label={t("defaultLocale")} htmlFor="defaultLocale">
+                <select id="defaultLocale" name="defaultLocale" className="select" defaultValue={ctx.company.defaultLocale}>
+                  <option value="en">English</option>
+                  <option value="ka">ქართული</option>
+                </select>
+              </Field>
+              <Field label={t("currency")} htmlFor="currency">
+                <Input id="currency" name="currency" defaultValue={ctx.company.currency} />
+              </Field>
+            </div>
             <Button type="submit">{t("save")}</Button>
           </form>
         </Surface>

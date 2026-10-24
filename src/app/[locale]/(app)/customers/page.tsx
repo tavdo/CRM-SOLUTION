@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { Plus, Search, ArrowUpRight } from "lucide-react";
-import { Button, EmptyState, Input, Surface } from "@/components/ui";
+import { Badge, Button, EmptyState, Input, Surface } from "@/components/ui";
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { listCustomers } from "@/lib/services/customers";
 import { isLocale } from "@/i18n/config";
@@ -23,6 +23,7 @@ export default async function CustomersPage({
   const result = await listCustomers(ctx, { q: sp.q, page });
   const t = await getTranslations("customers");
   const common = await getTranslations("common");
+  const isKa = locale === "ka";
 
   return (
     <div style={{ display: "grid", gap: "1.15rem" }}>
@@ -68,6 +69,7 @@ export default async function CustomersPage({
             <thead>
               <tr>
                 <th>{t("name")}</th>
+                <th>{isKa ? "ს/კ (Tax ID)" : "Tax ID (ს/კ)"}</th>
                 <th>{t("email")}</th>
                 <th>{t("phone")}</th>
                 <th>{t("owner")}</th>
@@ -79,8 +81,14 @@ export default async function CustomersPage({
                 <tr key={c.id}>
                   <td>
                     <Link href={`/${locale}/customers/${c.id}`}>
-                      <strong style={{ color: "#fff" }}>{c.name}</strong>
+                      <strong style={{ color: "#fff" }}>
+                        {c.legalForm ? `${c.legalForm} ` : ""}
+                        {c.name}
+                      </strong>
                     </Link>
+                  </td>
+                  <td>
+                    {c.taxId ? <Badge>{c.taxId}</Badge> : <span className="muted">—</span>}
                   </td>
                   <td className="muted">{c.email ?? "—"}</td>
                   <td className="muted">{c.phone ?? "—"}</td>

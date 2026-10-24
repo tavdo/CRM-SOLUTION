@@ -65,9 +65,14 @@ model User {
   ownedDeals            Deal[]               @relation("DealOwner")
   ownedTasks            Task[]               @relation("TaskOwner")
   createdTasks          Task[]               @relation("TaskCreator")
+  ownedLeads            Lead[]               @relation("LeadOwner")
   notes                 Note[]
   auditEvents           AuditEvent[]         @relation("AuditActor")
   invitationsSent       Invitation[]         @relation("InviteSender")
+  feedPosts             FeedPost[]
+  chatMessages          ChatMessage[]
+  workLogs              WorkLog[]
+  leaveRequests         LeaveRequest[]
 }
 
 model Session {
@@ -112,14 +117,22 @@ model EmailVerifyToken {
 }
 
 model Company {
-  id           String   @id @default(cuid())
-  name         String
-  slug         String   @unique
-  timezone     String   @default("Asia/Tbilisi")
-  defaultLocale String  @default("ka")
-  currency     String   @default("GEL")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  timezone      String   @default("Asia/Tbilisi")
+  defaultLocale String   @default("ka")
+  currency      String   @default("GEL")
+  // Georgian Business Identity (ს/კ, დღგ, BOG/TBC IBAN)
+  taxId         String?  // 9-digit საიდენტიფიკაციო კოდი (ს/კ)
+  legalForm     String   @default("შპს") // შპს | სს | ი/მ | ფიზიკური პირი
+  isVatPayer    Boolean  @default(true) // დღგ-ს გადამხდელი (18%)
+  bogIban       String?  // საქართველოს ბანკი IBAN (GE..BG..)
+  tbcIban       String?  // თიბისი ბანკი IBAN (GE..TB..)
+  address       String?
+  phone         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   memberships      Membership[]
   invitations      Invitation[]
@@ -128,6 +141,15 @@ model Company {
   pipelineStages   PipelineStage[]
   deals            Deal[]
   tasks            Task[]
+  leads            Lead[]
+  products         Product[]
+  invoices         Invoice[]
+  feedPosts        FeedPost[]
+  chatMessages     ChatMessage[]
+  departments      Department[]
+  workLogs         WorkLog[]
+  leaveRequests    LeaveRequest[]
+  automationRules  AutomationRule[]
   customFields     CustomFieldDefinition[]
   notes            Note[]
   auditEvents      AuditEvent[]
@@ -136,12 +158,14 @@ model Company {
 }
 
 model Membership {
-  id        String   @id @default(cuid())
-  companyId String
-  userId    String
-  role      Role     @default(EMPLOYEE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  companyId      String
+  userId         String
+  role           Role     @default(EMPLOYEE)
+  departmentName String?
+  jobTitle       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -173,6 +197,10 @@ model Customer {
   id          String    @id @default(cuid())
   companyId   String
   name        String
+  taxId       String?   // 9-digit საიდენტიფიკაციო კოდი (ს/კ)
+  legalForm   String?   @default("შპს")
+  isVatPayer  Boolean   @default(true)
+  bankIban    String?
   email       String?
   phone       String?
   website     String?
@@ -187,6 +215,7 @@ model Customer {
   contacts     Contact[]
   deals        Deal[]
   tasks        Task[]
+  invoices     Invoice[]
   notes        Note[]
   customValues CustomFieldValue[]
 
@@ -221,17 +250,17 @@ model Contact {
 }
 
 model CustomFieldDefinition {
-  id        String          @id @default(cuid())
-  companyId String
-  name      String
-  key       String
-  fieldType CustomFieldType
-  options   String? // JSON array for SELECT
-  required  Boolean         @default(false)
-  sortOrder Int             @default(0)
+  id         String          @id @default(cuid())
+  companyId  String
+  name       String
+  key        String
+  fieldType  CustomFieldType
+  options    String? // JSON array for SELECT
+  required   Boolean         @default(false)
+  sortOrder  Int             @default(0)
   archivedAt DateTime?
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
 
   company Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   values  CustomFieldValue[]
@@ -241,13 +270,13 @@ model CustomFieldDefinition {
 }
 
 model CustomFieldValue {
-  id         String @id @default(cuid())
-  companyId  String
-  fieldId    String
-  customerId String
-  valueText  String?
+  id          String    @id @default(cuid())
+  companyId   String
+  fieldId     String
+  customerId  String
+  valueText   String?
   valueNumber Float?
-  valueDate  DateTime?
+  valueDate   DateTime?
 
   field    CustomFieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
   customer Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
@@ -278,15 +307,15 @@ model Note {
 }
 
 model PipelineStage {
-  id        String    @id @default(cuid())
-  companyId String
-  name      String
-  sortOrder Int
-  isWon     Boolean   @default(false)
-  isLost    Boolean   @default(false)
+  id         String    @id @default(cuid())
+  companyId  String
+  name       String
+  sortOrder  Int
+  isWon      Boolean   @default(false)
+  isLost     Boolean   @default(false)
   archivedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   deals   Deal[]
@@ -295,31 +324,31 @@ model PipelineStage {
 }
 
 model Deal {
-  id               String     @id @default(cuid())
-  companyId        String
-  title            String
-  customerId       String?
-  contactId        String?
-  stageId          String
-  ownerId          String?
-  // Monetary amount stored as integer minor units (e.g. tetri/cents)
-  amountMinor      Int        @default(0)
-  currency         String     @default("GEL")
-  expectedCloseAt  DateTime?
-  status           DealStatus @default(OPEN)
-  lossReason       String?
-  closedAt         DateTime?
-  archivedAt       DateTime?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  id              String     @id @default(cuid())
+  companyId       String
+  title           String
+  customerId      String?
+  contactId       String?
+  stageId         String
+  ownerId         String?
+  amountMinor     Int        @default(0)
+  currency        String     @default("GEL")
+  expectedCloseAt DateTime?
+  status          DealStatus @default(OPEN)
+  lossReason      String?
+  closedAt        DateTime?
+  archivedAt      DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
-  company  Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  customer Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  contact  Contact?      @relation("DealPrimaryContact", fields: [contactId], references: [id], onDelete: SetNull)
-  stage    PipelineStage @relation(fields: [stageId], references: [id])
-  owner    User?         @relation("DealOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  tasks    Task[]
-  notes    Note[]
+  company    Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer   Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  contact    Contact?       @relation("DealPrimaryContact", fields: [contactId], references: [id], onDelete: SetNull)
+  stage      PipelineStage  @relation(fields: [stageId], references: [id])
+  owner      User?          @relation("DealOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  tasks      Task[]
+  invoices   Invoice[]
+  notes      Note[]
   activities DealActivity[]
 
   @@index([companyId, stageId])
@@ -344,19 +373,22 @@ model DealActivity {
 }
 
 model Task {
-  id          String     @id @default(cuid())
-  companyId   String
-  title       String
-  description String?
-  status      TaskStatus @default(OPEN)
-  dueAt       DateTime?
-  completedAt DateTime?
-  ownerId     String
-  creatorId   String
-  customerId  String?
-  dealId      String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id            String     @id @default(cuid())
+  companyId     String
+  title         String
+  description   String?
+  status        TaskStatus @default(OPEN)
+  priority      String     @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  boardStage    String     @default("TODO")   // TODO | IN_PROGRESS | REVIEW | DONE
+  checklistJson String?    // JSON array of { text, done }
+  dueAt         DateTime?
+  completedAt   DateTime?
+  ownerId       String
+  creatorId     String
+  customerId    String?
+  dealId        String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   owner    User      @relation("TaskOwner", fields: [ownerId], references: [id])
@@ -369,15 +401,205 @@ model Task {
   @@index([companyId, dealId])
 }
 
-model AuditEvent {
+// —— Bitrix24-style Leads Inbox (ლიდები) ——
+model Lead {
+  id                  String   @id @default(cuid())
+  companyId           String
+  title               String
+  contactName         String
+  companyName         String?
+  taxId               String?  // ს/კ
+  phone               String?
+  email               String?
+  source              String   @default("FACEBOOK") // FACEBOOK | INSTAGRAM | WHATSAPP | WEBSITE | MYPHONE | REFERRAL
+  status              String   @default("NEW")      // NEW | CONTACTED | QUALIFIED | CONVERTED | JUNK
+  amountMinor         Int      @default(0)
+  currency            String   @default("GEL")
+  notes               String?
+  ownerId             String?
+  convertedCustomerId String?
+  convertedDealId     String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  owner   User?   @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, status])
+  @@index([companyId, source])
+}
+
+// —— Products & Services Catalog (პროდუქტები) ——
+model Product {
+  id          String   @id @default(cuid())
+  companyId   String
+  sku         String?
+  name        String
+  description String?
+  unit        String   @default("ცალი") // ცალი | თვე | საათი | პაკეტი
+  priceMinor  Int      @default(0)
+  currency    String   @default("GEL")
+  vatIncluded Boolean  @default(true)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  items   InvoiceItem[]
+
+  @@index([companyId, name])
+}
+
+// —— Georgian Invoices (ინვოისები — ს/კ, დღგ 18%, BOG/TBC IBAN, RS.ge) ——
+model Invoice {
+  id              String    @id @default(cuid())
+  companyId       String
+  invoiceNumber   String
+  customerId      String
+  dealId          String?
+  status          String    @default("SENT") // DRAFT | SENT | PAID | OVERDUE
+  issueDate       DateTime  @default(now())
+  dueDate         DateTime?
+  subtotalMinor   Int       @default(0)
+  vatRate         Int       @default(18)     // 18% Georgian VAT (დღგ)
+  vatMinor        Int       @default(0)
+  totalMinor      Int       @default(0)
+  currency        String    @default("GEL")
+  includeVat      Boolean   @default(true)
+  bankPreference  String    @default("BOG_TBC") // BOG | TBC | BOG_TBC
+  rsGeWaybillRef  String?   // RS.ge ზედნადების / ფაქტურის ნომერი
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  company  Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  deal     Deal?         @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  items    InvoiceItem[]
+
+  @@unique([companyId, invoiceNumber])
+  @@index([companyId, status])
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  productId   String?
+  description String
+  quantity    Int     @default(1)
+  unit        String  @default("ცალი")
+  unitMinor   Int     @default(0)
+  totalMinor  Int     @default(0)
+
+  invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+}
+
+// —— Company Feed / Announcements (სიახლეები) & Team Chat (ჩატი) ——
+model FeedPost {
   id        String   @id @default(cuid())
   companyId String
-  actorId   String?
-  action    String
-  entityType String
-  entityId  String?
-  detail    String? // JSON, never passwords/tokens
+  authorId  String
+  title     String
+  body      String
+  category  String   @default("ANNOUNCEMENT") // ANNOUNCEMENT | WIN | UPDATE | HR
+  pinned    Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, createdAt])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  companyId String
+  authorId  String
+  channel   String   @default("general") // general | sales | support | management
+  body      String
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, channel, createdAt])
+}
+
+// —— HR, Org Structure & Worktime Clock-In/Out (HR & სამუშაო დრო) ——
+model Department {
+  id         String   @id @default(cuid())
+  companyId  String
+  name       String
+  headName   String?
+  parentName String?
+  memberCount Int     @default(1)
+  createdAt  DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model WorkLog {
+  id         String    @id @default(cuid())
+  companyId  String
+  userId     String
+  status     String    @default("WORKING") // WORKING | COMPLETED
+  clockInAt  DateTime  @default(now())
+  clockOutAt DateTime?
+  note       String?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, userId, clockInAt])
+}
+
+model LeaveRequest {
+  id        String   @id @default(cuid())
+  companyId String
+  userId    String
+  leaveType String   @default("VACATION") // VACATION | SICK | DAY_OFF | REMOTE
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("PENDING")  // PENDING | APPROVED | REJECTED
+  reason    String?
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status])
+}
+
+// —— Pipeline Automation Rules (ავტომატიზაცია / რობოტები) ——
+model AutomationRule {
+  id             String   @id @default(cuid())
+  companyId      String
+  name           String
+  triggerStageId String
+  actionType     String   @default("CREATE_TASK") // CREATE_TASK | SEND_SMS | POST_FEED
+  actionDetail   String   // Task title or SMS template
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, triggerStageId])
+}
+
+model AuditEvent {
+  id         String   @id @default(cuid())
+  companyId  String
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  detail     String? // JSON, never passwords/tokens
+  createdAt  DateTime @default(now())
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   actor   User?   @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
@@ -387,54 +609,53 @@ model AuditEvent {
 }
 
 model Plan {
-  id              String   @id @default(cuid())
-  code            String   @unique
-  name            String
-  description     String?
-  // Prices are configurable placeholders — not approved commercial terms
-  priceMinor      Int      @default(0)
-  currency        String   @default("GEL")
-  interval        String   @default("month") // month | year
-  maxUsers        Int      @default(5)
-  maxCustomers    Int      @default(100)
-  maxDeals        Int      @default(200)
-  trialDays       Int      @default(14)
-  isActive        Boolean  @default(true)
-  sortOrder       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id           String   @id @default(cuid())
+  code         String   @unique
+  name         String
+  description  String?
+  priceMinor   Int      @default(0)
+  currency     String   @default("GEL")
+  interval     String   @default("month") // month | year
+  maxUsers     Int      @default(5)
+  maxCustomers Int      @default(100)
+  maxDeals     Int      @default(200)
+  trialDays    Int      @default(14)
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   subscriptions Subscription[]
 }
 
 model Subscription {
-  id                   String             @id @default(cuid())
-  companyId            String             @unique
-  planId               String
-  status               SubscriptionStatus @default(TRIALING)
-  trialEndsAt          DateTime?
-  currentPeriodStart   DateTime?
-  currentPeriodEnd     DateTime?
-  cancelAtPeriodEnd    Boolean            @default(false)
-  externalCustomerId   String?
+  id                     String             @id @default(cuid())
+  companyId              String             @unique
+  planId                 String
+  status                 SubscriptionStatus @default(TRIALING)
+  trialEndsAt            DateTime?
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean            @default(false)
+  externalCustomerId     String?
   externalSubscriptionId String?
-  lastPaymentFailureAt DateTime?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  lastPaymentFailureAt   DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  plan    Plan    @relation(fields: [planId], references: [id])
+  company Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan    Plan           @relation(fields: [planId], references: [id])
   events  BillingEvent[]
 }
 
 model BillingEvent {
-  id               String   @id @default(cuid())
-  subscriptionId   String
-  provider         String   @default("dev")
-  externalEventId  String
-  eventType        String
-  payload          String // JSON
-  processedAt      DateTime @default(now())
+  id              String   @id @default(cuid())
+  subscriptionId  String
+  provider        String   @default("dev")
+  externalEventId String
+  eventType       String
+  payload         String // JSON
+  processedAt     DateTime @default(now())
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 

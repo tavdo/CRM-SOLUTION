@@ -10,7 +10,7 @@ function resolveDatabaseUrl(): string {
   // On Vercel serverless runtime, always use writable /tmp/crm-demo-v2.db
   // unless an external cloud database URL (postgres/libsql) is provided.
   if (process.env.VERCEL && (!envUrl || envUrl.startsWith("file:"))) {
-    const tmpDbPath = "/tmp/crm-demo-v2.db";
+    const tmpDbPath = "/tmp/crm-demo-v3.db";
     try {
       if (!fs.existsSync(tmpDbPath)) {
         const candidates = [
