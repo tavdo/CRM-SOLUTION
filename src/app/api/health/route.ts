@@ -5,21 +5,17 @@ import { ensureDbInitialized } from "@/lib/db-init";
 export async function GET() {
   try {
     await ensureDbInitialized();
-    const users = await prisma.user.count();
-    const companies = await prisma.company.count();
+    await prisma.$queryRaw`SELECT 1`;
     return NextResponse.json({
       status: "ok",
       service: "crm-solution",
-      users,
-      companies,
       time: new Date().toISOString(),
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       {
         status: "degraded",
         db: false,
-        error: err instanceof Error ? err.message : "unknown",
       },
       { status: 503 },
     );

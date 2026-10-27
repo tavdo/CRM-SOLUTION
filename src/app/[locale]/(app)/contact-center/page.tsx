@@ -4,7 +4,7 @@ import { Copy, ExternalLink, Globe } from "lucide-react";
 import { Badge, Surface } from "@/components/ui";
 import { WebformEmbedCopy } from "@/components/WebformEmbedCopy";
 import { requireWorkspace } from "@/lib/auth/workspace";
-import { prisma } from "@/lib/db";
+import { listLeads } from "@/lib/services/leads";
 import { isLocale } from "@/i18n/config";
 
 export default async function ContactCenterPage({
@@ -23,12 +23,7 @@ export default async function ContactCenterPage({
   const formUrl = `${appUrl}${formPath}`;
   const embed = `<iframe src="${formUrl}" title="Lead form" width="100%" height="560" style="border:0;border-radius:12px;"></iframe>`;
 
-  const recent = await prisma.lead.findMany({
-    where: { companyId: ctx.company.id, source: "WEBSITE" },
-    orderBy: { createdAt: "desc" },
-    take: 8,
-    include: { owner: { select: { name: true } } },
-  });
+  const recent = await listLeads(ctx, { source: "WEBSITE", take: 8 });
 
   return (
     <div style={{ display: "grid", gap: "1.25rem" }}>
@@ -41,8 +36,8 @@ export default async function ContactCenterPage({
         </h1>
         <p className="muted" style={{ margin: "0.4rem 0 0", maxWidth: 640, fontSize: "0.9rem" }}>
           {isKa
-            ? "Meta / WhatsApp / MyPhone ბეიჯები ამოღებულია — აქ არის რეალური საჯარო ფორმა, რომელიც ლიდს ქმნის. სხვა არხები მოგვიანებით."
-            : "Fake Meta / WhatsApp / MyPhone badges removed. This is a real public form that creates leads. Other channels later."}
+            ? "მიიღეთ მომხმარებლების მოთხოვნები საჯარო ვებ-ფორმით და გააგრძელეთ მუშაობა ლიდების სიაში."
+            : "Collect customer inquiries through your public web form and follow up from the leads inbox."}
         </p>
       </div>
 
@@ -50,14 +45,14 @@ export default async function ContactCenterPage({
         style={{
           display: "grid",
           gap: "1rem",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))",
         }}
       >
         <Surface style={{ padding: "1.25rem", display: "grid", gap: "0.85rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Globe size={16} color="#10b981" />
             <h2 className="section-title">{isKa ? "საჯარო ბმული" : "Public form link"}</h2>
-            <Badge tone="ok">LIVE</Badge>
+            <Badge tone="ok">{isKa ? "ხელმისაწვდომია" : "Available"}</Badge>
           </div>
           <code
             style={{

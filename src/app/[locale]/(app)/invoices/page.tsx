@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import {
   FileSpreadsheet,
@@ -16,9 +16,13 @@ import {
   updateInvoiceStatusAction,
 } from "@/app/actions/crm";
 import { requireWorkspace } from "@/lib/auth/workspace";
+import { listInvoices } from "@/lib/services/invoices";
+import { recordScope } from "@/lib/scope";
 import { prisma } from "@/lib/db";
 import { formatMoney } from "@/lib/money";
 import { formatDate } from "@/lib/dates";
+import { ProviderStatus } from "@/components/ProviderStatus";
+import { bankAccountProvider, rsGeProvider } from "@/lib/providers";
 import { isLocale } from "@/i18n/config";
 
 export default async function InvoicesPage({
@@ -31,23 +35,20 @@ export default async function InvoicesPage({
   setRequestLocale(locale);
   const ctx = await requireWorkspace();
   const isKa = locale === "ka";
+  const statusT = await getTranslations("invoiceStates");
 
   const [invoices, products, customers, deals] = await Promise.all([
-    prisma.invoice.findMany({
-      where: { companyId: ctx.company.id },
-      include: { customer: true, deal: true, items: true },
-      orderBy: { createdAt: "desc" },
-    }),
+    listInvoices(ctx),
     prisma.product.findMany({
       where: { companyId: ctx.company.id, isActive: true },
       orderBy: { createdAt: "desc" },
     }),
     prisma.customer.findMany({
-      where: { companyId: ctx.company.id, archivedAt: null },
+      where: { ...recordScope(ctx), archivedAt: null },
       orderBy: { name: "asc" },
     }),
     prisma.deal.findMany({
-      where: { companyId: ctx.company.id, archivedAt: null },
+      where: { ...recordScope(ctx), archivedAt: null },
       orderBy: { updatedAt: "desc" },
     }),
   ]);
@@ -74,8 +75,8 @@ export default async function InvoicesPage({
         <div>
           <span className="kicker">
             {isKa
-              ? "ქართული ბუღალტერია · ს/კ · დღგ 18% · BOG / TBC IBAN · RS.GE"
-              : "GEORGIAN BILLING · TAX ID (ს/კ) · 18% VAT (დღგ) · BOG / TBC IBAN"}
+              ? "შეთავაზებები · ინვოისები · გადახდის რეკვიზიტები"
+              : "QUOTES · INVOICES · PAYMENT DETAILS"}
           </span>
           <h1 className="page-title" style={{ marginTop: 4 }}>
             {isKa ? "ინვოისები და პროდუქტების კატალოგი" : "Georgian Invoices & Product Catalog"}
@@ -100,18 +101,21 @@ export default async function InvoicesPage({
               {ctx.company.legalForm} {ctx.company.name}
             </strong>
             <div className="muted" style={{ fontSize: "0.78rem" }}>
-              ს/კ (Tax ID): <strong style={{ color: "var(--ink)" }}>{ctx.company.taxId ?? "405318921"}</strong>
+              ს/კ (Tax ID): <strong style={{ color: "var(--ink)" }}>{ctx.company.taxId ?? "—"}</strong>
               {" · "}
-              BOG IBAN: <strong style={{ color: "var(--ink)" }}>{ctx.company.bogIban ?? "GE29BG0000000101904917"}</strong>
+              BOG IBAN: <strong style={{ color: "var(--ink)" }}>{ctx.company.bogIban ?? "—"}</strong>
               {" · "}
-              TBC IBAN: <strong style={{ color: "var(--ink)" }}>{ctx.company.tbcIban ?? "GE83TB7000000365123456"}</strong>
+              TBC IBAN: <strong style={{ color: "var(--ink)" }}>{ctx.company.tbcIban ?? "—"}</strong>
             </div>
           </div>
         </div>
         <Badge tone="ok">{ctx.company.isVatPayer ? "დღგ-ს გადამხდელი (18% VAT)" : "Non-VAT"}</Badge>
       </Surface>
 
-      {/* Invoices Table */}
+      <Surface style={{ padding: "1rem", display: "grid", gap: "0.8rem" }}>
+        <ProviderStatus provider={bankAccountProvider(ctx.company.bogIban || ctx.company.tbcIban)} locale={locale} />
+        <ProviderStatus provider={rsGeProvider(invoices.some((invoice) => Boolean(invoice.rsGeWaybillRef)))} locale={locale} />
+      </Surface>
       <Surface style={{ overflowX: "auto" }}>
         {invoices.length === 0 ? (
           <EmptyState>{isKa ? "ინვოისები ჯერ არ არის." : "No invoices generated yet."}</EmptyState>
@@ -158,14 +162,14 @@ export default async function InvoicesPage({
                   </td>
                   <td>
                     {inv.rsGeWaybillRef ? (
-                      <Badge tone="ok">{inv.rsGeWaybillRef}</Badge>
+                      <Badge>{inv.rsGeWaybillRef}</Badge>
                     ) : (
                       <span className="muted">—</span>
                     )}
                   </td>
                   <td>
                     <Badge tone={inv.status === "PAID" ? "ok" : "warn"}>
-                      {inv.status}
+                      {statusT.has(inv.status) ? statusT(inv.status) : inv.status}
                     </Badge>
                   </td>
                   <td style={{ textAlign: "right" }}>
@@ -214,7 +218,7 @@ export default async function InvoicesPage({
         style={{
           display: "grid",
           gap: "1.15rem",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
           alignItems: "start",
         }}
       >

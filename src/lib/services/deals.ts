@@ -1,9 +1,12 @@
+import { parseDateOnly } from "../dates";
 import type { DealStatus, Prisma } from "@prisma/client";
+import { assertLinkedAccess, recordScope, noteScope, visibleRelation } from "../scope";
 import { prisma } from "../db";
 import { AppError } from "../errors";
 import { writeAudit } from "../audit";
 import { enforcePlanLimit } from "../billing/adapter";
 import { can, canAccessOwnedRecord } from "../permissions";
+import { isSupportedAutomationAction } from "../providers";
 import { toMinor } from "../money";
 import type { WorkspaceContext } from "../auth/workspace";
 
@@ -16,7 +19,7 @@ export async function listDeals(
   ctx: WorkspaceContext,
   opts: { status?: DealStatus; archived?: boolean } = {},
 ) {
-  return prisma.deal.findMany({
+  const records = await prisma.deal.findMany({
     where: {
       companyId: ctx.company.id,
       archivedAt: opts.archived ? { not: null } : null,
@@ -26,26 +29,29 @@ export async function listDeals(
     include: {
       stage: true,
       owner: { select: { id: true, name: true } },
-      customer: { select: { id: true, name: true } },
+      customer: { select: { id: true, name: true, companyId: true, ownerId: true } },
     },
     orderBy: [{ stage: { sortOrder: "asc" } }, { updatedAt: "desc" }],
   });
+  return records.map((record) => ({ ...record, customer: visibleRelation(ctx, record.customer) }));
 }
 
 export async function getDeal(ctx: WorkspaceContext, id: string) {
   const deal = await prisma.deal.findFirst({
-    where: { id, companyId: ctx.company.id },
+    where: { id, ...recordScope(ctx) },
     include: {
       stage: true,
       owner: { select: { id: true, name: true, email: true } },
       customer: true,
       contact: true,
       notes: {
+        where: noteScope(ctx),
         orderBy: { createdAt: "desc" },
         include: { author: { select: { id: true, name: true } } },
       },
-      activities: { orderBy: { createdAt: "desc" }, take: 50 },
+      activities: { where: { companyId: ctx.company.id }, orderBy: { createdAt: "desc" }, take: 50 },
       tasks: {
+        where: recordScope(ctx),
         orderBy: { dueAt: "asc" },
         include: { owner: { select: { id: true, name: true } } },
       },
@@ -55,7 +61,7 @@ export async function getDeal(ctx: WorkspaceContext, id: string) {
   if (!canAccessOwnedRecord(ctx.role, deal.ownerId, ctx.user.id)) {
     throw new AppError("Forbidden", "FORBIDDEN", 403);
   }
-  return deal;
+  return { ...deal, customer: visibleRelation(ctx, deal.customer), contact: visibleRelation(ctx, deal.contact) };
 }
 
 export async function createDeal(
@@ -77,16 +83,10 @@ export async function createDeal(
   await enforcePlanLimit(ctx.company.id, "deals");
 
   if (input.customerId) {
-    const c = await prisma.customer.findFirst({
-      where: { id: input.customerId, companyId: ctx.company.id },
-    });
-    if (!c) throw new AppError("Customer not found", "NOT_FOUND", 404);
+    await assertLinkedAccess(ctx, "customer", input.customerId);
   }
   if (input.contactId) {
-    const c = await prisma.contact.findFirst({
-      where: { id: input.contactId, companyId: ctx.company.id },
-    });
-    if (!c) throw new AppError("Contact not found", "NOT_FOUND", 404);
+    await assertLinkedAccess(ctx, "contact", input.contactId);
   }
 
   let stageId = input.stageId;
@@ -128,7 +128,7 @@ export async function createDeal(
       amountMinor,
       currency,
       expectedCloseAt: input.expectedCloseAt
-        ? new Date(input.expectedCloseAt)
+        ? parseDateOnly(input.expectedCloseAt)
         : null,
     },
   });
@@ -217,7 +217,6 @@ export async function moveDealStage(
     detail: { stageId, status },
   });
 
-  // Execute Bitrix24-style Pipeline Automation Rules (Robots)
   const rules = await prisma.automationRule.findMany({
     where: {
       companyId: ctx.company.id,
@@ -226,6 +225,21 @@ export async function moveDealStage(
     },
   });
   for (const rule of rules) {
+    if (!isSupportedAutomationAction(rule.actionType)) {
+      await writeAudit({
+        companyId: ctx.company.id,
+        actorId: ctx.user.id,
+        action: "automation.skipped_unsupported",
+        entityType: "deal",
+        entityId: deal.id,
+        detail: {
+          ruleId: rule.id,
+          actionType: rule.actionType,
+          delivered: false,
+        },
+      });
+      continue;
+    }
     if (rule.actionType === "CREATE_TASK") {
       await prisma.task.create({
         data: {
@@ -246,34 +260,9 @@ export async function moveDealStage(
         data: {
           companyId: ctx.company.id,
           authorId: ctx.user.id,
-          title: `Deal Update: ${deal.title} → ${stage.name}`,
+          title: rule.name,
           body: rule.actionDetail,
           category: stage.isWon ? "WIN" : "UPDATE",
-        },
-      });
-    } else if (rule.actionType === "SEND_SMS") {
-      // Demo-honest SMS: no real gateway — log to audit + feed as "sent"
-      await writeAudit({
-        companyId: ctx.company.id,
-        actorId: ctx.user.id,
-        action: "automation.sms_logged",
-        entityType: "deal",
-        entityId: deal.id,
-        detail: {
-          ruleId: rule.id,
-          ruleName: rule.name,
-          template: rule.actionDetail,
-          simulated: true,
-          toOwnerId: deal.ownerId,
-        },
-      });
-      await prisma.feedPost.create({
-        data: {
-          companyId: ctx.company.id,
-          authorId: ctx.user.id,
-          title: `SMS logged (demo): ${deal.title}`,
-          body: `[Simulated SMS — not sent to a carrier]\n${rule.actionDetail}`,
-          category: "UPDATE",
         },
       });
     }
@@ -362,10 +351,7 @@ export async function updateDeal(
   }
 
   if (input.customerId) {
-    const c = await prisma.customer.findFirst({
-      where: { id: input.customerId, companyId: ctx.company.id },
-    });
-    if (!c) throw new AppError("Customer not found", "NOT_FOUND", 404);
+    await assertLinkedAccess(ctx, "customer", input.customerId);
   }
 
   let ownerId = deal.ownerId;
@@ -390,7 +376,7 @@ export async function updateDeal(
         input.expectedCloseAt === undefined
           ? undefined
           : input.expectedCloseAt
-            ? new Date(input.expectedCloseAt)
+            ? parseDateOnly(input.expectedCloseAt)
             : null,
       ownerId,
     },

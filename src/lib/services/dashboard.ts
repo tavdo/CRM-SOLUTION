@@ -1,3 +1,4 @@
+import { visibleRelation } from "../scope";
 import { prisma } from "../db";
 import { can } from "../permissions";
 import { sumByCurrency } from "../money";
@@ -58,7 +59,7 @@ export async function getDashboard(ctx: WorkspaceContext) {
       },
       include: {
         owner: { select: { id: true, name: true } },
-        deal: { select: { id: true, title: true } },
+        deal: { select: { id: true, title: true, companyId: true, ownerId: true } },
       },
       orderBy: { dueAt: "asc" },
       take: 10,
@@ -112,7 +113,7 @@ export async function getDashboard(ctx: WorkspaceContext) {
     lostThisMonth,
     winRate,
     openTasksCount: openTasks,
-    overdueTasks,
+    overdueTasks: overdueTasks.map((task) => ({ ...task, deal: visibleRelation(ctx, task.deal) })),
     overdueCount: overdueTasks.length,
     upcomingTasks,
     recentCustomers,

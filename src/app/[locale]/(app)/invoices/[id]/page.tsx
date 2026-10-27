@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Badge, Button, Surface } from "@/components/ui";
 import { PrintInvoiceButton } from "@/components/PrintInvoiceButton";
@@ -9,9 +9,12 @@ import {
   updateInvoiceStatusAction,
 } from "@/app/actions/crm";
 import { requireWorkspace } from "@/lib/auth/workspace";
-import { prisma } from "@/lib/db";
+import { getInvoice } from "@/lib/services/invoices";
+import { isAppError } from "@/lib/errors";
 import { formatMoney } from "@/lib/money";
 import { formatDate } from "@/lib/dates";
+import { ProviderStatus } from "@/components/ProviderStatus";
+import { bankAccountProvider, rsGeProvider } from "@/lib/providers";
 import { isLocale } from "@/i18n/config";
 
 export default async function InvoiceDetailPage({
@@ -24,12 +27,12 @@ export default async function InvoiceDetailPage({
   setRequestLocale(locale);
   const ctx = await requireWorkspace();
   const isKa = locale === "ka";
+  const statusT = await getTranslations("invoiceStates");
 
-  const invoice = await prisma.invoice.findFirst({
-    where: { id, companyId: ctx.company.id },
-    include: { customer: true, deal: true, items: true },
+  const invoice = await getInvoice(ctx, id).catch((error) => {
+    if (isAppError(error) && (error.status === 404 || error.status === 403)) notFound();
+    throw error;
   });
-  if (!invoice) notFound();
 
   return (
     <div style={{ display: "grid", gap: "1.2rem", maxWidth: 880 }}>
@@ -73,7 +76,10 @@ export default async function InvoiceDetailPage({
         </div>
       </div>
 
-      {/* Printable Official Georgian B2B Tax Invoice */}
+      <Surface style={{ padding: "1rem", display: "grid", gap: "0.8rem" }}>
+        <ProviderStatus provider={bankAccountProvider(ctx.company.bogIban || ctx.company.tbcIban)} locale={locale} />
+        <ProviderStatus provider={rsGeProvider(Boolean(invoice.rsGeWaybillRef))} locale={locale} />
+      </Surface>
       <Surface style={{ padding: "2.2rem" }}>
         <div
           style={{
@@ -92,7 +98,7 @@ export default async function InvoiceDetailPage({
                 ? isKa
                   ? "შეთავაზება / QUOTE"
                   : "QUOTE / შეთავაზება"
-                : "ინვოისი / TAX INVOICE"}
+                : "ინვოისი / INVOICE"}
             </span>
             <h1 className="page-title" style={{ marginTop: 4 }}>
               {invoice.invoiceNumber}
@@ -107,10 +113,10 @@ export default async function InvoiceDetailPage({
 
           <div style={{ textAlign: "right", display: "grid", gap: 6, justifyItems: "end" }}>
             <Badge tone={invoice.status === "PAID" ? "ok" : "warn"}>
-              {invoice.status}
+              {statusT.has(invoice.status) ? statusT(invoice.status) : invoice.status}
             </Badge>
             {invoice.rsGeWaybillRef ? (
-              <Badge tone="ok">RS.ge: {invoice.rsGeWaybillRef}</Badge>
+              <Badge>RS.ge: {invoice.rsGeWaybillRef}</Badge>
             ) : null}
           </div>
         </div>
@@ -134,11 +140,11 @@ export default async function InvoiceDetailPage({
               {ctx.company.legalForm} {ctx.company.name}
             </strong>
             <div className="muted" style={{ fontSize: "0.84rem", marginTop: 4, lineHeight: 1.6 }}>
-              საიდენტიფიკაციო კოდი (ს/კ): <strong style={{ color: "var(--ink)" }}>{ctx.company.taxId ?? "405318921"}</strong>
+              საიდენტიფიკაციო კოდი (ს/კ): <strong style={{ color: "var(--ink)" }}>{ctx.company.taxId ?? "—"}</strong>
               <br />
-              საქართველოს ბანკი (BAGAGE22): <strong style={{ color: "var(--ink)" }}>{ctx.company.bogIban ?? "GE29BG0000000101904917"}</strong>
+              საქართველოს ბანკი (BAGAGE22): <strong style={{ color: "var(--ink)" }}>{ctx.company.bogIban ?? "—"}</strong>
               <br />
-              თიბისი ბანკი (TBCBGE22): <strong style={{ color: "var(--ink)" }}>{ctx.company.tbcIban ?? "GE83TB7000000365123456"}</strong>
+              თიბისი ბანკი (TBCBGE22): <strong style={{ color: "var(--ink)" }}>{ctx.company.tbcIban ?? "—"}</strong>
               {ctx.company.address ? (
                 <>
                   <br />

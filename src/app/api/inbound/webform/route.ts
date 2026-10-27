@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
     const message = String(body.message || body.notes || "").trim() || undefined;
     const title = String(body.title || "").trim() || undefined;
     const redirectTo = String(body.redirectTo || "").trim();
+    const redirectUrl = redirectTo ? new URL(redirectTo, req.url) : null;
+    if (redirectUrl && redirectUrl.origin !== req.nextUrl.origin) {
+      return NextResponse.json({ ok: false, code: "INVALID_REDIRECT" }, { status: 400 });
+    }
 
     const result = await createInboundLead({
       companySlug,
@@ -40,10 +44,9 @@ export async function POST(req: NextRequest) {
       title,
     });
 
-    if (redirectTo) {
-      const url = new URL(redirectTo, req.url);
-      url.searchParams.set("sent", result.duplicate ? "duplicate" : "1");
-      return NextResponse.redirect(url, 303);
+    if (redirectUrl) {
+      redirectUrl.searchParams.set("sent", result.duplicate ? "duplicate" : "1");
+      return NextResponse.redirect(redirectUrl, 303);
     }
 
     return NextResponse.json({

@@ -6,8 +6,9 @@ import {
   createAutomationRuleAction,
   toggleAutomationRuleAction,
 } from "@/app/actions/crm";
-import { requireWorkspace } from "@/lib/auth/workspace";
+import { requireCapability } from "@/lib/auth/workspace";
 import { prisma } from "@/lib/db";
+import { isSupportedAutomationAction } from "@/lib/providers";
 import { isLocale } from "@/i18n/config";
 
 export default async function AutomationsPage({
@@ -18,7 +19,7 @@ export default async function AutomationsPage({
   const { locale } = await params;
   if (!isLocale(locale)) redirect("/en");
   setRequestLocale(locale);
-  const ctx = await requireWorkspace();
+  const ctx = await requireCapability("company.automations");
   const isKa = locale === "ka";
 
   const [rules, stages] = await Promise.all([
@@ -39,8 +40,8 @@ export default async function AutomationsPage({
       <div className="rise">
         <span className="kicker">
           {isKa
-            ? "BITRIX24 ROBOTS · გაყიდვების მილის ავტომატიზაცია"
-            : "BITRIX24 ROBOTS & TRIGGERS · PIPELINE AUTOMATION"}
+            ? "გაყიდვების მილის ავტომატიზაცია"
+            : "PIPELINE AUTOMATION"}
         </span>
         <h1 className="page-title" style={{ marginTop: 4 }}>
           {isKa
@@ -58,7 +59,7 @@ export default async function AutomationsPage({
         style={{
           display: "grid",
           gap: "1.15rem",
-          gridTemplateColumns: "minmax(0, 1.6fr) minmax(300px, 1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))",
           alignItems: "start",
         }}
       >
@@ -85,11 +86,11 @@ export default async function AutomationsPage({
               >
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <Badge tone={r.isActive ? "ok" : "default"}>
+                    <Badge tone={r.isActive && isSupportedAutomationAction(r.actionType) ? "ok" : "default"}>
                       <Zap size={11} />
                       <span>Stage: {stageMap[r.triggerStageId] ?? r.triggerStageId}</span>
                     </Badge>
-                    <Badge tone="warn">{r.actionType}</Badge>
+                    <Badge tone="warn">{isSupportedAutomationAction(r.actionType) ? r.actionType : (isKa ? "მოქმედება მიუწვდომელია" : "Action unavailable")}</Badge>
                   </div>
                   <h2 style={{ margin: "0.55rem 0 0.25rem", fontSize: "1rem", color: "#fff" }}>
                     {r.name}
@@ -104,6 +105,7 @@ export default async function AutomationsPage({
                   <input type="hidden" name="id" value={r.id} />
                   <Button
                     type="submit"
+                    disabled={!r.isActive && !isSupportedAutomationAction(r.actionType)}
                     variant={r.isActive ? "secondary" : "primary"}
                     style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}
                   >
@@ -158,10 +160,10 @@ export default async function AutomationsPage({
                 <option value="POST_FEED">
                   {isKa ? "სიახლეების ლენტაში გამოქვეყნება" : "Post Announcement to Company Feed"}
                 </option>
-                <option value="SEND_SMS">
+                <option value="SEND_SMS" disabled>
                   {isKa
-                    ? "SMS ლოგი (დემო — რეალური გაგზავნა არა)"
-                    : "Log SMS (demo — not sent to carrier)"}
+                    ? "SMS მიუწვდომელია — შეტყობინებები არ იგზავნება"
+                    : "SMS unavailable — messages are not delivered"}
                 </option>
               </select>
             </Field>

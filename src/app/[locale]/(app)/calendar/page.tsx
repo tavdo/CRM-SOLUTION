@@ -7,6 +7,7 @@ import { Surface } from "@/components/ui";
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { prisma } from "@/lib/db";
 import { can } from "@/lib/permissions";
+import { dateInTimezone } from "@/lib/dates";
 import { isLocale } from "@/i18n/config";
 
 export default async function CalendarPage({
@@ -51,7 +52,7 @@ export default async function CalendarPage({
     if (!task.dueAt) continue;
     events.push({
       id: `task-${task.id}`,
-      date: task.dueAt.toISOString(),
+      date: dateInTimezone(task.dueAt, ctx.company.timezone),
       title: task.title,
       href: `/${locale}/tasks/${task.id}`,
       kind: "task",

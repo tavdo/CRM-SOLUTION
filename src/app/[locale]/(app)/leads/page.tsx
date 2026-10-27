@@ -71,7 +71,7 @@ export default async function LeadsPage({
             {isKa ? "OMNICHANNEL · ლიდების მართვა" : "OMNICHANNEL · LEADS INBOX"}
           </span>
           <h1 className="page-title" style={{ marginTop: 4 }}>
-            {isKa ? "შემომავალი ლიდები (Bitrix24 Leads)" : "Incoming Leads Inbox"}
+            {isKa ? "შემომავალი ლიდები" : "Incoming Leads Inbox"}
           </h1>
         </div>
         <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>

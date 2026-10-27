@@ -4,18 +4,19 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { Role } from "@prisma/client";
 import { requireWorkspace, requireCapability } from "@/lib/auth/workspace";
-import { isAppError } from "@/lib/errors";
+import { AppError, isAppError } from "@/lib/errors";
 import * as customers from "@/lib/services/customers";
 import * as deals from "@/lib/services/deals";
 import * as tasks from "@/lib/services/tasks";
 import * as members from "@/lib/services/members";
 import * as leadsSvc from "@/lib/services/leads";
 import * as productsSvc from "@/lib/services/products";
+import * as invoicesSvc from "@/lib/services/invoices";
+import { isSupportedAutomationAction } from "@/lib/providers";
 import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/audit";
-import { can } from "@/lib/permissions";
+import { can, assertChatChannel } from "@/lib/permissions";
 import { slugify } from "@/lib/slug";
-import { toMinor } from "@/lib/money";
 
 function s(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -60,7 +61,7 @@ export async function updateCustomerAction(formData: FormData) {
     phone: s(formData, "phone") || null,
     website: s(formData, "website") || null,
     address: s(formData, "address") || null,
-    ownerId: s(formData, "ownerId") || null,
+    ownerId: formData.has("ownerId") ? s(formData, "ownerId") || null : undefined,
   });
   revalidatePath(localePath(locale, `/customers/${id}`));
 }
@@ -150,8 +151,8 @@ export async function updateDealAction(formData: FormData) {
     amount: s(formData, "amount"),
     currency: s(formData, "currency"),
     expectedCloseAt: s(formData, "expectedCloseAt") || null,
-    customerId: s(formData, "customerId") || null,
-    ownerId: s(formData, "ownerId") || null,
+    customerId: formData.has("customerId") ? s(formData, "customerId") || null : undefined,
+    ownerId: formData.has("ownerId") ? s(formData, "ownerId") || null : undefined,
   });
   revalidatePath(localePath(locale, `/deals/${dealId}`));
 }
@@ -175,10 +176,10 @@ export async function moveTaskStageAction(formData: FormData) {
   const id = s(formData, "id");
   const boardStage = s(formData, "boardStage") || "TODO";
   const ctx = await requireWorkspace();
-  const existing = await prisma.task.findFirst({
-    where: { id, companyId: ctx.company.id },
-  });
-  if (!existing) return;
+  await tasks.getTask(ctx, id);
+  if (!["TODO", "IN_PROGRESS", "REVIEW", "DONE"].includes(boardStage)) {
+    throw new AppError("Invalid task stage", "VALIDATION", 400);
+  }
   const status = boardStage === "DONE" ? "DONE" : "OPEN";
   await prisma.task.update({
     where: { id },
@@ -294,76 +295,19 @@ export async function toggleProductActiveAction(formData: FormData) {
 export async function createInvoiceAction(formData: FormData) {
   const locale = s(formData, "locale") || "en";
   const ctx = await requireWorkspace();
-  const customerId = s(formData, "customerId");
-  const dealId = s(formData, "dealId") || null;
-  const productId = s(formData, "productId") || null;
-  const asQuote = s(formData, "asQuote") === "1";
-  const description = s(formData, "description") || "CRM Services / მომსახურება";
-  const quantity = Math.max(1, Number(s(formData, "quantity") || "1"));
-  let unitPriceMinor = toMinor(s(formData, "unitPrice") || "0");
-  let unit = s(formData, "unit") || "პაკეტი";
-  let lineDescription = description;
-
-  if (productId) {
-    const product = await prisma.product.findFirst({
-      where: { id: productId, companyId: ctx.company.id, isActive: true },
-    });
-    if (product) {
-      unitPriceMinor = product.priceMinor;
-      unit = product.unit;
-      lineDescription = product.name;
-    }
-  }
-
-  const includeVat = s(formData, "includeVat") !== "false";
-  const rsGeWaybillRef = s(formData, "rsGeWaybillRef") || null;
-
-  const subtotalMinor = quantity * unitPriceMinor;
-  const vatRate = 18;
-  const vatMinor = includeVat ? Math.round(subtotalMinor * 0.18) : 0;
-  const totalMinor = subtotalMinor + vatMinor;
-
-  const count = await prisma.invoice.count({ where: { companyId: ctx.company.id } });
-  const year = new Date().getFullYear();
-  const seq = String(count + 1).padStart(3, "0");
-  const invoiceNumber = asQuote ? `QTE-${year}-${seq}` : `INV-${year}-${seq}`;
-
-  const inv = await prisma.invoice.create({
-    data: {
-      companyId: ctx.company.id,
-      invoiceNumber,
-      customerId,
-      dealId,
-      status: asQuote ? "QUOTE" : "SENT",
-      issueDate: new Date(),
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-      subtotalMinor,
-      vatRate,
-      vatMinor,
-      totalMinor,
-      currency: ctx.company.currency,
-      includeVat,
-      rsGeWaybillRef,
-      notes:
-        s(formData, "notes") ||
-        (asQuote
-          ? "Quote / შეთავაზება — valid 14 days."
-          : "გადახდა წარმოებს საქართველოს ბანკის ან თიბისი ბანკის ანგარიშზე."),
-      items: {
-        create: [
-          {
-            productId: productId || null,
-            description: lineDescription,
-            quantity,
-            unit,
-            unitMinor: unitPriceMinor,
-            totalMinor: subtotalMinor,
-          },
-        ],
-      },
-    },
+  const inv = await invoicesSvc.createInvoice(ctx, {
+    customerId: s(formData, "customerId"),
+    dealId: s(formData, "dealId") || null,
+    productId: s(formData, "productId") || null,
+    asQuote: s(formData, "asQuote") === "1",
+    description: s(formData, "description") || undefined,
+    quantity: Number(s(formData, "quantity") || "1"),
+    unit: s(formData, "unit") || undefined,
+    unitPrice: s(formData, "unitPrice") || "0",
+    includeVat: s(formData, "includeVat") !== "false",
+    rsGeWaybillRef: s(formData, "rsGeWaybillRef") || null,
+    notes: s(formData, "notes") || undefined,
   });
-
   revalidatePath(localePath(locale, "/invoices"));
   redirect(localePath(locale, `/invoices/${inv.id}`));
 }
@@ -372,38 +316,7 @@ export async function convertQuoteToInvoiceAction(formData: FormData) {
   const locale = s(formData, "locale") || "en";
   const id = s(formData, "id");
   const ctx = await requireWorkspace();
-  const inv = await prisma.invoice.findFirst({
-    where: { id, companyId: ctx.company.id },
-  });
-  if (!inv || inv.status !== "QUOTE") return;
-
-  const count = await prisma.invoice.count({
-    where: { companyId: ctx.company.id, status: { not: "QUOTE" } },
-  });
-  const invoiceNumber = `INV-${new Date().getFullYear()}-${String(count + 1).padStart(3, "0")}`;
-
-  await prisma.invoice.update({
-    where: { id },
-    data: {
-      status: "SENT",
-      invoiceNumber,
-      issueDate: new Date(),
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-      notes: inv.notes
-        ? `${inv.notes}\nConverted from quote ${inv.invoiceNumber}.`
-        : `Converted from quote ${inv.invoiceNumber}.`,
-    },
-  });
-
-  await writeAudit({
-    companyId: ctx.company.id,
-    actorId: ctx.user.id,
-    action: "quote.converted_to_invoice",
-    entityType: "invoice",
-    entityId: id,
-    detail: { from: inv.invoiceNumber, to: invoiceNumber },
-  });
-
+  await invoicesSvc.convertQuoteToInvoice(ctx, id);
   revalidatePath(localePath(locale, "/invoices"));
   revalidatePath(localePath(locale, `/invoices/${id}`));
   redirect(localePath(locale, `/invoices/${id}`));
@@ -414,14 +327,7 @@ export async function updateInvoiceStatusAction(formData: FormData) {
   const id = s(formData, "id");
   const status = s(formData, "status") || "PAID";
   const ctx = await requireWorkspace();
-  const inv = await prisma.invoice.findFirst({
-    where: { id, companyId: ctx.company.id },
-  });
-  if (!inv) return;
-  await prisma.invoice.update({
-    where: { id },
-    data: { status },
-  });
+  await invoicesSvc.updateInvoiceStatus(ctx, id, status);
   revalidatePath(localePath(locale, "/invoices"));
   revalidatePath(localePath(locale, `/invoices/${id}`));
 }
@@ -451,6 +357,7 @@ export async function sendChatMessageAction(formData: FormData) {
   const ctx = await requireWorkspace();
   const body = s(formData, "body");
   const channel = s(formData, "channel") || "general";
+  assertChatChannel(ctx.role, channel);
   if (!body) return;
   await prisma.chatMessage.create({
     data: {
@@ -499,7 +406,7 @@ export async function toggleWorkClockAction(formData: FormData) {
 
 export async function createDepartmentAction(formData: FormData) {
   const locale = s(formData, "locale") || "en";
-  const ctx = await requireWorkspace();
+  const ctx = await requireCapability("crm.all");
   await prisma.department.create({
     data: {
       companyId: ctx.company.id,
@@ -538,11 +445,11 @@ export async function updateLeaveStatusAction(formData: FormData) {
   const locale = s(formData, "locale") || "en";
   const id = s(formData, "id");
   const status = s(formData, "status") || "APPROVED";
-  const ctx = await requireWorkspace();
+  const ctx = await requireCapability("crm.all");
   const leave = await prisma.leaveRequest.findFirst({
     where: { id, companyId: ctx.company.id },
   });
-  if (!leave) return;
+  if (!leave) throw new AppError("Not found", "NOT_FOUND", 404);
   await prisma.leaveRequest.update({
     where: { id },
     data: { status },
@@ -550,16 +457,24 @@ export async function updateLeaveStatusAction(formData: FormData) {
   revalidatePath(localePath(locale, "/hr"));
 }
 
-// —— Pipeline Automation Rules (Bitrix24 Robots) ——
 export async function createAutomationRuleAction(formData: FormData) {
   const locale = s(formData, "locale") || "en";
-  const ctx = await requireWorkspace();
+  const ctx = await requireCapability("company.automations");
+  const actionType = s(formData, "actionType") || "CREATE_TASK";
+  if (!isSupportedAutomationAction(actionType)) {
+    throw new AppError("Unsupported automation action", "BAD_REQUEST", 400);
+  }
+  const triggerStageId = s(formData, "triggerStageId");
+  const stage = await prisma.pipelineStage.findFirst({
+    where: { id: triggerStageId, companyId: ctx.company.id, archivedAt: null },
+  });
+  if (!stage) throw new AppError("Stage not found", "NOT_FOUND", 404);
   await prisma.automationRule.create({
     data: {
       companyId: ctx.company.id,
       name: s(formData, "name"),
-      triggerStageId: s(formData, "triggerStageId"),
-      actionType: s(formData, "actionType") || "CREATE_TASK",
+      triggerStageId,
+      actionType,
       actionDetail: s(formData, "actionDetail"),
       isActive: true,
     },
@@ -571,11 +486,14 @@ export async function createAutomationRuleAction(formData: FormData) {
 export async function toggleAutomationRuleAction(formData: FormData) {
   const locale = s(formData, "locale") || "en";
   const id = s(formData, "id");
-  const ctx = await requireWorkspace();
+  const ctx = await requireCapability("company.automations");
   const rule = await prisma.automationRule.findFirst({
     where: { id, companyId: ctx.company.id },
   });
-  if (!rule) return;
+  if (!rule) throw new AppError("Not found", "NOT_FOUND", 404);
+  if (!rule.isActive && !isSupportedAutomationAction(rule.actionType)) {
+    throw new AppError("Unsupported automation action", "BAD_REQUEST", 400);
+  }
   await prisma.automationRule.update({
     where: { id },
     data: { isActive: !rule.isActive },

@@ -443,6 +443,8 @@ const SCHEMA_STATEMENTS = [
 let initPromise: Promise<void> | null = null;
 
 export async function ensureDbInitialized(): Promise<void> {
+  // Production schema changes and seed data require explicit deployment tooling.
+  if (process.env.NODE_ENV === "production") return;
   if (initPromise) return initPromise;
 
   initPromise = (async () => {

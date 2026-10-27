@@ -20,6 +20,7 @@ import {
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { prisma } from "@/lib/db";
 import { formatDate, formatDateTime } from "@/lib/dates";
+import { can } from "@/lib/permissions";
 import { isLocale } from "@/i18n/config";
 
 export default async function HrAndWorktimePage({
@@ -41,17 +42,17 @@ export default async function HrAndWorktimePage({
       }),
       prisma.membership.findMany({
         where: { companyId: ctx.company.id },
-        include: { user: true },
+        include: { user: { select: { id: true, name: true, email: true } } },
         orderBy: { createdAt: "asc" },
       }),
       prisma.workLog.findMany({
-        where: { companyId: ctx.company.id },
+        where: { companyId: ctx.company.id, ...(can(ctx.role, "crm.all") ? {} : { userId: ctx.user.id }) },
         include: { user: { select: { name: true } } },
         orderBy: { clockInAt: "desc" },
         take: 15,
       }),
       prisma.leaveRequest.findMany({
-        where: { companyId: ctx.company.id },
+        where: { companyId: ctx.company.id, ...(can(ctx.role, "crm.all") ? {} : { userId: ctx.user.id }) },
         include: { user: { select: { name: true } } },
         orderBy: { createdAt: "desc" },
       }),

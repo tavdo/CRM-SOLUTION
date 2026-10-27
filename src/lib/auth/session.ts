@@ -1,3 +1,4 @@
+import { sessionSecret } from "@/lib/auth/demo";
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "../db";
@@ -8,12 +9,7 @@ const COOKIE = "crm_session";
 const WORKSPACE_COOKIE = "crm_workspace";
 const SESSION_DAYS = 14;
 
-function getJwtSecret(): Uint8Array {
-  const secret =
-    process.env.SESSION_SECRET ||
-    "vercel-owner-demo-session-secret-change-before-live";
-  return new TextEncoder().encode(secret);
-}
+
 
 export type SessionUser = {
   id: string;
@@ -40,7 +36,7 @@ export async function createSession(
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_DAYS}d`)
-    .sign(getJwtSecret());
+    .sign(sessionSecret());
 
   // Also record in Session table best-effort
   await prisma.session
@@ -89,7 +85,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
     // 1. Verify stateless signed JWT (works across all serverless containers)
     try {
-      const { payload } = await jwtVerify(token, getJwtSecret());
+      const { payload } = await jwtVerify(token, sessionSecret());
       const userId = typeof payload.sub === "string" ? payload.sub : null;
       const email = typeof payload.email === "string" ? payload.email : null;
 

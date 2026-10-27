@@ -1,3 +1,5 @@
+import { normalizePhone, normalizeText } from "../normalization";
+import { assertLinkedAccess, recordScope, noteScope } from "../scope";
 import { prisma } from "../db";
 import { AppError } from "../errors";
 import { writeAudit } from "../audit";
@@ -30,7 +32,7 @@ export async function listCustomers(
     ...ownerFilter(ctx),
   };
   if (opts.q?.trim()) {
-    const q = opts.q.trim();
+    const q = normalizeText(opts.q);
     where.OR = [
       { name: { contains: q } },
       { email: { contains: q } },
@@ -57,18 +59,19 @@ export async function listCustomers(
 
 export async function getCustomer(ctx: WorkspaceContext, id: string) {
   const customer = await prisma.customer.findFirst({
-    where: { id, companyId: ctx.company.id },
+    where: { id, ...recordScope(ctx) },
     include: {
       owner: { select: { id: true, name: true, email: true } },
-      contacts: { where: { archivedAt: null }, orderBy: { lastName: "asc" } },
+      contacts: { where: { archivedAt: null, ...recordScope(ctx) }, orderBy: { lastName: "asc" } },
       notes: {
+        where: noteScope(ctx),
         orderBy: { createdAt: "desc" },
         take: 50,
         include: { author: { select: { id: true, name: true } } },
       },
-      customValues: { include: { field: true } },
+      customValues: { where: { companyId: ctx.company.id, field: { companyId: ctx.company.id } }, include: { field: true } },
       deals: {
-        where: { archivedAt: null },
+        where: { archivedAt: null, ...recordScope(ctx) },
         include: { stage: true },
         orderBy: { updatedAt: "desc" },
         take: 20,
@@ -109,12 +112,12 @@ export async function createCustomer(
   const customer = await prisma.customer.create({
     data: {
       companyId: ctx.company.id,
-      name: input.name.trim(),
+      name: normalizeText(input.name),
       taxId: input.taxId?.trim() || null,
       legalForm: input.legalForm?.trim() || "შპს",
       bankIban: input.bankIban?.trim() || null,
       email: input.email?.trim() || null,
-      phone: input.phone?.trim() || null,
+      phone: normalizePhone(input.phone),
       website: input.website?.trim() || null,
       address: input.address?.trim() || null,
       ownerId,
@@ -180,7 +183,7 @@ export async function updateCustomer(
           ? undefined
           : input.bankIban?.trim() || null,
       email: input.email === undefined ? undefined : input.email?.trim() || null,
-      phone: input.phone === undefined ? undefined : input.phone?.trim() || null,
+      phone: input.phone === undefined ? undefined : normalizePhone(input.phone),
       website:
         input.website === undefined ? undefined : input.website?.trim() || null,
       address:
@@ -235,10 +238,7 @@ export async function createContact(
   },
 ) {
   if (input.customerId) {
-    const cust = await prisma.customer.findFirst({
-      where: { id: input.customerId, companyId: ctx.company.id },
-    });
-    if (!cust) throw new AppError("Customer not found", "NOT_FOUND", 404);
+    await assertLinkedAccess(ctx, "customer", input.customerId);
   }
 
   const ownerId =
@@ -249,10 +249,10 @@ export async function createContact(
   return prisma.contact.create({
     data: {
       companyId: ctx.company.id,
-      firstName: input.firstName.trim(),
-      lastName: input.lastName.trim(),
+      firstName: normalizeText(input.firstName),
+      lastName: normalizeText(input.lastName),
       email: input.email?.trim() || null,
-      phone: input.phone?.trim() || null,
+      phone: normalizePhone(input.phone),
       title: input.title?.trim() || null,
       customerId: input.customerId || null,
       ownerId,
@@ -266,18 +266,14 @@ export async function addNote(
 ) {
   if (!input.body.trim()) throw new AppError("Note is required", "VALIDATION");
 
+  if (input.contactId) await assertLinkedAccess(ctx, "contact", input.contactId);
+
   // Tenant-safe link checks
   if (input.customerId) {
-    const c = await prisma.customer.findFirst({
-      where: { id: input.customerId, companyId: ctx.company.id },
-    });
-    if (!c) throw new AppError("Not found", "NOT_FOUND", 404);
+    await assertLinkedAccess(ctx, "customer", input.customerId);
   }
   if (input.dealId) {
-    const d = await prisma.deal.findFirst({
-      where: { id: input.dealId, companyId: ctx.company.id },
-    });
-    if (!d) throw new AppError("Not found", "NOT_FOUND", 404);
+    await assertLinkedAccess(ctx, "deal", input.dealId);
   }
 
   return prisma.note.create({

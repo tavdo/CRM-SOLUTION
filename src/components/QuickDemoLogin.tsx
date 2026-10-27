@@ -7,6 +7,7 @@ export function QuickDemoLogin({
   locale: string;
   compact?: boolean;
 }) {
+  if (process.env.NODE_ENV === "production") return null;
   const isKa = locale === "ka";
 
   const personas = [

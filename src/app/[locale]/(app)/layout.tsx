@@ -4,6 +4,8 @@ import { AppShell } from "@/components/AppShell";
 import { getSessionUser } from "@/lib/auth/session";
 import { listUserWorkspaces, requireWorkspace } from "@/lib/auth/workspace";
 import { prisma } from "@/lib/db";
+import { can } from "@/lib/permissions";
+import { ownerScope } from "@/lib/scope";
 import { isLocale } from "@/i18n/config";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +33,9 @@ export default async function AppLayout({
   const [memberships, newLeadsCount, activeWorkLog] = await Promise.all([
     listUserWorkspaces(user.id),
     prisma.lead
-      .count({ where: { companyId: ctx.company.id, status: "NEW" } })
+      .count({
+        where: { companyId: ctx.company.id, status: "NEW", ...ownerScope(ctx) },
+      })
       .catch(() => 0),
     prisma.workLog
       .findFirst({
@@ -56,6 +60,7 @@ export default async function AppLayout({
       activeCompanyId={ctx.company.id}
       newLeadsCount={newLeadsCount}
       isClockedIn={Boolean(activeWorkLog)}
+      canManageAutomations={can(ctx.role, "company.automations")}
       workspaces={memberships.map((m) => ({ id: m.companyId, name: m.company.name }))}
       labels={{
         dashboard: t("dashboard"),

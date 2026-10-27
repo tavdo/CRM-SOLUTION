@@ -1,5 +1,7 @@
 "use server";
 
+import { canUseDemoLogin } from "@/lib/auth/demo";
+
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
@@ -170,7 +172,8 @@ export async function setLocalePreferenceAction(locale: "en" | "ka") {
 
 export async function demoLoginAction(formData: FormData) {
   const email = formString(formData, "email") || "admin@demo-alpha.local";
-  const locale = (formString(formData, "locale") || "en") as "en" | "ka";
+  const locale = formString(formData, "locale") === "ka" ? "ka" : "en";
+  if (!canUseDemoLogin(email)) throw new Error("Not available");
 
   await ensureDbInitialized();
 

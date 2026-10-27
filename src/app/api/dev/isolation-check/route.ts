@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth/session";
-import { requireWorkspace } from "@/lib/auth/workspace";
-import { prisma } from "@/lib/db";
+import { requireCapability } from "@/lib/auth/workspace";
 import { getCustomer } from "@/lib/services/customers";
 import { getDeal } from "@/lib/services/deals";
 import { isAppError } from "@/lib/errors";
@@ -23,7 +22,7 @@ export async function POST(req: NextRequest) {
     dealId?: string;
   };
 
-  const ctx = await requireWorkspace();
+  const ctx = await requireCapability("audit.view");
   const results: Record<string, string> = {};
 
   if (body.customerId) {
@@ -44,14 +43,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Direct enumeration should still be scoped
-  const foreignCustomers = await prisma.customer.count({
-    where: { companyId: { not: ctx.company.id } },
-  });
-
   return NextResponse.json({
     workspace: ctx.company.id,
-    foreignCustomersExist: foreignCustomers > 0,
     attempts: results,
     note: "404/403 means isolation held; LEAK means a bug",
   });

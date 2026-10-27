@@ -60,6 +60,7 @@ export function AppShell({
   activeCompanyId,
   newLeadsCount = 0,
   isClockedIn = false,
+  canManageAutomations = false,
   children,
 }: {
   locale: string;
@@ -70,6 +71,7 @@ export function AppShell({
   activeCompanyId: string;
   newLeadsCount?: number;
   isClockedIn?: boolean;
+  canManageAutomations?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -88,7 +90,9 @@ export function AppShell({
     { href: `/${locale}/feed`, label: labels.feed, icon: MessageSquare },
     { href: `/${locale}/hr`, label: labels.hr, icon: UserCheck },
     { href: `/${locale}/contact-center`, label: labels.contactCenter, icon: Headset },
-    { href: `/${locale}/automations`, label: labels.automations, icon: Bot },
+    ...(canManageAutomations
+      ? [{ href: `/${locale}/automations`, label: labels.automations, icon: Bot }]
+      : []),
     { href: `/${locale}/settings`, label: labels.settings, icon: Settings },
   ];
 
@@ -240,7 +244,7 @@ export function AppShell({
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", flexWrap: "wrap" }}>
-            {/* Bitrix24-style Live Workday Clock-In / Clock-Out Widget */}
+            {/* Workday clock */}
             <form action={toggleWorkClockAction}>
               <input type="hidden" name="locale" value={locale} />
               <button

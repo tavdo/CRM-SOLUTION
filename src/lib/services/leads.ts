@@ -1,3 +1,4 @@
+import { normalizePhone, normalizeText, samePhone } from "../normalization";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { AppError } from "../errors";
@@ -13,16 +14,18 @@ function ownerFilter(ctx: WorkspaceContext): Prisma.LeadWhereInput {
 
 export async function listLeads(
   ctx: WorkspaceContext,
-  opts?: { status?: string },
+  opts?: { status?: string; source?: string; take?: number },
 ) {
   return prisma.lead.findMany({
     where: {
       companyId: ctx.company.id,
       ...ownerFilter(ctx),
       ...(opts?.status ? { status: opts.status } : {}),
+      ...(opts?.source ? { source: opts.source } : {}),
     },
     include: { owner: { select: { id: true, name: true } } },
     orderBy: { createdAt: "desc" },
+    ...(opts?.take ? { take: opts.take } : {}),
   });
 }
 
@@ -40,21 +43,9 @@ export async function findDuplicateLead(
   input: { email?: string | null; phone?: string | null },
 ) {
   const email = input.email?.trim().toLowerCase() || null;
-  const phone = input.phone?.replace(/\s+/g, "") || null;
-  if (!email && !phone) return null;
+  const phone = normalizePhone(input.phone);
+  return duplicateInScope(ctx.company.id, ownerFilter(ctx), email, phone);
 
-  const or: Prisma.LeadWhereInput[] = [];
-  if (email) or.push({ email: { equals: email } });
-  if (phone) or.push({ phone: { contains: phone.slice(-9) } });
-
-  return prisma.lead.findFirst({
-    where: {
-      companyId: ctx.company.id,
-      status: { in: ["NEW", "CONTACTED", "QUALIFIED"] },
-      OR: or,
-    },
-    include: { owner: { select: { name: true } } },
-  });
 }
 
 export async function createLead(
@@ -78,7 +69,7 @@ export async function createLead(
   }
 
   const email = input.email?.trim().toLowerCase() || null;
-  const phone = input.phone?.trim() || null;
+  const phone = normalizePhone(input.phone);
 
   if (!input.forceDuplicate) {
     const dup = await findDuplicateLead(ctx, { email, phone });
@@ -106,8 +97,8 @@ export async function createLead(
   const lead = await prisma.lead.create({
     data: {
       companyId: ctx.company.id,
-      title: input.title.trim(),
-      contactName: input.contactName.trim(),
+      title: normalizeText(input.title),
+      contactName: normalizeText(input.contactName),
       companyName: input.companyName?.trim() || null,
       taxId: input.taxId?.trim() || null,
       phone,
@@ -268,36 +259,15 @@ export async function createInboundLead(input: {
   });
   if (!company) throw new AppError("Workspace not found", "NOT_FOUND", 404);
 
-  const contactName = input.contactName.trim();
+  const contactName = normalizeText(input.contactName);
   if (!contactName) throw new AppError("Name required", "BAD_REQUEST", 400);
 
   const email = input.email?.trim().toLowerCase() || null;
-  const phone = input.phone?.trim() || null;
+  const phone = normalizePhone(input.phone);
 
-  const or: Prisma.LeadWhereInput[] = [];
-  if (email) or.push({ email });
-  if (phone) or.push({ phone: { contains: phone.slice(-9) } });
-
-  const dup =
-    or.length > 0
-      ? await prisma.lead.findFirst({
-          where: {
-            companyId: company.id,
-            status: { in: ["NEW", "CONTACTED", "QUALIFIED"] },
-            OR: or,
-          },
-        })
-      : null;
-  if (dup) {
-    await prisma.lead.update({
-      where: { id: dup.id },
-      data: {
-        notes: [dup.notes, input.message].filter(Boolean).join("\n---\n") || dup.notes,
-        updatedAt: new Date(),
-      },
-    });
-    return { leadId: dup.id, duplicate: true as const };
-  }
+  const dup = await duplicateInScope(company.id, {}, email, phone);
+  // Public submissions never overwrite an existing record's notes.
+  if (dup) return { leadId: dup.id, duplicate: true as const };
 
   const admin = await prisma.membership.findFirst({
     where: { companyId: company.id, role: "ADMIN" },
@@ -330,4 +300,22 @@ export async function createInboundLead(input: {
   });
 
   return { leadId: lead.id, duplicate: false as const };
+}
+
+async function duplicateInScope(companyId: string, scope: Prisma.LeadWhereInput, email: string | null, phone: string | null) {
+  if (!email && !phone) return null;
+  let cursor: string | undefined;
+  while (true) {
+    const rows = await prisma.lead.findMany({
+      where: { AND: [{ companyId, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } }, scope],
+        OR: [...(email ? [{ email }] : []), ...(phone ? [{ phone: { not: null } }] : [])] },
+      include: { owner: { select: { name: true } } },
+      orderBy: { id: "asc" }, take: 200,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    const duplicate = rows.find((row) => (email && row.email?.toLowerCase() === email) || samePhone(phone, row.phone));
+    if (duplicate) return duplicate;
+    if (rows.length < 200) return null;
+    cursor = rows[rows.length - 1].id;
+  }
 }

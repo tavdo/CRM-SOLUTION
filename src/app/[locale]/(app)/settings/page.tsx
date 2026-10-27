@@ -16,6 +16,8 @@ import { can } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
+import { ProviderStatus } from "@/components/ProviderStatus";
+import { billingProvider, emailProvider, smsProvider } from "@/lib/providers";
 import { isLocale } from "@/i18n/config";
 import { redirect } from "next/navigation";
 
@@ -29,11 +31,12 @@ export default async function SettingsPage({
   setRequestLocale(locale);
   const ctx = await requireWorkspace();
   const t = await getTranslations("settings");
+  const exportT = await getTranslations("workspaceExport");
 
   const [members, stages, fields, plans, audit] = await Promise.all([
     prisma.membership.findMany({
       where: { companyId: ctx.company.id },
-      include: { user: true },
+      include: { user: { select: { id: true, name: true, email: true } } },
       orderBy: { createdAt: "asc" },
     }),
     prisma.pipelineStage.findMany({
@@ -45,19 +48,42 @@ export default async function SettingsPage({
       orderBy: { sortOrder: "asc" },
     }),
     prisma.plan.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
-    prisma.auditEvent.findMany({
+    can(ctx.role, "audit.view") ? prisma.auditEvent.findMany({
       where: { companyId: ctx.company.id },
       orderBy: { createdAt: "desc" },
       take: 20,
       include: { actor: { select: { name: true } } },
-    }),
+    }) : Promise.resolve([]),
   ]);
+
+  const usage = can(ctx.role, "company.billing") ? await Promise.all([
+    prisma.customer.count({ where: { companyId: ctx.company.id, archivedAt: null } }),
+    prisma.deal.count({ where: { companyId: ctx.company.id, archivedAt: null } }),
+  ]) : [0, 0];
 
   const isAdmin = can(ctx.role, "company.settings");
 
   return (
     <div style={{ display: "grid", gap: "1.25rem" }}>
       <h1 className="page-title">{t("title")}</h1>
+      <Surface style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+        <ProviderStatus provider={billingProvider()} locale={locale} />
+        <ProviderStatus provider={emailProvider()} locale={locale} />
+        <ProviderStatus provider={smsProvider()} locale={locale} />
+      </Surface>
+
+      {can(ctx.role, "company.export") ? (
+        <Surface style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+          <h2 className="section-title">{exportT("title")}</h2>
+          <p className="muted" style={{ margin: 0 }}>{exportT("body")}</p>
+          <p className="muted" style={{ margin: 0 }}>{exportT("liveRead")}</p>
+          <Alert tone="info">{exportT("notice")}</Alert>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+            <a className="btn btn-primary" href="/api/workspace/export?format=json" download>{exportT("json")}</a>
+            <a className="btn btn-secondary" href="/api/workspace/export?format=csv" download>{exportT("csv")}</a>
+          </div>
+        </Surface>
+      ) : null}
 
       {isAdmin ? (
         <Surface style={{ padding: "1.2rem" }}>
@@ -65,43 +91,43 @@ export default async function SettingsPage({
           <form action={updateCompanyAction} style={{ display: "grid", gap: "0.85rem", maxWidth: 680 }}>
             <input type="hidden" name="locale" value={locale} />
             <div style={{ display: "grid", gridTemplateColumns: "130px 1fr 160px", gap: "0.65rem" }}>
-              <Field label="Legal Form / ფორმა" htmlFor="legalForm">
+              <Field label={t("legalForm")} htmlFor="legalForm">
                 <select id="legalForm" name="legalForm" className="select" defaultValue={ctx.company.legalForm || "შპს"}>
                   <option value="შპს">შპს (LLC)</option>
                   <option value="სს">სს (JSC)</option>
                   <option value="ი/მ">ი/მ (Sole Prop.)</option>
                 </select>
               </Field>
-              <Field label="Company Name / სახელი" htmlFor="name">
+              <Field label={t("companyName")} htmlFor="name">
                 <Input id="name" name="name" defaultValue={ctx.company.name} required />
               </Field>
-              <Field label="ს/კ (9-digit Tax ID)" htmlFor="taxId">
-                <Input id="taxId" name="taxId" defaultValue={ctx.company.taxId ?? "405318921"} />
+              <Field label={t("taxId")} htmlFor="taxId">
+                <Input id="taxId" name="taxId" defaultValue={ctx.company.taxId ?? ""} />
               </Field>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.65rem" }}>
-              <Field label="Bank of Georgia IBAN (BAGAGE22)" htmlFor="bogIban">
-                <Input id="bogIban" name="bogIban" defaultValue={ctx.company.bogIban ?? "GE29BG0000000101904917"} />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: "0.65rem" }}>
+              <Field label={t("bogIban")} htmlFor="bogIban">
+                <Input id="bogIban" name="bogIban" defaultValue={ctx.company.bogIban ?? ""} />
               </Field>
-              <Field label="TBC Bank IBAN (TBCBGE22)" htmlFor="tbcIban">
-                <Input id="tbcIban" name="tbcIban" defaultValue={ctx.company.tbcIban ?? "GE83TB7000000365123456"} />
+              <Field label={t("tbcIban")} htmlFor="tbcIban">
+                <Input id="tbcIban" name="tbcIban" defaultValue={ctx.company.tbcIban ?? ""} />
               </Field>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 160px", gap: "0.65rem" }}>
-              <Field label="Address / მისამართი" htmlFor="address">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))", gap: "0.65rem" }}>
+              <Field label={t("address")} htmlFor="address">
                 <Input id="address" name="address" defaultValue={ctx.company.address ?? ""} />
               </Field>
-              <Field label="Phone / ტელეფონი" htmlFor="phone">
+              <Field label={t("phone")} htmlFor="phone">
                 <Input id="phone" name="phone" defaultValue={ctx.company.phone ?? ""} />
               </Field>
-              <Field label="VAT / დღგ (18%)" htmlFor="isVatPayer">
+              <Field label={t("vat")} htmlFor="isVatPayer">
                 <select id="isVatPayer" name="isVatPayer" className="select" defaultValue={ctx.company.isVatPayer ? "true" : "false"}>
-                  <option value="true">დღგ-ს გადამხდელი (18%)</option>
-                  <option value="false">დღგ-ს გარეშე (0%)</option>
+                  <option value="true">{t("vatYes")}</option>
+                  <option value="false">{t("vatNo")}</option>
                 </select>
               </Field>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 140px", gap: "0.65rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))", gap: "0.65rem" }}>
               <Field label={t("timezone")} htmlFor="timezone">
                 <Input id="timezone" name="timezone" defaultValue={ctx.company.timezone} />
               </Field>
@@ -125,8 +151,8 @@ export default async function SettingsPage({
         <table className="table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Email</th>
+              <th>{t("name")}</th>
+              <th>{t("email")}</th>
               <th>{t("role")}</th>
               {isAdmin ? <th /> : null}
             </tr>
@@ -184,7 +210,7 @@ export default async function SettingsPage({
             </select>
             <Button type="submit">{t("invite")}</Button>
             <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
-              Invitation links are logged to the server console when EMAIL_TRANSPORT=console.
+              {t("invitationDelivery")}
             </p>
           </form>
         ) : null}
@@ -257,7 +283,7 @@ export default async function SettingsPage({
             </select>
             <Input name="options" placeholder={t("fieldOptions")} />
             <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input type="checkbox" name="required" /> Required
+              <input type="checkbox" name="required" /> {t("required")}
             </label>
             <Button type="submit">{t("addField")}</Button>
           </form>
@@ -267,8 +293,7 @@ export default async function SettingsPage({
       {can(ctx.role, "company.billing") ? (
         <Surface style={{ padding: "1.2rem" }}>
           <h2 style={{ marginTop: 0 }}>{t("subscription")}</h2>
-          <Alert tone="info">{t("billingNote")}</Alert>
-          <Badge tone="warn">{t("simulated")}</Badge>
+          <p className="muted">{t("costScope")}</p>
           {ctx.subscription ? (
             <div style={{ marginTop: "1rem" }}>
               <p>
@@ -279,19 +304,21 @@ export default async function SettingsPage({
                 <strong>{t("trialEnds")}:</strong>{" "}
                 {formatDate(ctx.subscription.trialEndsAt, locale, ctx.company.timezone)}
                 <br />
-                <strong>{t("limits")}:</strong> {ctx.subscription.plan.maxUsers} users /{" "}
-                {ctx.subscription.plan.maxCustomers} customers / {ctx.subscription.plan.maxDeals} deals
+                <strong>{t("limits")}:</strong> {ctx.subscription.plan.maxUsers} {t("users")} /{" "}
+                {ctx.subscription.plan.maxCustomers} {t("customers")} / {ctx.subscription.plan.maxDeals} {t("deals")}
+                <br />
+                <strong>{t("usage")}:</strong> {members.length} {t("users")} / {usage[0]} {t("customers")} / {usage[1]} {t("deals")}
               </p>
               <form action={changePlanAction} style={{ display: "grid", gap: "0.75rem", maxWidth: 420 }}>
                 <input type="hidden" name="locale" value={locale} />
                 <select name="planId" className="select" defaultValue={ctx.subscription.planId}>
                   {plans.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} — {formatMoney(p.priceMinor, p.currency, locale)} / {p.interval} (placeholder)
+                      {p.name} — {formatMoney(p.priceMinor, p.currency, locale)} / {p.interval} ({t("examplePrice")})
                     </option>
                   ))}
                 </select>
-                <Button type="submit">Change plan (local only)</Button>
+                <Button type="submit">{t("changePlan")}</Button>
               </form>
             </div>
           ) : null}

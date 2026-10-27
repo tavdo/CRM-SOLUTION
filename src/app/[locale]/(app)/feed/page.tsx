@@ -6,6 +6,7 @@ import { Badge, Button, EmptyState, Field, Input, Surface, Textarea } from "@/co
 import { createFeedPostAction, sendChatMessageAction } from "@/app/actions/crm";
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { prisma } from "@/lib/db";
+import { can, assertChatChannel } from "@/lib/permissions";
 import { formatDateTime } from "@/lib/dates";
 import { isLocale } from "@/i18n/config";
 
@@ -23,6 +24,7 @@ export default async function FeedAndChatPage({
   const ctx = await requireWorkspace();
   const isKa = locale === "ka";
   const activeChannel = sp.channel || "general";
+  assertChatChannel(ctx.role, activeChannel);
 
   const [posts, messages] = await Promise.all([
     prisma.feedPost.findMany({
@@ -44,7 +46,7 @@ export default async function FeedAndChatPage({
     { key: "sales", label: "#sales" },
     { key: "support", label: "#support" },
     { key: "management", label: "#management" },
-  ];
+  ].filter((channel) => channel.key !== "management" || can(ctx.role, "crm.all"));
 
   return (
     <div style={{ display: "grid", gap: "1.35rem" }}>
@@ -53,7 +55,7 @@ export default async function FeedAndChatPage({
           {isKa ? "კომუნიკაცია · კომპანიის სიახლეები და გუნდური ჩატი" : "TEAM COLLABORATION · ACTIVITY STREAM & CHAT"}
         </span>
         <h1 className="page-title" style={{ marginTop: 4 }}>
-          {isKa ? "სიახლეების ლენტა და ჩატი (Bitrix24 Feed & Chat)" : "Company Feed & Team Chat"}
+          {isKa ? "სიახლეების ლენტა და ჩატი" : "Company Feed & Team Chat"}
         </h1>
       </div>
 

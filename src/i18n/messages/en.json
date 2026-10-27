@@ -173,7 +173,30 @@
       "EMPLOYEE": "Employee"
     },
     "lastAdmin": "Cannot remove the last administrator",
-    "audit": "Recent audit events"
+    "audit": "Recent audit events",
+    "legalForm": "Legal form",
+    "companyName": "Company name",
+    "taxId": "Tax ID",
+    "bogIban": "Bank of Georgia IBAN",
+    "tbcIban": "TBC Bank IBAN",
+    "address": "Address",
+    "phone": "Phone",
+    "vat": "VAT registration",
+    "vatYes": "VAT registered",
+    "vatNo": "Not VAT registered",
+    "name": "Name",
+    "email": "Email",
+    "delete": "Delete",
+    "archive": "Archive",
+    "required": "Required",
+    "invitationDelivery": "Invitation delivery depends on the email setup shown above.",
+    "changePlan": "Change demo plan",
+    "examplePrice": "example price",
+    "usage": "Current usage",
+    "users": "users",
+    "customers": "customers",
+    "deals": "deals",
+    "costScope": "Subscription prices are examples. Setup, support, provider charges, and usage fees have not been agreed. No real charge is processed."
   },
   "common": {
     "loading": "Loading…",
@@ -212,5 +235,50 @@
     "finalTitle": "Ready when your next lead arrives",
     "finalBody": "Create a private company workspace in minutes and start the sales workflow today.",
     "footerNote": "CRM Solution — multi-tenant sales CRM"
+  },
+  "providers": {
+    "states": {
+      "unavailable": "Unavailable",
+      "not_configured": "Not configured",
+      "demo": "Demo",
+      "connected": "Connected",
+      "error": "Error"
+    },
+    "labels": {
+      "sms": "SMS",
+      "rsge": "RS.ge",
+      "bank": "Bank details",
+      "billing": "Subscription billing",
+      "email": "Email",
+      "webform": "Website form"
+    },
+    "details": {
+      "smsUnavailable": "SMS delivery is unavailable. Unsupported rules are skipped; no message is delivered.",
+      "rsReference": "Internal reference only. No tax document has been submitted to RS.ge.",
+      "rsUnconfigured": "RS.ge is not connected. References can be saved for internal use.",
+      "bankSaved": "Saved payment instructions only. No bank connection or payment verification.",
+      "bankMissing": "No bank details saved. Bank payments are not connected.",
+      "billingDemo": "Demo billing. Plan changes do not charge money. Displayed prices are examples, not commercial offers.",
+      "billingUnconfigured": "Subscription payments are not connected. No live charges are processed.",
+      "billingUnavailable": "Subscription payment provider is unavailable.",
+      "emailSmtp": "SMTP is configured; inbox delivery has not been verified here.",
+      "emailDemo": "Demo email: messages are logged locally and are not delivered to inboxes.",
+      "webform": "The public website form creates leads in this workspace."
+    }
+  },
+  "invoiceStates": {
+    "DRAFT": "Draft",
+    "QUOTE": "Quote",
+    "SENT": "Marked sent manually",
+    "PAID": "Marked paid manually",
+    "OVERDUE": "Overdue"
+  },
+  "workspaceExport": {
+    "title": "Download workspace data",
+    "body": "Administrator export of CRM records, contact details, notes, member names/emails, and saved bank details. JSON includes stable IDs and relationships; CSV contains customers only. Credentials and authentication tokens are excluded.",
+    "liveRead": "Export reads data in pages while the workspace remains active. Concurrent edits may appear inconsistently; this is not a backup snapshot.",
+    "json": "Download JSON v1",
+    "csv": "Download customers CSV",
+    "notice": "The downloaded file contains personal and financial data. Keep it in a location you control."
   }
 }

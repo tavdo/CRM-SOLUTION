@@ -1,3 +1,4 @@
+import { sessionSecret, canUseDemoLogin } from "@/lib/auth/demo";
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT } from "jose";
 import { prisma } from "@/lib/db";
@@ -7,14 +8,13 @@ const COOKIE = "crm_session";
 const WORKSPACE_COOKIE = "crm_workspace";
 const SESSION_DAYS = 14;
 
-function getJwtSecret(): Uint8Array {
-  const secret =
-    process.env.SESSION_SECRET ||
-    "vercel-owner-demo-session-secret-change-before-live";
-  return new TextEncoder().encode(secret);
-}
+
 
 export async function GET(req: NextRequest) {
+  const requestedEmail = req.nextUrl.searchParams.get("email") || "admin@demo-alpha.local";
+  if (!canUseDemoLogin(requestedEmail)) {
+    return NextResponse.json({ error: "Not available" }, { status: 404 });
+  }
   try {
     await ensureDbInitialized();
 
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
       .setExpirationTime(`${SESSION_DAYS}d`)
-      .sign(getJwtSecret());
+      .sign(sessionSecret());
 
     const expiresAt = new Date(
       Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000,
@@ -74,7 +74,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         error: "Demo login initialization failed",
-        detail: err instanceof Error ? err.message : String(err),
       },
       { status: 500 },
     );
