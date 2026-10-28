@@ -121,7 +121,7 @@ export default async function TasksPage({
             return (
               <section key={col.key} className="pipeline-col" role="listitem">
                 <div className="pipeline-col-header">
-                  <strong style={{ fontSize: "0.88rem", color: "#fff" }}>{col.label}</strong>
+                  <strong style={{ fontSize: "0.88rem", color: "var(--ink)" }}>{col.label}</strong>
                   <Badge tone={col.key === "DONE" ? "ok" : "default"}>
                     {colTasks.length}
                   </Badge>
@@ -151,7 +151,7 @@ export default async function TasksPage({
                         href={`/${locale}/tasks/${task.id}`}
                         style={{ display: "block", marginTop: 8 }}
                       >
-                        <strong style={{ color: "#fff", fontSize: "0.9rem" }}>{task.title}</strong>
+                        <strong style={{ color: "var(--ink)", fontSize: "0.9rem" }}>{task.title}</strong>
                       </Link>
                       {task.deal ? (
                         <div className="muted" style={{ fontSize: "0.76rem", marginTop: 4 }}>
@@ -214,7 +214,7 @@ export default async function TasksPage({
                   <tr key={task.id}>
                     <td>
                       <Link href={`/${locale}/tasks/${task.id}`}>
-                        <strong style={{ color: "#fff" }}>{task.title}</strong>
+                        <strong style={{ color: "var(--ink)" }}>{task.title}</strong>
                       </Link>
                       {task.deal ? (
                         <div className="muted" style={{ fontSize: "0.78rem" }}>

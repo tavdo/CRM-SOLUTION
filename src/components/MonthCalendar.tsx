@@ -67,7 +67,7 @@ export function MonthCalendar({
         >
           <ChevronLeft size={16} />
         </button>
-        <strong style={{ color: "#fff", fontSize: "1.05rem" }}>
+        <strong style={{ color: "var(--ink)", fontSize: "1.05rem" }}>
           {format(cursor, "LLLL yyyy", { locale: dfLocale })}
         </strong>
         <button

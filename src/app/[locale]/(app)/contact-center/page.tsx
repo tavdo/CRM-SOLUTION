@@ -59,11 +59,11 @@ export default async function ContactCenterPage({
               display: "block",
               padding: "0.75rem 0.9rem",
               borderRadius: 10,
-              background: "rgba(0,0,0,0.35)",
+              background: "var(--bg-inset)",
               border: "1px solid var(--line)",
               fontSize: "0.8rem",
               wordBreak: "break-all",
-              color: "#a7f3d0",
+              color: "var(--ok-ink)",
             }}
           >
             {formUrl}
@@ -113,11 +113,11 @@ export default async function ContactCenterPage({
                   padding: "0.65rem 0.75rem",
                   borderRadius: 10,
                   border: "1px solid var(--line)",
-                  background: "rgba(255,255,255,0.02)",
+                  background: "var(--bg-subtle)",
                 }}
               >
                 <div>
-                  <strong style={{ color: "#fff", fontSize: "0.9rem" }}>{l.title}</strong>
+                  <strong style={{ color: "var(--ink)", fontSize: "0.9rem" }}>{l.title}</strong>
                   <div className="muted" style={{ fontSize: "0.76rem" }}>
                     {l.contactName}
                     {l.email ? ` · ${l.email}` : ""}

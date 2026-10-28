@@ -81,7 +81,7 @@ export default async function CustomersPage({
                 <tr key={c.id}>
                   <td>
                     <Link href={`/${locale}/customers/${c.id}`}>
-                      <strong style={{ color: "#fff" }}>
+                      <strong style={{ color: "var(--ink)" }}>
                         {c.legalForm ? `${c.legalForm} ` : ""}
                         {c.name}
                       </strong>

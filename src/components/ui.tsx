@@ -102,18 +102,18 @@ export function Alert({
       ? {
           background: "rgba(244, 63, 94, 0.12)",
           border: "1px solid rgba(244, 63, 94, 0.32)",
-          color: "#fda4af",
+          color: "var(--danger-ink)",
         }
       : tone === "ok"
         ? {
             background: "rgba(16, 185, 129, 0.12)",
             border: "1px solid rgba(16, 185, 129, 0.32)",
-            color: "#6ee7b7",
+            color: "var(--ok-ink)",
           }
         : {
             background: "rgba(56, 189, 248, 0.1)",
             border: "1px solid rgba(56, 189, 248, 0.28)",
-            color: "#bae6fd",
+            color: "var(--info-ink)",
           };
   return (
     <div

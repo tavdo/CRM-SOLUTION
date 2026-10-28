@@ -97,7 +97,7 @@ export default async function InvoicesPage({
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Building2 size={18} color="#10b981" />
           <div>
-            <strong style={{ color: "#fff" }}>
+            <strong style={{ color: "var(--ink)" }}>
               {ctx.company.legalForm} {ctx.company.name}
             </strong>
             <div className="muted" style={{ fontSize: "0.78rem" }}>
@@ -139,7 +139,7 @@ export default async function InvoicesPage({
                 <tr key={inv.id}>
                   <td>
                     <Link href={`/${locale}/invoices/${inv.id}`}>
-                      <strong style={{ color: "#fff" }}>{inv.invoiceNumber}</strong>
+                      <strong style={{ color: "var(--ink)" }}>{inv.invoiceNumber}</strong>
                     </Link>
                   </td>
                   <td>
@@ -330,7 +330,7 @@ export default async function InvoicesPage({
                 style={{
                   padding: "0.65rem 0.8rem",
                   borderRadius: 10,
-                  background: "rgba(255,255,255,0.025)",
+                  background: "var(--bg-subtle)",
                   border: "1px solid var(--line)",
                   display: "flex",
                   justifyContent: "space-between",
@@ -339,7 +339,7 @@ export default async function InvoicesPage({
                 }}
               >
                 <div>
-                  <strong style={{ color: "#fff", fontSize: "0.88rem" }}>{p.name}</strong>
+                  <strong style={{ color: "var(--ink)", fontSize: "0.88rem" }}>{p.name}</strong>
                   <div className="muted" style={{ fontSize: "0.75rem" }}>
                     {p.sku ?? "SKU"} · {p.unit}
                   </div>

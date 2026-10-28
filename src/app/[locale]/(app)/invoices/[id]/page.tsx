@@ -136,7 +136,7 @@ export default async function InvoiceDetailPage({
             <div className="kicker" style={{ marginBottom: 6 }}>
               {isKa ? "მიმწოდებელი (SELLER)" : "SELLER (მიმწოდებელი)"}
             </div>
-            <strong style={{ fontSize: "1rem", color: "#fff" }}>
+            <strong style={{ fontSize: "1rem", color: "var(--ink)" }}>
               {ctx.company.legalForm} {ctx.company.name}
             </strong>
             <div className="muted" style={{ fontSize: "0.84rem", marginTop: 4, lineHeight: 1.6 }}>
@@ -158,7 +158,7 @@ export default async function InvoiceDetailPage({
             <div className="kicker" style={{ marginBottom: 6 }}>
               {isKa ? "მყიდველი (BUYER)" : "BUYER (მყიდველი)"}
             </div>
-            <strong style={{ fontSize: "1rem", color: "#fff" }}>
+            <strong style={{ fontSize: "1rem", color: "var(--ink)" }}>
               {invoice.customer.legalForm ?? "შპს"} {invoice.customer.name}
             </strong>
             <div className="muted" style={{ fontSize: "0.84rem", marginTop: 4, lineHeight: 1.6 }}>
@@ -202,7 +202,7 @@ export default async function InvoiceDetailPage({
               <tr key={item.id}>
                 <td>{idx + 1}</td>
                 <td>
-                  <strong style={{ color: "#fff" }}>{item.description}</strong>
+                  <strong style={{ color: "var(--ink)" }}>{item.description}</strong>
                 </td>
                 <td>{item.quantity}</td>
                 <td className="muted">{item.unit}</td>
@@ -237,7 +237,7 @@ export default async function InvoiceDetailPage({
               minWidth: 260,
               padding: "1rem 1.2rem",
               borderRadius: 12,
-              background: "rgba(255,255,255,0.03)",
+              background: "var(--bg-subtle)",
               border: "1px solid var(--line)",
               display: "grid",
               gap: "0.45rem",

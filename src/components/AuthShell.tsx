@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Surface } from "./ui";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 export function AuthShell({
   title,
@@ -30,13 +31,18 @@ export function AuthShell({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "1rem",
         }}
       >
         <Link href={`/${locale}`} className="app-brand-row" style={{ padding: 0 }}>
           <span className="app-brand-mark">CS</span>
-          <span style={{ fontWeight: 700, color: "#fff" }}>{brand}</span>
+          <span style={{ fontWeight: 700, color: "var(--ink)" }}>{brand}</span>
         </Link>
-        <LanguageSwitcher locale={locale} />
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          <ThemeSwitcher />
+          <LanguageSwitcher locale={locale} />
+        </div>
       </header>
 
       <div style={{ display: "grid", placeItems: "center", padding: "2rem 0" }}>

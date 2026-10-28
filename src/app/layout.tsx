@@ -25,7 +25,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `try{document.documentElement.dataset.theme=localStorage.getItem("crm-theme")==="light"?"light":"dark"}catch{}` }} />
+      </head>
       <body className={`${manrope.variable} ${fraunces.variable} ${notoGeorgian.variable} antialiased`}>
         <AnimatedBackground />
         <div style={{ position: "relative", zIndex: 1 }}>{children}</div>

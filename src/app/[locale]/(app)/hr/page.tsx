@@ -158,7 +158,7 @@ export default async function HrAndWorktimePage({
             {members.map((m) => (
               <tr key={m.id}>
                 <td>
-                  <strong style={{ color: "#fff" }}>{m.user.name}</strong>
+                  <strong style={{ color: "var(--ink)" }}>{m.user.name}</strong>
                 </td>
                 <td>{m.jobTitle ?? "Specialist"}</td>
                 <td className="muted">{m.departmentName ?? "General"}</td>
@@ -195,7 +195,7 @@ export default async function HrAndWorktimePage({
                 style={{
                   padding: "0.65rem 0.8rem",
                   borderRadius: 10,
-                  background: "rgba(255,255,255,0.025)",
+                  background: "var(--bg-subtle)",
                   border: "1px solid var(--line)",
                   display: "flex",
                   justifyContent: "space-between",
@@ -204,7 +204,7 @@ export default async function HrAndWorktimePage({
                 }}
               >
                 <div>
-                  <strong style={{ color: "#fff", fontSize: "0.86rem" }}>{log.user.name}</strong>
+                  <strong style={{ color: "var(--ink)", fontSize: "0.86rem" }}>{log.user.name}</strong>
                   <div className="muted" style={{ fontSize: "0.75rem" }}>
                     In: {formatDateTime(log.clockInAt, locale, ctx.company.timezone)}
                     {log.clockOutAt
@@ -255,7 +255,7 @@ export default async function HrAndWorktimePage({
                 style={{
                   padding: "0.7rem 0.85rem",
                   borderRadius: 10,
-                  background: "rgba(255,255,255,0.025)",
+                  background: "var(--bg-subtle)",
                   border: "1px solid var(--line)",
                   display: "flex",
                   justifyContent: "space-between",
@@ -265,7 +265,7 @@ export default async function HrAndWorktimePage({
                 }}
               >
                 <div>
-                  <strong style={{ color: "#fff", fontSize: "0.86rem" }}>
+                  <strong style={{ color: "var(--ink)", fontSize: "0.86rem" }}>
                     {lr.user.name} · {lr.leaveType}
                   </strong>
                   <div className="muted" style={{ fontSize: "0.75rem" }}>

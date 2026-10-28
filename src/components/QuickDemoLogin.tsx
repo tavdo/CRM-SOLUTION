@@ -126,7 +126,7 @@ export function QuickDemoLogin({
                   <Icon size={15} />
                 </span>
                 <span style={{ display: "grid", lineHeight: 1.2 }}>
-                  <span style={{ fontWeight: 700, fontSize: "0.82rem", color: "#fff" }}>
+                  <span style={{ fontWeight: 700, fontSize: "0.82rem", color: "var(--ink)" }}>
                     {p.title}
                   </span>
                   <span className="muted" style={{ fontSize: "0.7rem" }}>

@@ -113,7 +113,7 @@ export default async function DealsPage({
                 <tr key={d.id}>
                   <td>
                     <Link href={`/${locale}/deals/${d.id}`}>
-                      <strong style={{ color: "#fff" }}>{d.title}</strong>
+                      <strong style={{ color: "var(--ink)" }}>{d.title}</strong>
                     </Link>
                   </td>
                   <td className="muted">{d.customer?.name ?? "—"}</td>

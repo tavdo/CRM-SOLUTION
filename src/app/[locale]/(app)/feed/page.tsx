@@ -135,7 +135,7 @@ export default async function FeedAndChatPage({
                     {formatDateTime(post.createdAt, locale, ctx.company.timezone)}
                   </span>
                 </div>
-                <h3 style={{ margin: "0.6rem 0 0.35rem", fontSize: "1.05rem", color: "#fff" }}>
+                <h3 style={{ margin: "0.6rem 0 0.35rem", fontSize: "1.05rem", color: "var(--ink)" }}>
                   {post.title}
                 </h3>
                 <p style={{ margin: 0, color: "var(--ink-secondary)", whiteSpace: "pre-wrap", fontSize: "0.9rem" }}>
@@ -179,7 +179,7 @@ export default async function FeedAndChatPage({
               alignContent: "start",
               padding: "0.75rem",
               borderRadius: 12,
-              background: "rgba(5, 8, 13, 0.65)",
+              background: "var(--bg-inset)",
               border: "1px solid var(--line)",
             }}
           >
@@ -212,7 +212,7 @@ export default async function FeedAndChatPage({
                         {formatDateTime(m.createdAt, locale, ctx.company.timezone)}
                       </span>
                     </div>
-                    <div style={{ marginTop: 4, fontSize: "0.86rem", color: "#fff" }}>
+                    <div style={{ marginTop: 4, fontSize: "0.86rem", color: "var(--ink)" }}>
                       {m.body}
                     </div>
                   </div>

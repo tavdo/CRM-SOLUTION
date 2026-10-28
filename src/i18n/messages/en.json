@@ -280,5 +280,10 @@
     "json": "Download JSON v1",
     "csv": "Download customers CSV",
     "notice": "The downloaded file contains personal and financial data. Keep it in a location you control."
+  },
+  "theme": {
+    "label": "Color theme",
+    "day": "Day",
+    "night": "Night"
   }
 }

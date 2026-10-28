@@ -80,7 +80,7 @@ export default async function ProductsPage({
                 {products.map((p) => (
                   <tr key={p.id}>
                     <td>
-                      <strong style={{ color: "#fff" }}>{p.name}</strong>
+                      <strong style={{ color: "var(--ink)" }}>{p.name}</strong>
                       {p.description ? (
                         <div className="muted" style={{ fontSize: "0.75rem" }}>
                           {p.description}

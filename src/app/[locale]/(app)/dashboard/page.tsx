@@ -102,7 +102,7 @@ export default async function DashboardPage({
       >
         <Surface className="stat-card">
           <span className="muted" style={{ fontSize: "0.8rem" }}>{t("lostMonth")}</span>
-          <strong style={{ color: "#fda4af" }}>{data.lostThisMonth}</strong>
+          <strong style={{ color: "var(--danger-ink)" }}>{data.lostThisMonth}</strong>
         </Surface>
         <Surface className="stat-card">
           <span className="muted" style={{ fontSize: "0.8rem" }}>{t("winRate")}</span>
@@ -128,7 +128,7 @@ export default async function DashboardPage({
               const max = Math.max(1, ...data.funnel.map((f) => f.count));
               return data.funnel.map((f) => (
                 <div key={f.stageId} className="funnel-row">
-                  <span style={{ fontSize: "0.82rem", color: "#fff" }}>{f.name}</span>
+                  <span style={{ fontSize: "0.82rem", color: "var(--ink)" }}>{f.name}</span>
                   <div className="funnel-track">
                     <div
                       className="funnel-fill"
@@ -218,7 +218,7 @@ export default async function DashboardPage({
                   style={{
                     padding: "0.65rem 0.75rem",
                     borderRadius: 10,
-                    background: "rgba(255,255,255,0.025)",
+                    background: "var(--bg-subtle)",
                     border: "1px solid var(--line)",
                   }}
                 >
@@ -258,7 +258,7 @@ export default async function DashboardPage({
                   style={{
                     padding: "0.65rem 0.75rem",
                     borderRadius: 10,
-                    background: "rgba(255,255,255,0.025)",
+                    background: "var(--bg-subtle)",
                     border: "1px solid var(--line)",
                   }}
                 >

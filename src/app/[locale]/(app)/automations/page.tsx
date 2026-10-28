@@ -92,7 +92,7 @@ export default async function AutomationsPage({
                     </Badge>
                     <Badge tone="warn">{isSupportedAutomationAction(r.actionType) ? r.actionType : (isKa ? "მოქმედება მიუწვდომელია" : "Action unavailable")}</Badge>
                   </div>
-                  <h2 style={{ margin: "0.55rem 0 0.25rem", fontSize: "1rem", color: "#fff" }}>
+                  <h2 style={{ margin: "0.55rem 0 0.25rem", fontSize: "1rem", color: "var(--ink)" }}>
                     {r.name}
                   </h2>
                   <div className="muted" style={{ fontSize: "0.84rem" }}>

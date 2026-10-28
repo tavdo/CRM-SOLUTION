@@ -105,7 +105,7 @@ export default async function LeadsPage({
             background: "rgba(245, 158, 11, 0.08)",
           }}
         >
-          <strong style={{ color: "#fcd34d" }}>
+          <strong style={{ color: "var(--warn-ink)" }}>
             {isKa ? "შესაძლო დუბლიკატი" : "Possible duplicate"}
           </strong>
           <p className="muted" style={{ margin: "0.35rem 0 0.65rem", fontSize: "0.85rem" }}>
@@ -168,7 +168,7 @@ export default async function LeadsPage({
                         <Badge>ს/კ: {lead.taxId}</Badge>
                       ) : null}
                     </div>
-                    <h2 style={{ margin: "0.55rem 0 0.2rem", fontSize: "1.02rem", color: "#fff" }}>
+                    <h2 style={{ margin: "0.55rem 0 0.2rem", fontSize: "1.02rem", color: "var(--ink)" }}>
                       {lead.title}
                     </h2>
                     <div className="muted" style={{ fontSize: "0.84rem" }}>
@@ -195,7 +195,7 @@ export default async function LeadsPage({
                     style={{
                       margin: "0.7rem 0 0",
                       padding: "0.55rem 0.75rem",
-                      background: "rgba(255,255,255,0.025)",
+                      background: "var(--bg-subtle)",
                       borderRadius: 9,
                       border: "1px solid var(--line)",
                       fontSize: "0.83rem",

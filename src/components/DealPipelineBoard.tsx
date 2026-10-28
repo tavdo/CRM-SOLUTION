@@ -62,7 +62,7 @@ export function DealPipelineBoard({
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
       {error ? (
-        <div className="muted" style={{ color: "#fecdd3", fontSize: "0.85rem" }}>
+        <div className="muted" style={{ color: "var(--danger-ink)", fontSize: "0.85rem" }}>
           {error}
         </div>
       ) : null}
@@ -92,7 +92,7 @@ export function DealPipelineBoard({
           >
             <div className="pipeline-col-header">
               <div>
-                <strong style={{ fontSize: "0.88rem", color: "#fff" }}>{stage.name}</strong>
+                <strong style={{ fontSize: "0.88rem", color: "var(--ink)" }}>{stage.name}</strong>
                 {stage.totalLabel ? (
                   <div className="muted" style={{ fontSize: "0.72rem", marginTop: 2 }}>
                     {stage.totalLabel}
@@ -124,7 +124,7 @@ export function DealPipelineBoard({
                   }}
                 >
                   <Link href={`/${locale}/deals/${d.id}`}>
-                    <strong style={{ color: "#fff", fontSize: "0.9rem" }}>{d.title}</strong>
+                    <strong style={{ color: "var(--ink)", fontSize: "0.9rem" }}>{d.title}</strong>
                   </Link>
                 </div>
                 <div

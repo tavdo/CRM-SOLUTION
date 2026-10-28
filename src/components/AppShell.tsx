@@ -27,6 +27,7 @@ import {
 import { signOutAction, switchWorkspaceAction } from "@/app/actions/auth";
 import { toggleWorkClockAction } from "@/app/actions/crm";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 type Workspace = { id: string; name: string };
 type NavLabels = {
@@ -105,7 +106,7 @@ export function AppShell({
         <Link href={`/${locale}/dashboard`} className="app-brand-row">
           <span className="app-brand-mark">CS</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#fff", lineHeight: 1.15 }}>
+            <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--ink)", lineHeight: 1.15 }}>
               {brand}
             </div>
             <div className="muted" style={{ fontSize: "0.72rem" }}>
@@ -192,7 +193,7 @@ export function AppShell({
                 style={{
                   fontSize: "0.82rem",
                   fontWeight: 600,
-                  color: "#fff",
+                  color: "var(--ink)",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -244,6 +245,7 @@ export function AppShell({
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", flexWrap: "wrap" }}>
+            <ThemeSwitcher />
             {/* Workday clock */}
             <form action={toggleWorkClockAction}>
               <input type="hidden" name="locale" value={locale} />
@@ -259,7 +261,7 @@ export function AppShell({
                 {isClockedIn ? (
                   <>
                     <Square size={12} color="#10b981" fill="#10b981" />
-                    <span style={{ color: "#6ee7b7" }}>{labels.clockOut}</span>
+                    <span style={{ color: "var(--ok-ink)" }}>{labels.clockOut}</span>
                   </>
                 ) : (
                   <>

@@ -16,7 +16,7 @@ export async function ProviderStatus({
   return (
     <div style={{ display: "grid", gap: 4 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        <strong style={{ fontSize: "0.85rem", color: "#fff" }}>{t(`labels.${provider.id}`)}</strong>
+        <strong style={{ fontSize: "0.85rem", color: "var(--ink)" }}>{t(`labels.${provider.id}`)}</strong>
         <Badge tone={providerTone(provider.state)}>
           {t(`states.${provider.state}`)}
         </Badge>
