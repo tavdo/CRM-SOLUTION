@@ -78,6 +78,7 @@ export function DealPipelineBoard({
             className={`pipeline-col${overStageId === stage.id ? " pipeline-col-over" : ""}`}
             aria-label={stage.name}
             role="listitem"
+            data-outcome={stage.isWon ? "won" : stage.isLost ? "lost" : "open"}
             onDragOver={(e) => {
               e.preventDefault();
               setOverStageId(stage.id);
@@ -103,6 +104,8 @@ export function DealPipelineBoard({
                 {stage.deals.length}
               </Badge>
             </div>
+
+            {stage.deals.length === 0 ? <div className="pipeline-empty">{locale === "ka" ? "გარიგებები ჯერ არ არის" : "No deals yet"}</div> : null}
 
             {stage.deals.map((d) => (
               <div

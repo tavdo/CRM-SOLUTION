@@ -1,16 +1,37 @@
 {
+  "workspaceUi": {
+    "workspaceSettings": "Workspace settings", "companySettings": "Company profile", "pipelineSettings": "Sales pipeline settings",
+    "noResults": "No deals match your filters.",
+    "overview": "Workspace overview", "overviewIntro": "Hello, {name}. Here is what is happening in your workspace.",
+    "activeDeals": "Active deals", "openDealsNote": "Open deals in your pipeline", "pipelineValue": "Pipeline value",
+    "currencyNote": "Open deals · totals per currency", "newLeads": "New leads", "leadsNote": "Waiting for a first response",
+    "openTasks": "Open tasks", "overdueCount": "{count} overdue", "salesPipeline": "Sales pipeline", "viewAll": "View all",
+    "won": "Won", "lost": "Lost", "winRate": "Win rate", "recentDeals": "Recent deals", "dealName": "Deal",
+    "amount": "Amount", "status": "Status", "recentCustomers": "Recent customers", "addedOn": "Added on",
+    "taskAgenda": "Task agenda", "noDueDate": "No due date", "leadSources": "Lead sources", "quickActions": "Quick actions",
+    "create": "Create", "createDeal": "Create deal", "createCustomer": "Add customer", "createTask": "Create task",
+    "createProject": "Create project", "invite": "Invite users", "scopeNote": "Only records you have access to are included. Sales totals cover all time; currencies are kept separate.",
+    "emptyPipeline": "Create pipeline stages in Settings to get started.", "emptyDeals": "Your deals will appear here.",
+    "emptyCustomers": "Add your first customer to get started.", "emptyTasks": "No open tasks. You are all caught up.",
+    "emptyLeads": "Your lead sources will appear here.", "toggleMenu": "Collapse or expand the sidebar", "closeMenu": "Close menu",
+    "moduleNavigation": "Module navigation", "quickAccess": "Quick access", "searchDeals": "Search deals", "search": "Search",
+    "searchPlaceholder": "Filter and search deals", "closeSearch": "Close search", "skipToContent": "Skip to content",
+    "allStages": "All stages", "allStatuses": "All statuses", "filter": "Filter", "clear": "Clear", "clearFilters": "Clear filters",
+    "viewMode": "View mode", "resultCount": "{count} deals", "dealStatus": { "OPEN": "In progress", "WON": "Won", "LOST": "Lost" },
+    "sources": { "FACEBOOK": "Facebook", "INSTAGRAM": "Instagram", "WHATSAPP": "WhatsApp", "WEBSITE": "Website", "MYPHONE": "Phone", "REFERRAL": "Referral", "OTHER": "Other" }
+  },
   "brand": {
     "name": "CRM Solution",
-    "tagline": "Construction workspace for contractors"
+    "tagline": "Your customers, sales and teamwork in one workspace"
   },
   "nav": {
     "dashboard": "Dashboard",
-    "leads": "Incoming requests",
+    "leads": "Leads",
     "customers": "Clients",
-    "deals": "Visits & offers",
+    "deals": "Deals",
     "invoices": "Invoices & Quotes",
-    "products": "Materials & services",
-    "tasks": "Work & tasks",
+    "products": "Products & services",
+    "tasks": "Tasks",
     "calendar": "Calendar",
     "contactCenter": "Web Form",
     "automations": "Automations",
@@ -96,7 +117,7 @@
     "customFields": "Custom fields"
   },
   "deals": {
-    "title": "Visits, offers & agreements",
+    "title": "Deals",
     "list": "List view",
     "board": "Board view",
     "new": "New opportunity",

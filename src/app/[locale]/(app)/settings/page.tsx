@@ -87,7 +87,7 @@ export default async function SettingsPage({
 
       {isAdmin ? (
         <Surface style={{ padding: "1.2rem" }}>
-          <h2 style={{ marginTop: 0 }}>{t("company")}</h2>
+          <h2 id="company" style={{ marginTop: 0, scrollMarginTop: 90 }}>{t("company")}</h2>
           <form action={updateCompanyAction} style={{ display: "grid", gap: "0.85rem", maxWidth: 680 }}>
             <input type="hidden" name="locale" value={locale} />
             <div style={{ display: "grid", gridTemplateColumns: "130px 1fr 160px", gap: "0.65rem" }}>
@@ -147,7 +147,7 @@ export default async function SettingsPage({
       ) : null}
 
       <Surface style={{ padding: "1.2rem" }}>
-        <h2 style={{ marginTop: 0 }}>{t("members")}</h2>
+        <h2 id="members" style={{ marginTop: 0, scrollMarginTop: 90 }}>{t("members")}</h2>
         <table className="table">
           <thead>
             <tr>
@@ -218,7 +218,7 @@ export default async function SettingsPage({
 
       {can(ctx.role, "company.pipeline") ? (
         <Surface style={{ padding: "1.2rem" }}>
-          <h2 style={{ marginTop: 0 }}>{t("pipeline")}</h2>
+          <h2 id="pipeline" style={{ marginTop: 0, scrollMarginTop: 90 }}>{t("pipeline")}</h2>
           <ul style={{ listStyle: "none", padding: 0 }}>
             {stages.map((s) => (
               <li key={s.id} style={{ padding: "0.45rem 0", borderBottom: "1px solid var(--line)", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>

@@ -26,12 +26,18 @@ describe("honest provider states", () => {
 describe("demo authentication gate", () => {
   it("allows only fixed development demo identities", () => {
     vi.stubEnv("NODE_ENV", "development");
-    expect(canUseDemoLogin("admin@demo-alpha.local")).toBe(true);
+    expect(canUseDemoLogin("admin@crm.local")).toBe(true);
+    expect(canUseDemoLogin("manager@crm.local")).toBe(true);
+    expect(canUseDemoLogin("user@crm.local")).toBe(true);
+    expect(canUseDemoLogin("admin@demo-alpha.local")).toBe(false);
+    expect(canUseDemoLogin("admin@demo-beta.local")).toBe(false);
     expect(canUseDemoLogin("real-customer@example.com")).toBe(false);
   });
   it("rejects production demo requests before database access", async () => {
     vi.stubEnv("NODE_ENV", "production");
     expect(canUseDemoLogin("admin@demo-alpha.local")).toBe(false);
+    expect(canUseDemoLogin("admin@crm.local")).toBe(false);
+    expect((await demoLogin(new NextRequest("http://localhost/api/demo-login?email=admin@crm.local"))).status).toBe(404);
     expect((await demoLogin(new NextRequest("http://localhost/api/demo-login?email=admin@demo-alpha.local"))).status).toBe(404);
   });
   it("rejects an arbitrary account in development", async () => {

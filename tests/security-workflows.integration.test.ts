@@ -33,6 +33,7 @@ import { getInvoice, listInvoices, createInvoice, updateInvoiceStatus, convertQu
 import { findDuplicateLead, listLeads, createLead, convertLead } from "../src/lib/services/leads";
 import { registerCompany } from "../src/lib/services/onboarding";
 import { getDashboard } from "../src/lib/services/dashboard";
+import { getCrmOverview } from "../src/lib/services/crm-overview";
 import { createAutomationRuleAction, toggleAutomationRuleAction, updateCustomerAction, moveTaskStageAction } from "../src/app/actions/crm";
 import { exportWorkspace } from "../src/lib/services/export";
 import { GET as downloadExport } from "../src/app/api/workspace/export/route";
@@ -116,6 +117,35 @@ describe("authorized CRM workflows with an isolated migrated database", () => {
     expect((await listLeads(employee, { source: "WEBSITE", take: 8 })).map((l) => l.id)).toEqual(["lead-own"]);
     expect((await listInvoices(employee)).map((i) => i.id)).toEqual(["invoice-own"]);
     expect(await findDuplicateLead(employee, { email: "restricted@test.local" })).toBeNull();
+  });
+
+  it("scopes overview totals and every preview list to the active tenant and owner", async () => {
+    await prisma.deal.update({ where: { id: "deal-own" }, data: { amountMinor: 12345, currency: "GEL" } });
+    await prisma.deal.update({ where: { id: "deal-restricted" }, data: { amountMinor: 98765, currency: "USD" } });
+    const overview = await getCrmOverview(employee);
+    expect(overview.activeDeals).toBe(1);
+    expect(overview.pipelineValue).toEqual({ GEL: 12345 });
+    expect(overview.newLeads).toBe(1);
+    expect(overview.totalLeads).toBe(1);
+    expect(overview.openTasks).toBe(1);
+    expect(overview.overdueTasks).toBe(1);
+    expect(overview.recentDeals.map((deal) => deal.id)).toEqual(["deal-own"]);
+    expect(overview.recentCustomers.map((customer) => customer.id)).toEqual(["own"]);
+    expect(overview.upcomingTasks.map((task) => task.id)).toEqual(["task-own"]);
+    expect(overview.stages.reduce((sum, stage) => sum + stage.count, 0)).toBe(1);
+    expect(overview.winRate).toBeNull();
+    const adminOverview = await getCrmOverview(admin);
+    expect(adminOverview.activeDeals).toBe(2);
+    expect(adminOverview.pipelineValue).toEqual({ GEL: 12345, USD: 98765 });
+    expect(adminOverview.recentDeals.map((deal) => deal.id)).not.toContain("deal-foreign");
+  });
+
+  it("combines sales search, stage and status filters without widening access", async () => {
+    expect((await listDeals(employee, { q: "own", status: "OPEN", stageId: "stage-own" })).map((deal) => deal.id)).toEqual(["deal-own"]);
+    expect(await listDeals(employee, { q: "restricted" })).toEqual([]);
+    expect(await listDeals(employee, { stageId: "stage-foreign" })).toEqual([]);
+    expect(await listDeals(employee, { status: "WON" })).toEqual([]);
+    expect((await listDeals(admin, { q: "restricted", stageId: "stage-restricted" })).map((deal) => deal.id)).toEqual(["deal-restricted"]);
   });
 
   it("rejects forged links before creating or updating records", async () => {

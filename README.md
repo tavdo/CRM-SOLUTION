@@ -1,6 +1,6 @@
 # CRM Solution
 
-Georgian/English workspace for construction contractors: inquiries, visits and offers, projects, versioned estimates, planned/actual budgets, site reports, materials, purchasing, subcontractors, acceptance acts and manual payments.
+Georgian/English CRM workspace with a Bitrix24-inspired dashboard: leads, customers, deals, invoices, tasks, calendar and workspace permissions. Specialist construction workflows remain available through Projects.
 
 See [the contractor implementation and migration guide](docs/CONTRACTOR_IMPLEMENTATION.md) for supported workflows, verification and hosting limitations.
 
@@ -22,18 +22,17 @@ npm run dev
 
 Open [http://localhost:3000/en](http://localhost:3000/en).
 
-### Demo accounts (local seed only)
+### Workspace accounts
 
 | Workspace | Role | Email | Password |
 |---|---|---|---|
-| Demo Alpha | Admin | `admin@demo-alpha.local` | `Password123!` |
-| Demo Alpha | Manager | `manager@demo-alpha.local` | `Password123!` |
-| Demo Alpha | Employee | `employee@demo-alpha.local` | `Password123!` |
-| დემო ბეტა | Admin | `admin@demo-beta.local` | `Password123!` |
-| დემო ბეტა | Manager | `manager@demo-beta.local` | `Password123!` |
-| დემო ბეტა | Employee | `employee@demo-beta.local` | `Password123!` |
+| CRM Workspace | Admin | `admin@crm.local` | `Password123!` |
+| CRM Workspace | Manager | `manager@crm.local` | `Password123!` |
+| CRM Workspace | User | `user@crm.local` | `Password123!` |
 
-Seed records are labeled **DEMO** / **DEMO-ALPHA** / **DEMO-BETA**. Seeding is additive: existing records are preserved. Four contractor projects are added only to the two known demo tenants.
+The bundled workspace contains exactly one account per role and no sample customers, leads, deals, products, invoices or projects. The starter credentials above are for this shared evaluation workspace. Regular password sign-in works; one-click access stays disabled in production.
+
+Seeding adds missing initial accounts without overwriting changed passwords, roles or existing CRM data. The legacy Alpha/Beta seed has been removed. `npm run db:clean-demo` is an explicit one-time cleanup of the two exact legacy tenants and their six accounts; it requires an explicitly supplied SQLite `DATABASE_URL`, checks dependencies, removes associated local document files and preserves unrelated workspaces. It is never run during request initialization.
 
 For an existing database, back it up and run `npm run db:deploy` before starting this version. Never use a reset to install this change.
 
@@ -48,7 +47,7 @@ For an existing database, back it up and run `npm run db:deploy` before starting
 | `SMTP_*` | SMTP settings when not using console |
 | `BILLING_PROVIDER` | `dev` (default). Stripe not activated |
 | `BILLING_WEBHOOK_SECRET` | HMAC secret for `/api/billing/webhook` |
-| `SEED_DEMO_DATA` | `true` to allow demo seed |
+| `SEED_DEMO_DATA` | `true` to allow the three-account workspace bootstrap; no sample CRM data is generated |
 
 ## Scripts
 
@@ -60,7 +59,8 @@ For an existing database, back it up and run `npm run db:deploy` before starting
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript check |
 | `npm test` | Vitest unit/integration tests |
-| `npm run db:seed` | Seed plans + two demo companies |
+| `npm run db:seed` | Prepare one empty workspace and three role accounts |
+| `npm run db:clean-demo` | Explicitly remove legacy Alpha/Beta demo tenants from a specified SQLite database |
 | `npm run setup` | Migrate + seed |
 
 ## Core workflow (admin walkthrough)
@@ -98,7 +98,7 @@ npm test
 npm run build
 ```
 
-Tenant isolation: after seeding two companies, signed-in Alpha users must not read Beta record IDs (services return 404/403). Dev helper: `POST /api/dev/isolation-check` with `{ "customerId": "<beta-id>" }` (disabled in production).
+Tenant isolation is verified with temporary test workspaces: users cannot read another workspace's record IDs (services return 404/403). Run `node scripts/isolation-smoke.mjs`; it does not depend on seeded CRM records. The development-only `POST /api/dev/isolation-check` helper remains disabled in production.
 
 ## Deployment notes
 

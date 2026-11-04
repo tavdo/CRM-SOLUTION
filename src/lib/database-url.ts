@@ -8,7 +8,7 @@ export function resolveDatabaseUrl({ env = process.env, root = process.cwd(), te
 } = {}): string {
   const configured = env.DATABASE_URL;
   if (env.VERCEL && (!configured || configured.startsWith("file:"))) {
-    const runtime = path.join(temporaryDirectory, "crm-demo-contractor-v1.db");
+    const runtime = path.join(temporaryDirectory, "crm-workspace-v2.db");
     if (!existsSync(runtime)) {
       const artifact = path.join(root, "prisma", "deployment-demo.db");
       if (!existsSync(artifact)) {

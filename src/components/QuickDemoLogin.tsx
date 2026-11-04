@@ -1,4 +1,4 @@
-import { Zap, Shield, Briefcase, UserCheck, Globe2, ArrowUpRight } from "lucide-react";
+import { Zap, Shield, Briefcase, UserCheck, ArrowUpRight } from "lucide-react";
 
 export function QuickDemoLogin({
   locale,
@@ -12,23 +12,15 @@ export function QuickDemoLogin({
 
   const personas = [
     {
-      email: "admin@demo-alpha.local",
-      targetLocale: "en",
-      title: isKa ? "Alpha ადმინი (EN)" : "Alpha Admin (EN)",
-      sub: isKa ? "სრული მართვა · 5 გარიგება" : "Full workspace · 5 deals",
+      email: "admin@crm.local",
+      targetLocale: locale,
+      title: isKa ? "ადმინისტრატორი" : "Administrator",
+      sub: isKa ? "სივრცისა და მომხმარებლების მართვა" : "Workspace and member management",
       icon: Shield,
       primary: true,
     },
     {
-      email: "admin@demo-beta.local",
-      targetLocale: "ka",
-      title: isKa ? "ბეტა ადმინი (ქარ)" : "Beta Admin (ქარ)",
-      sub: isKa ? "ქართული სამუშაო სივრცე" : "Georgian workspace",
-      icon: Globe2,
-      primary: false,
-    },
-    {
-      email: "manager@demo-alpha.local",
+      email: "manager@crm.local",
       targetLocale: locale,
       title: isKa ? "გაყიდვების მენეჯერი" : "Sales Manager",
       sub: isKa ? "მთელი მილი და დავალებები" : "All CRM & pipeline",
@@ -36,9 +28,9 @@ export function QuickDemoLogin({
       primary: false,
     },
     {
-      email: "employee@demo-alpha.local",
+      email: "user@crm.local",
       targetLocale: locale,
-      title: isKa ? "თანამშრომელი" : "Sales Rep (Employee)",
+      title: isKa ? "მომხმარებელი" : "User",
       sub: isKa ? "მხოლოდ საკუთარი ჩანაწერები" : "Own assigned records only",
       icon: UserCheck,
       primary: false,

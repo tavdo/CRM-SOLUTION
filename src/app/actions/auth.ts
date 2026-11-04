@@ -171,7 +171,7 @@ export async function setLocalePreferenceAction(locale: "en" | "ka") {
 }
 
 export async function demoLoginAction(formData: FormData) {
-  const email = formString(formData, "email") || "admin@demo-alpha.local";
+  const email = formString(formData, "email") || "admin@crm.local";
   const locale = formString(formData, "locale") === "ka" ? "ka" : "en";
   if (!canUseDemoLogin(email)) throw new Error("Not available");
 

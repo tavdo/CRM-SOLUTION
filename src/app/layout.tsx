@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Fraunces, Noto_Sans_Georgian } from "next/font/google";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import "./globals.css";
+import "./crm-workspace.css";
 
 const manrope = Manrope({
   variable: "--font-manrope",

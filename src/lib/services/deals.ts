@@ -17,13 +17,15 @@ function ownerFilter(ctx: WorkspaceContext): Prisma.DealWhereInput {
 
 export async function listDeals(
   ctx: WorkspaceContext,
-  opts: { status?: DealStatus; archived?: boolean } = {},
+  opts: { status?: DealStatus; archived?: boolean; q?: string; stageId?: string } = {},
 ) {
   const records = await prisma.deal.findMany({
     where: {
       companyId: ctx.company.id,
       archivedAt: opts.archived ? { not: null } : null,
       status: opts.status,
+      ...(opts.q?.trim() ? { title: { contains: opts.q.trim().slice(0, 120) } } : {}),
+      ...(opts.stageId ? { stageId: opts.stageId } : {}),
       ...ownerFilter(ctx),
     },
     include: {

@@ -52,6 +52,7 @@ export default async function AppLayout({
       newLeadsCount={newLeadsCount}
       canManageAutomations={can(ctx.role, "company.automations")}
       canManageConstruction={can(ctx.role, "construction.manage")}
+      canManageMembers={can(ctx.role, "company.members")}
       workspaces={memberships.map((m) => ({ id: m.companyId, name: m.company.name }))}
       labels={{
         projects: t("projects"),

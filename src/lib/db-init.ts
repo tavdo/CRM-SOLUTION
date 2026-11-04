@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import { ensureDemoData } from "./demo-seed";
+import { ensureWorkspaceAccounts } from "./workspace-seed";
 
 const SCHEMA_STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS "User" (
@@ -458,7 +458,7 @@ export async function ensureDbInitialized(): Promise<void> {
         }
       }
       if (process.env.SEED_DEMO_DATA !== "false") {
-        await ensureDemoData(prisma);
+        await ensureWorkspaceAccounts(prisma);
       }
     } catch (err) {
       initPromise = null;

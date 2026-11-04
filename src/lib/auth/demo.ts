@@ -1,6 +1,5 @@
 const DEMO_EMAILS = new Set([
-  "admin@demo-alpha.local", "admin@demo-beta.local",
-  "manager@demo-alpha.local", "employee@demo-alpha.local",
+  "admin@crm.local", "manager@crm.local", "user@crm.local",
 ]);
 
 export function canUseDemoLogin(email: string): boolean {

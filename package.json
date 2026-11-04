@@ -14,6 +14,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "db:clean-demo": "tsx scripts/clean-legacy-demo.ts --remove-alpha-beta",
     "db:reset": "prisma migrate reset --force",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate || echo [warn] prisma generate skipped — stop running Node servers and run: npx prisma generate",

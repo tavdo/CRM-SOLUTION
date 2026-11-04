@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { ensureDemoData } from "../src/lib/demo-seed";
+import { ensureWorkspaceAccounts } from "../src/lib/workspace-seed";
 
 const prisma = new PrismaClient();
 
@@ -9,12 +9,8 @@ async function main() {
     return;
   }
 
-  // Add missing demo records; existing workspaces and users are preserved.
-  await ensureDemoData(prisma);
-
-  console.log("\n[DEMO-ALPHA] admin@demo-alpha.local / Password123!");
-  console.log("[DEMO-BETA]  admin@demo-beta.local  / Password123!");
-  console.log("Seed complete. Credentials are local-only demo accounts.");
+  await ensureWorkspaceAccounts(prisma);
+  console.log("Workspace prepared with one administrator, one manager and one user. No sample records added.");
 }
 
 main()

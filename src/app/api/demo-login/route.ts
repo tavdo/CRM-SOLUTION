@@ -11,7 +11,7 @@ const SESSION_DAYS = 14;
 
 
 export async function GET(req: NextRequest) {
-  const requestedEmail = req.nextUrl.searchParams.get("email") || "admin@demo-alpha.local";
+  const requestedEmail = req.nextUrl.searchParams.get("email") || "admin@crm.local";
   if (!canUseDemoLogin(requestedEmail)) {
     return NextResponse.json({ error: "Not available" }, { status: 404 });
   }
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     await ensureDbInitialized();
 
     const email =
-      req.nextUrl.searchParams.get("email") || "admin@demo-alpha.local";
+      req.nextUrl.searchParams.get("email") || "admin@crm.local";
     const localeParam = req.nextUrl.searchParams.get("locale");
     const locale = localeParam === "ka" ? "ka" : "en";
 

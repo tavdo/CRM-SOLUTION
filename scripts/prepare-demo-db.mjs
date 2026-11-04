@@ -20,7 +20,7 @@ export function prepareDemoDatabase({ root = process.cwd(), seedDemo = false } =
   const env = { ...process.env, DATABASE_URL: `file:${artifact.replaceAll("\\", "/")}`, SEED_DEMO_DATA: "false" };
   execFileSync(process.execPath, [require.resolve("prisma/build/index.js"), "migrate", "deploy"], { cwd: root, env, stdio: "inherit" });
   if (seedDemo) {
-    execFileSync(process.execPath, [require.resolve("tsx/cli"), path.join(fileURLToPath(new URL(".", import.meta.url)), "seed-construction-demo.ts")], { cwd: root, env, stdio: "inherit" });
+    execFileSync(process.execPath, [require.resolve("tsx/cli"), path.join(fileURLToPath(new URL(".", import.meta.url)), "clean-legacy-demo.ts"), "--remove-alpha-beta"], { cwd: root, env, stdio: "inherit" });
   }
   return artifact;
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { LayoutGrid, List, Plus } from "lucide-react";
+import { LayoutGrid, List, Plus, Search, X } from "lucide-react";
 import { Badge, EmptyState, Surface } from "@/components/ui";
 import { DealPipelineBoard } from "@/components/DealPipelineBoard";
 import { requireWorkspace } from "@/lib/auth/workspace";
@@ -14,16 +14,27 @@ export default async function DealsPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; q?: string; status?: string; stage?: string }>;
 }) {
   const { locale } = await params;
   const sp = await searchParams;
   if (!isLocale(locale)) redirect("/en");
   setRequestLocale(locale);
   const ctx = await requireWorkspace();
-  const [stages, deals] = await Promise.all([listStages(ctx), listDeals(ctx)]);
+  const status = sp.status === "OPEN" || sp.status === "WON" || sp.status === "LOST" ? sp.status : undefined;
+  const query = typeof sp.q === "string" ? sp.q.slice(0, 120) : "";
+  const stageId = typeof sp.stage === "string" ? sp.stage.slice(0, 100) : undefined;
+  const [stages, deals] = await Promise.all([listStages(ctx), listDeals(ctx, { status, q: query, stageId })]);
   const t = await getTranslations("deals");
+  const ui = await getTranslations("workspaceUi");
   const view = sp.view === "list" ? "list" : "board";
+  const viewHref = (next: string) => {
+    const queryParams = new URLSearchParams({ view: next });
+    if (query) queryParams.set("q", query);
+    if (status) queryParams.set("status", status);
+    if (stageId) queryParams.set("stage", stageId);
+    return `/${locale}/deals?${queryParams.toString()}`;
+  };
 
   const orderedStages = stages
     .filter((s) => !s.isWon && !s.isLost)
@@ -54,46 +65,33 @@ export default async function DealsPage({
 
   return (
     <div style={{ display: "grid", gap: "1.2rem" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "1rem",
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <span className="kicker">{ctx.company.name}</span>
-          <h1 className="page-title" style={{ marginTop: 2 }}>
-            {t("title")}
-          </h1>
+      <div>
+        <div className="sales-toolbar">
+          <h1 className="page-title">{t("title")}</h1>
+          <Link href={`/${locale}/deals/new`} className="btn btn-primary"><Plus size={17} />{ui("create")}</Link>
+          <form className="sales-filter" action={`/${locale}/deals`}>
+            <input type="hidden" name="view" value={view} />
+            <label htmlFor="deal-query" className="sr-only">{ui("searchDeals")}</label>
+            <input id="deal-query" className="input" name="q" maxLength={120} defaultValue={query} placeholder={ui("searchPlaceholder")} />
+            <label htmlFor="deal-stage" className="sr-only">{t("stage")}</label>
+            <select id="deal-stage" className="select" name="stage" defaultValue={stageId || ""}>
+              <option value="">{ui("allStages")}</option>{stages.map((stage) => <option key={stage.id} value={stage.id}>{stage.name}</option>)}
+            </select>
+            <label htmlFor="deal-status" className="sr-only">{t("status")}</label>
+            <select id="deal-status" className="select" name="status" defaultValue={status || ""}><option value="">{ui("allStatuses")}</option>{["OPEN", "WON", "LOST"].map((value) => <option key={value} value={value}>{ui(`dealStatus.${value}`)}</option>)}</select>
+            <button className="btn btn-primary" type="submit"><Search size={15} />{ui("filter")}</button>
+            {(query || status || stageId) && <Link className="btn btn-secondary" href={`/${locale}/deals?view=${view}`} aria-label={ui("clearFilters")}><X size={16} />{ui("clear")}</Link>}
+          </form>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <Link
-            href={`/${locale}/deals?view=board`}
-            className={`btn ${view === "board" ? "btn-primary" : "btn-secondary"}`}
-          >
-            <LayoutGrid size={15} />
-            <span>{t("board")}</span>
-          </Link>
-          <Link
-            href={`/${locale}/deals?view=list`}
-            className={`btn ${view === "list" ? "btn-primary" : "btn-secondary"}`}
-          >
-            <List size={15} />
-            <span>{t("list")}</span>
-          </Link>
-          <Link href={`/${locale}/deals/new`} className="btn btn-primary">
-            <Plus size={15} />
-            <span>{t("new")}</span>
-          </Link>
-        </div>
+        <div className="workspace-viewbar"><nav className="workspace-view-tabs" aria-label={ui("viewMode")}>
+          <Link href={viewHref("board")} aria-current={view === "board" ? "page" : undefined}><LayoutGrid size={14} />{t("board")}</Link>
+          <Link href={viewHref("list")} aria-current={view === "list" ? "page" : undefined}><List size={14} />{t("list")}</Link>
+        </nav><span className="workspace-result-count">{ui("resultCount", { count: deals.length })}</span></div>
       </div>
 
       {deals.length === 0 ? (
         <Surface>
-          <EmptyState>{t("empty")}</EmptyState>
+          <EmptyState>{query || status || stageId ? ui("noResults") : t("empty")}</EmptyState>
         </Surface>
       ) : view === "list" ? (
         <Surface style={{ overflowX: "auto" }}>
@@ -130,7 +128,7 @@ export default async function DealsPage({
                         d.status === "WON" ? "ok" : d.status === "LOST" ? "danger" : "default"
                       }
                     >
-                      {d.status}
+                      {ui(`dealStatus.${d.status}`)}
                     </Badge>
                   </td>
                 </tr>

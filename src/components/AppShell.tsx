@@ -2,312 +2,189 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useTransition } from "react";
-import {
-  HardHat,
-  LayoutDashboard,
-  Inbox,
-  Users,
-  Kanban,
-  FileSpreadsheet,
-  Package,
-  CheckSquare,
-  CalendarDays,
-  Headset,
-  Bot,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  Building2,
-} from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { LayoutDashboard, Inbox, Users, Kanban, FileSpreadsheet, Package, CheckSquare,
+  CalendarDays, Headset, Bot, Settings, LogOut, Menu, X, Building2, ChevronDown,
+  Search, Plus, PanelsTopLeft, type LucideIcon } from "lucide-react";
 import { signOutAction, switchWorkspaceAction } from "@/app/actions/auth";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
 type Workspace = { id: string; name: string };
-type NavLabels = {
-  projects: string;
-  tools: string;
-  dashboard: string;
-  leads: string;
-  customers: string;
-  deals: string;
-  invoices: string;
-  products: string;
-  tasks: string;
-  calendar: string;
-  contactCenter: string;
-  automations: string;
-  settings: string;
-  signOut: string;
-  workspace: string;
-  switchWorkspace: string;
-  menu: string;
-};
+type NavLabels = Record<"projects" | "tools" | "dashboard" | "leads" | "customers" |
+  "deals" | "invoices" | "products" | "tasks" | "calendar" | "contactCenter" |
+  "automations" | "settings" | "signOut" | "workspace" | "switchWorkspace" | "menu", string>;
+type NavItem = { path: string; label: string; icon: LucideIcon; badge?: number };
 
-export function AppShell({
-  locale,
-  brand,
-  labels,
-  userName,
-  workspaces,
-  activeCompanyId,
-  newLeadsCount = 0,
-  canManageAutomations = false,
-  canManageConstruction = false,
-  children,
+export function AppShell({ locale, brand, labels, userName, workspaces, activeCompanyId,
+  newLeadsCount = 0, canManageAutomations = false, canManageConstruction = false,
+  canManageMembers = false, children,
 }: {
-  locale: string;
-  brand: string;
-  labels: NavLabels;
-  userName: string;
-  workspaces: Workspace[];
-  activeCompanyId: string;
-  newLeadsCount?: number;
-  canManageAutomations?: boolean;
-  canManageConstruction?: boolean;
-  children: React.ReactNode;
+  locale: string; brand: string; labels: NavLabels; userName: string;
+  workspaces: Workspace[]; activeCompanyId: string; newLeadsCount?: number;
+  canManageAutomations?: boolean; canManageConstruction?: boolean;
+  canManageMembers?: boolean; children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const t = useTranslations("workspaceUi");
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [pending, startTransition] = useTransition();
-
-  const items = [
-    { href: `/${locale}/projects`, label: labels.projects, icon: HardHat },
-    { href: `/${locale}/dashboard`, label: labels.dashboard, icon: LayoutDashboard },
-    { href: `/${locale}/leads`, label: labels.leads, icon: Inbox, badge: newLeadsCount },
-    { href: `/${locale}/deals`, label: labels.deals, icon: Kanban },
-    { href: `/${locale}/customers`, label: labels.customers, icon: Users },
-    { href: `/${locale}/tasks`, label: labels.tasks, icon: CheckSquare },
-    { href: `/${locale}/calendar`, label: labels.calendar, icon: CalendarDays },
-    { href: `/${locale}/settings`, label: labels.settings, icon: Settings },
-  ];
-
-  const tools = [
-    { href: `/${locale}/invoices`, label: labels.invoices, icon: FileSpreadsheet },
-    { href: `/${locale}/products`, label: labels.products, icon: Package },
-    { href: `/${locale}/contact-center`, label: labels.contactCenter, icon: Headset },
-    ...(canManageAutomations
-      ? [{ href: `/${locale}/automations`, label: labels.automations, icon: Bot }]
-      : []),
-  ];
-
+  const drawer = useRef<HTMLElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const searchInput = useRef<HTMLInputElement>(null);
   const activeWorkspace = workspaces.find((w) => w.id === activeCompanyId) ?? workspaces[0];
+  const href = (path: string) => `/${locale}/${path}`;
+  const active = (path: string) => pathname === href(path) || pathname.startsWith(`${href(path)}/`);
+  const crmItems: NavItem[] = [
+    { path: "deals", label: labels.deals, icon: Kanban },
+    { path: "leads", label: labels.leads, icon: Inbox, badge: newLeadsCount },
+    { path: "customers", label: labels.customers, icon: Users },
+    { path: "invoices", label: labels.invoices, icon: FileSpreadsheet },
+  ];
+  const workItems: NavItem[] = [
+    { path: "tasks", label: labels.tasks, icon: CheckSquare },
+    { path: "calendar", label: labels.calendar, icon: CalendarDays },
+    { path: "projects", label: labels.projects, icon: Building2 },
+  ];
+  const toolItems: NavItem[] = [
+    { path: "products", label: labels.products, icon: Package },
+    { path: "contact-center", label: labels.contactCenter, icon: Headset },
+    ...(canManageAutomations ? [{ path: "automations", label: labels.automations, icon: Bot }] : []),
+  ];
+  const tabs = workItems.some((item) => active(item.path)) ? workItems
+    : toolItems.some((item) => active(item.path)) ? toolItems : active("settings")
+      ? [{ path: "settings", label: labels.settings, icon: Settings }]
+      : [{ path: "dashboard", label: labels.dashboard, icon: LayoutDashboard }, ...crmItems];
 
-  return (
-    <div className="app-frame">
-      {/* Desktop Command Sidebar */}
-      <aside className="app-sidebar" style={{ overflowY: "auto" }}>
-        <Link href={`/${locale}/dashboard`} className="app-brand-row">
-          <span className="app-brand-mark">CS</span>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--ink)", lineHeight: 1.15 }}>
-              {brand}
-            </div>
-            <div className="muted" style={{ fontSize: "0.72rem" }}>
-              {activeWorkspace?.name}
-            </div>
-          </div>
-        </Link>
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    const opener = menuButton.current;
+    document.body.style.overflow = "hidden";
+    drawer.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Tab") return;
+      const nodes = drawer.current?.querySelectorAll<HTMLElement>("a[href],button,select,summary");
+      const focusable = Array.from(nodes ?? []).filter((node) => node.getClientRects().length && !node.hasAttribute("disabled"));
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    const resize = () => { if (window.innerWidth > 920) setOpen(false); };
+    document.addEventListener("keydown", keydown);
+    window.addEventListener("resize", resize);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", keydown);
+      window.removeEventListener("resize", resize);
+      opener?.focus();
+    };
+  }, [open]);
+  useEffect(() => { if (searchOpen) searchInput.current?.focus(); }, [searchOpen]);
 
-        {workspaces.length > 1 ? (
-          <div style={{ padding: "0 0.25rem" }}>
-            <label className="sr-only" htmlFor="sidebar-workspace">
-              {labels.switchWorkspace}
-            </label>
-            <select
-              id="sidebar-workspace"
-              className="select"
-              style={{ fontSize: "0.8rem", padding: "0.45rem 0.65rem" }}
-              defaultValue={activeCompanyId}
-              disabled={pending}
-              onChange={(e) => {
-                const companyId = e.target.value;
-                startTransition(() => {
-                  void switchWorkspaceAction(companyId, locale);
-                });
-              }}
-            >
-              {workspaces.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : null}
+  function closeSettingsMenu(event: React.MouseEvent<HTMLAnchorElement>) {
+    event.currentTarget.closest("details")?.removeAttribute("open");
+    setOpen(false);
+  }
 
-        <nav className="app-nav" aria-label="Main">
-          {items.map((item) => {
-            const Icon = item.icon;
-            const active = pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`app-nav-link ${active ? "active" : ""}`}
-                style={{ justifyContent: "space-between" }}
-              >
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.65rem" }}>
-                  <Icon size={16} />
-                  <span>{item.label}</span>
-                </span>
-                {item.badge && item.badge > 0 ? (
-                  <span
-                    className="badge badge-ok"
-                    style={{ padding: "0.08rem 0.45rem", fontSize: "0.68rem" }}
-                  >
-                    {item.badge}
-                  </span>
-                ) : null}
-              </Link>
-            );
-          })}
-          <details className="app-tools"><summary className="app-nav-link">{labels.tools}</summary>{tools.map((item) => <Link key={item.href} href={item.href} className="app-nav-link"><item.icon size={16} /><span>{item.label}</span></Link>)}</details>
-        </nav>
+  const navLink = (item: NavItem) => <Link key={item.path} href={href(item.path)}
+    aria-current={active(item.path) ? "page" : undefined} title={item.label}
+    className={`app-nav-link ${active(item.path) ? "active" : ""}`} onClick={() => setOpen(false)}>
+    <item.icon size={21} aria-hidden="true" /><span className="nav-text">{item.label}</span>
+    {!!item.badge && <span className="nav-counter">{item.badge}</span>}
+  </Link>;
 
-        <div
-          style={{
-            marginTop: "auto",
-            paddingTop: "0.85rem",
-            borderTop: "1px solid var(--line)",
-            display: "grid",
-            gap: "0.6rem",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "0.5rem",
-              padding: "0 0.35rem",
-            }}
-          >
-            <div style={{ minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: "0.82rem",
-                  fontWeight: 600,
-                  color: "var(--ink)",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {userName}
-              </div>
-              <div className="muted" style={{ fontSize: "0.72rem" }}>
-                {activeWorkspace?.name}
-              </div>
-            </div>
-            <LanguageSwitcher locale={locale} />
-          </div>
-
-          <form action={signOutAction}>
-            <button
-              type="submit"
-              className="btn btn-secondary"
-              style={{ width: "100%", justifyContent: "flex-start", padding: "0.5rem 0.7rem" }}
-            >
-              <LogOut size={15} />
-              <span>{labels.signOut}</span>
-            </button>
-          </form>
-        </div>
-      </aside>
-
-      {/* Main Column */}
-      <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
-        <header className="app-topbar">
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <button
-              type="button"
-              className="btn btn-secondary mobile-only"
-              style={{ padding: "0.45rem 0.65rem" }}
-              onClick={() => setOpen((v) => !v)}
-              aria-expanded={open}
-              aria-controls="mobile-nav"
-            >
-              {open ? <X size={16} /> : <Menu size={16} />}
-              <span>{labels.menu}</span>
-            </button>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <Building2 size={15} className="muted" />
-              <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--ink-secondary)" }}>
-                {activeWorkspace?.name}
-              </span>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", flexWrap: "wrap" }}>
-            <ThemeSwitcher />
-            <div className="mobile-only">
-              <LanguageSwitcher locale={locale} />
-            </div>
-            <Link
-              href={`/${locale}/leads`}
-              className="btn btn-secondary hide-mobile"
-              style={{ padding: "0.42rem 0.75rem", fontSize: "0.78rem" }}
-            >
-              + {labels.leads}
-            </Link>
-            <Link
-              href={`/${locale}/invoices`}
-              className="btn btn-secondary hide-mobile"
-              style={{ padding: "0.42rem 0.75rem", fontSize: "0.78rem" }}
-            >
-              + {labels.invoices}
-            </Link>
-            {canManageConstruction ? <Link
-              href={`/${locale}/projects/new`}
-              className="btn btn-primary"
-              style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}
-            >
-              + {labels.projects}
-            </Link> : null}
-          </div>
-        </header>
-
-        {open ? (
-          <nav
-            id="mobile-nav"
-            className="mobile-only"
-            style={{
-              background: "var(--bg-elevated)",
-              borderBottom: "1px solid var(--line)",
-              padding: "0.75rem 1rem",
-              gap: "0.3rem",
-            }}
-          >
-            {items.map((item) => {
-              const Icon = item.icon;
-              const active = pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={`app-nav-link ${active ? "active" : ""}`}
-                >
-                  <Icon size={16} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-            <details className="app-tools"><summary className="app-nav-link">{labels.tools}</summary>{tools.map((item) => <Link key={item.href} href={item.href} className="app-nav-link"><item.icon size={16} /><span>{item.label}</span></Link>)}</details>
-            <form action={signOutAction} style={{ marginTop: "0.4rem" }}>
-              <button type="submit" className="btn btn-secondary" style={{ width: "100%" }}>
-                <LogOut size={15} />
-                <span>{labels.signOut}</span>
-              </button>
-            </form>
-          </nav>
-        ) : null}
-
-        <main className="app-content">{children}</main>
+  function navigation(mobile: boolean) {
+    return <>
+      <div className="workspace-brand">
+        <button type="button" className="chrome-icon" aria-label={mobile ? t("closeMenu") : t("toggleMenu")}
+          aria-expanded={mobile ? open : !collapsed} onClick={() => mobile ? setOpen(false) : setCollapsed(!collapsed)}>
+          {mobile ? <X size={22} /> : <Menu size={22} />}
+        </button>
+        <Link href={href("dashboard")} className="workspace-brand-name" title={brand}>{brand}<span>°</span></Link>
       </div>
+      <div className="workspace-selector">
+        {workspaces.length > 1 ? <>
+          <label htmlFor={mobile ? "mobile-workspace" : "sidebar-workspace"} className="sr-only">{labels.switchWorkspace}</label>
+          <select id={mobile ? "mobile-workspace" : "sidebar-workspace"} value={activeCompanyId} disabled={pending}
+            onChange={(event) => { const id = event.target.value; startTransition(() => { void switchWorkspaceAction(id, locale); }); }}>
+            {workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}
+          </select>
+        </> : <span title={activeWorkspace?.name}>{activeWorkspace?.name}</span>}
+      </div>
+      <nav className="app-nav" aria-label={labels.menu}>
+        {navLink({ path: "dashboard", label: labels.dashboard, icon: LayoutDashboard })}
+        <details className="workspace-nav-group" open>
+          <summary title="CRM"><Kanban size={21} aria-hidden="true" /><span className="nav-text">CRM</span><ChevronDown size={15} className="nav-chevron" /></summary>
+          <div className="workspace-subnav">{crmItems.map(navLink)}</div>
+        </details>
+        {workItems.map(navLink)}
+        <div className="nav-section-label">{labels.tools}</div>
+        {toolItems.map(navLink)}
+      </nav>
+      <div className="workspace-sidebar-bottom">
+        {collapsed && !mobile ? navLink({ path: "settings", label: labels.settings, icon: Settings }) : <details className="workspace-settings-menu"
+          onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false; }}
+          onKeyDown={(event) => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}>
+          <summary className={`app-nav-link ${active("settings") ? "active" : ""}`}><Settings size={21} /><span>{labels.settings}</span><ChevronDown size={15} className="nav-chevron" /></summary>
+          <div>
+            <Link href={href("settings")} onClick={closeSettingsMenu}>{t("workspaceSettings")}</Link>
+            {canManageMembers && <><Link href={href("settings#company")} onClick={closeSettingsMenu}>{t("companySettings")}</Link><Link href={href("settings#members")} onClick={closeSettingsMenu}>{t("invite")}</Link><Link href={href("settings#pipeline")} onClick={closeSettingsMenu}>{t("pipelineSettings")}</Link></>}
+            <Link href={href("contact-center")} onClick={closeSettingsMenu}>{labels.contactCenter}</Link>
+          </div>
+        </details>}
+        <div className="workspace-user"><span className="workspace-avatar" aria-hidden="true">{userName.slice(0, 1).toUpperCase()}</span>
+          <span className="workspace-user-name">{userName}<small>{activeWorkspace?.name}</small></span>
+          <form action={signOutAction}><button className="chrome-icon" type="submit" aria-label={labels.signOut} title={labels.signOut}><LogOut size={18} /></button></form>
+        </div>
+      </div>
+    </>;
+  }
+
+  return <div className={`app-frame crm-workspace ${collapsed ? "nav-collapsed" : ""}`}>
+    <a className="workspace-skip-link" href="#main-content">{t("skipToContent")}</a>
+    <aside className="app-sidebar">{navigation(false)}</aside>
+    {open && <div className="workspace-drawer-layer">
+      <button className="workspace-scrim" type="button" aria-label={t("closeMenu")} onClick={() => setOpen(false)} tabIndex={-1} />
+      <aside ref={drawer} id="mobile-nav" className="workspace-drawer" role="dialog" aria-modal="true" aria-label={labels.menu}>{navigation(true)}</aside>
+    </div>}
+    <div className="workspace-main" inert={open ? true : undefined}>
+      <header className="app-topbar">
+        <button ref={menuButton} type="button" className="chrome-icon workspace-mobile-menu" onClick={() => setOpen(true)}
+          aria-label={labels.menu} aria-expanded={open} aria-controls="mobile-nav"><Menu size={23} /></button>
+        <nav className="workspace-tabs" aria-label={t("moduleNavigation")}>
+          {tabs.map((item) => <Link key={item.path} href={href(item.path)} className={active(item.path) ? "selected" : ""}
+            aria-current={active(item.path) ? "page" : undefined}>{item.label}</Link>)}
+        </nav>
+        <div className="workspace-header-actions">
+          <button type="button" className="chrome-icon" aria-label={t("searchDeals")} aria-expanded={searchOpen}
+            aria-controls="workspace-search" onClick={() => setSearchOpen(!searchOpen)}><Search size={21} /></button>
+          {canManageMembers && <Link className="chrome-pill workspace-invite" href={href("settings#members")}><Plus size={14} />{t("invite")}</Link>}
+          <Link className="workspace-avatar" href={href("settings")} title={`${userName} · ${labels.settings}`} aria-label={`${userName} · ${labels.settings}`}>{userName.slice(0, 1).toUpperCase()}</Link>
+        </div>
+        {searchOpen && <form id="workspace-search" className="workspace-search-popover" action={href("deals")} onKeyDown={(event) => { if (event.key === "Escape") setSearchOpen(false); }}>
+          <label htmlFor="workspace-deal-query">{t("searchDeals")}</label>
+          <div><input ref={searchInput} id="workspace-deal-query" name="q" maxLength={120} placeholder={t("searchPlaceholder")} className="input" />
+            <button className="btn btn-primary" type="submit">{t("search")}</button>
+            <button type="button" className="btn btn-secondary" aria-label={t("closeSearch")} onClick={() => setSearchOpen(false)}><X size={18} /></button></div>
+        </form>}
+      </header>
+      <main id="main-content" className="app-content">{children}</main>
+      <footer className="workspace-footer"><Link href={href("dashboard")} className="chrome-pill">{brand}</Link><LanguageSwitcher locale={locale} /><ThemeSwitcher /><span>© {new Date().getFullYear()} {brand}</span></footer>
     </div>
-  );
+    <aside className="workspace-utility-rail" aria-label={t("quickAccess")}>
+      <Link className="chrome-icon" href={href("leads")} title={labels.leads} aria-label={`${labels.leads}${newLeadsCount ? ` (${newLeadsCount})` : ""}`}><Inbox size={21} />{newLeadsCount > 0 && <span className="rail-counter">{newLeadsCount}</span>}</Link>
+      <Link className="chrome-icon" href={href("tasks")} title={labels.tasks} aria-label={labels.tasks}><CheckSquare size={21} /></Link>
+      <Link className="chrome-icon" href={href("calendar")} title={labels.calendar} aria-label={labels.calendar}><CalendarDays size={21} /></Link>
+      <span className="rail-divider" />
+      <Link className="chrome-icon" href={href("settings")} title={labels.settings} aria-label={labels.settings}><Settings size={21} /></Link>
+      {canManageConstruction && <Link className="chrome-icon" href={href("projects/new")} title={t("createProject")} aria-label={t("createProject")}><PanelsTopLeft size={21} /></Link>}
+      <Link className="chrome-icon" href={href("customers/new")} title={t("createCustomer")} aria-label={t("createCustomer")}><Users size={21} /></Link>
+    </aside>
+  </div>;
 }

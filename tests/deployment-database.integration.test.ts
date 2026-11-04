@@ -44,15 +44,17 @@ describe("Vercel SQLite deployment artifact", () => {
     const artifact = path.join(root, "prisma", "deployment-demo.db");
     writeFileSync(artifact, "migrated artifact");
     const options = { root, env: { VERCEL: "1" }, temporaryDirectory: path.join(root, "runtime") };
+    writeFileSync(path.join(root, "runtime", "crm-demo-contractor-v1.db"), "retired demo identities");
     const url = resolveDatabaseUrl(options);
     const runtime = url.slice(5);
+    expect(path.basename(runtime)).toBe("crm-workspace-v2.db");
     expect(readFileSync(runtime, "utf8")).toBe("migrated artifact");
     writeFileSync(runtime, "runtime changes");
     expect(resolveDatabaseUrl(options)).toBe(url);
     expect(readFileSync(runtime, "utf8")).toBe("runtime changes");
     expect(readFileSync(artifact, "utf8")).toBe("migrated artifact");
   });
-  it("migrates the old bundled database and seeds contractor examples without changing source databases", async () => {
+  it("packages a clean three-account workspace without changing source or configured databases", async () => {
     const root = temporaryRoot();
     const source = path.join(root, "prisma", "demo-seed.db");
     copyFileSync("prisma/demo-seed.db", source);
@@ -62,12 +64,9 @@ describe("Vercel SQLite deployment artifact", () => {
     writeFileSync(configured, "existing configured database must remain untouched");
     const before = hash(source);
     const client = new PrismaClient({ datasourceUrl: `file:${source.replaceAll("\\", "/")}` });
-    let taskCount: number;
-    let invoiceCount: number;
     try {
-      await expect(client.constructionProject.count()).rejects.toMatchObject({ code: "P2021" });
-      taskCount = await client.task.count();
-      invoiceCount = await client.invoice.count();
+      expect(await client.constructionProject.count()).toBe(0);
+      expect(await client.user.count()).toBe(3);
     } finally { await client.$disconnect(); }
     vi.stubEnv("DATABASE_URL", `file:${configured.replaceAll("\\", "/")}`);
     let artifact: string;
@@ -77,11 +76,17 @@ describe("Vercel SQLite deployment artifact", () => {
     expect(readFileSync(configured, "utf8")).toBe("existing configured database must remain untouched");
     const deployment = new PrismaClient({ datasourceUrl: `file:${artifact.replaceAll("\\", "/")}` });
     try {
-      expect(await deployment.constructionProject.count()).toBe(8);
-      expect(await deployment.task.count()).toBe(taskCount! + 8);
-      expect(await deployment.invoice.count()).toBe(invoiceCount!);
-      expect(await deployment.task.findFirst({ select: { projectId: true, phase: true } })).toBeDefined();
-      expect(await deployment.invoice.findFirst({ select: { projectId: true, acceptanceId: true, vatRateBps: true } })).toBeDefined();
+      expect(await deployment.company.count()).toBe(1);
+      expect((await deployment.user.findMany({ select: { email: true }, orderBy: { email: "asc" } })).map((user) => user.email)).toEqual(["admin@crm.local", "manager@crm.local", "user@crm.local"]);
+      expect(await deployment.membership.count({ where: { role: "ADMIN" } })).toBe(1);
+      expect(await deployment.membership.count({ where: { role: "MANAGER" } })).toBe(1);
+      expect(await deployment.membership.count({ where: { role: "EMPLOYEE" } })).toBe(1);
+      expect(await deployment.customer.count()).toBe(0);
+      expect(await deployment.deal.count()).toBe(0);
+      expect(await deployment.lead.count()).toBe(0);
+      expect(await deployment.constructionProject.count()).toBe(0);
+      expect(await deployment.task.findMany({ select: { projectId: true, phase: true } })).toEqual([]);
+      expect(await deployment.invoice.findMany({ select: { projectId: true, acceptanceId: true, vatRateBps: true } })).toEqual([]);
       expect(await deployment.$queryRawUnsafe("PRAGMA foreign_key_check")).toEqual([]);
     } finally { await deployment.$disconnect(); }
   }, 60000);
