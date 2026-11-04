@@ -12,10 +12,15 @@ function currentTheme(): Theme {
   return document.documentElement.dataset.theme === "light" ? "light" : "dark";
 }
 
+function applyTheme(theme: Theme) {
+  document.documentElement.dataset.theme = theme;
+  document.cookie = `${STORAGE_KEY}=${theme}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
+}
+
 function subscribe(onChange: () => void) {
   const onStorage = (event: StorageEvent) => {
     if (event.key !== STORAGE_KEY && event.key !== null) return;
-    document.documentElement.dataset.theme = event.newValue === "light" ? "light" : "dark";
+    applyTheme(event.newValue === "light" ? "light" : "dark");
     onChange();
   };
   window.addEventListener(CHANGE_EVENT, onChange);
@@ -27,7 +32,7 @@ function subscribe(onChange: () => void) {
 }
 
 function selectTheme(theme: Theme) {
-  document.documentElement.dataset.theme = theme;
+  applyTheme(theme);
   try { localStorage.setItem(STORAGE_KEY, theme); } catch { /* The selection still works when storage is unavailable. */ }
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }

@@ -53,8 +53,10 @@ export default async function AppLayout({
       canManageAutomations={can(ctx.role, "company.automations")}
       canManageConstruction={can(ctx.role, "construction.manage")}
       canManageMembers={can(ctx.role, "company.members")}
+      canUseInbox={ctx.role !== "EMPLOYEE"}
       workspaces={memberships.map((m) => ({ id: m.companyId, name: m.company.name }))}
       labels={{
+        inbox: t("inbox"),
         projects: t("projects"),
         tools: t("tools"),
         dashboard: t("dashboard"),

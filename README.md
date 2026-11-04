@@ -4,6 +4,14 @@ Georgian/English CRM workspace with a Bitrix24-inspired dashboard: leads, custom
 
 See [the contractor implementation and migration guide](docs/CONTRACTOR_IMPLEMENTATION.md) for supported workflows, verification and hosting limitations.
 
+## Omnichannel Inbox
+
+Facebook Messenger, Instagram Direct (Facebook Login), WhatsApp Cloud, and Viber Bot adapters feed the tenant-scoped inbox at `/{locale}/inbox`. Administrators connect accounts at `/{locale}/settings/channels`; managers access their assigned conversations. Messages stay linked through contact merges and lead conversion. The existing web form remains available separately.
+
+Run `npm run db:deploy`, configure the inbox variables in `.env.example`, start Redis with `docker compose -f compose.inbox.yaml up -d`, and run `npm run inbox:worker` alongside `npm run dev`. Optional `npm run inbox:seed` creates a separate **Inbox Sandbox** workspace with disconnected sample channels. Run `npm run test:inbox` for signed payload and tenant-isolation tests.
+
+See [the complete inbox setup and staged manual tests](docs/OMNICHANNEL_INBOX.md) for Meta/Viber onboarding, HTTPS tunnels, media storage, retries, and production requirements. Provider delivery needs real accounts, permissions, credentials, Redis, and a running worker. No live account is connected by installation or seeding.
+
 ## Stack
 
 Next.js 15 · TypeScript · Prisma · SQLite (local) · next-intl · cookie sessions
@@ -21,6 +29,8 @@ npm run dev
 ```
 
 Open [http://localhost:3000/en](http://localhost:3000/en).
+
+`npm run dev` compiles routes as you visit them and enables hot reload. For a faster local preview, run `npm run build` followed by `npm run start`; rebuild after source changes. Authentication and workspace lookups are deduplicated within each server render, and inbox live updates pause in hidden tabs.
 
 ### Workspace accounts
 

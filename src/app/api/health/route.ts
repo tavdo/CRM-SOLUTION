@@ -7,6 +7,7 @@ export async function GET() {
     // A database connection alone can be healthy while the deployed schema is stale.
     await Promise.all([
       prisma.constructionProject.count(),
+      prisma.inboxConversation.count(),
       prisma.task.findFirst({ select: { projectId: true, phase: true } }),
       prisma.invoice.findFirst({ select: { projectId: true, acceptanceId: true, vatRateBps: true } }),
     ]);

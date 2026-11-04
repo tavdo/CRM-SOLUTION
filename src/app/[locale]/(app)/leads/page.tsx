@@ -169,7 +169,7 @@ export default async function LeadsPage({
                       ) : null}
                     </div>
                     <h2 style={{ margin: "0.55rem 0 0.2rem", fontSize: "1.02rem", color: "var(--ink)" }}>
-                      {lead.title}
+                      <Link href={`/${locale}/leads/${lead.id}`}>{lead.title}</Link>
                     </h2>
                     <div className="muted" style={{ fontSize: "0.84rem" }}>
                       <strong style={{ color: "var(--ink-secondary)" }}>{lead.contactName}</strong>

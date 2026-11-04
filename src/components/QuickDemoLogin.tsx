@@ -111,10 +111,10 @@ export function QuickDemoLogin({
                     borderRadius: 8,
                     display: "grid",
                     placeItems: "center",
-                    background: appearance === "workspace" ? "#e9f5ff" : p.primary
+                    background: appearance === "workspace" ? "var(--info-soft)" : p.primary
                       ? "rgba(16, 185, 129, 0.25)"
                       : "rgba(255, 255, 255, 0.06)",
-                    color: appearance === "workspace" ? "#2192c4" : p.primary ? "#6ee7b7" : "#cbd5e1",
+                    color: appearance === "workspace" ? "var(--info-ink)" : p.primary ? "#6ee7b7" : "#cbd5e1",
                     flexShrink: 0,
                   }}
                 >

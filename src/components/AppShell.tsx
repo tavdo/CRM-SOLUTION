@@ -14,17 +14,17 @@ import { ThemeSwitcher } from "./ThemeSwitcher";
 type Workspace = { id: string; name: string };
 type NavLabels = Record<"projects" | "tools" | "dashboard" | "leads" | "customers" |
   "deals" | "invoices" | "products" | "tasks" | "calendar" | "contactCenter" |
-  "automations" | "settings" | "signOut" | "workspace" | "switchWorkspace" | "menu", string>;
+  "automations" | "settings" | "signOut" | "workspace" | "switchWorkspace" | "menu" | "inbox", string>;
 type NavItem = { path: string; label: string; icon: LucideIcon; badge?: number };
 
 export function AppShell({ locale, brand, labels, userName, workspaces, activeCompanyId,
   newLeadsCount = 0, canManageAutomations = false, canManageConstruction = false,
-  canManageMembers = false, children,
+  canManageMembers = false, canUseInbox = false, children,
 }: {
   locale: string; brand: string; labels: NavLabels; userName: string;
   workspaces: Workspace[]; activeCompanyId: string; newLeadsCount?: number;
   canManageAutomations?: boolean; canManageConstruction?: boolean;
-  canManageMembers?: boolean; children: React.ReactNode;
+  canManageMembers?: boolean; canUseInbox?: boolean; children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const t = useTranslations("workspaceUi");
@@ -39,6 +39,7 @@ export function AppShell({ locale, brand, labels, userName, workspaces, activeCo
   const href = (path: string) => `/${locale}/${path}`;
   const active = (path: string) => pathname === href(path) || pathname.startsWith(`${href(path)}/`);
   const crmItems: NavItem[] = [
+    ...(canUseInbox ? [{ path: "inbox", label: labels.inbox, icon: Headset }] : []),
     { path: "deals", label: labels.deals, icon: Kanban },
     { path: "leads", label: labels.leads, icon: Inbox, badge: newLeadsCount },
     { path: "customers", label: labels.customers, icon: Users },

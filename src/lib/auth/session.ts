@@ -4,6 +4,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "../db";
 import { ensureDbInitialized } from "../db-init";
 import { hashToken } from "../crypto";
+import { cache } from "react";
 
 const COOKIE = "crm_session";
 const WORKSPACE_COOKIE = "crm_workspace";
@@ -75,7 +76,9 @@ export async function destroySession(): Promise<void> {
   jar.delete(COOKIE);
 }
 
-export async function getSessionUser(): Promise<SessionUser | null> {
+// Deduplicate layout/page reads only within a React Server Component render.
+// Route handlers and SSE calls run outside that cache and still revalidate auth.
+export const getSessionUser = cache(async function getSessionUser(): Promise<SessionUser | null> {
   try {
     const jar = await cookies();
     const token = jar.get(COOKIE)?.value;
@@ -129,7 +132,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     console.error("[getSessionUser]", err instanceof Error ? err.message : err);
     return null;
   }
-}
+});
 
 export async function setActiveWorkspace(companyId: string): Promise<void> {
   const jar = await cookies();

@@ -132,6 +132,10 @@ a {
   background: #04070b;
 }
 
+/* Workspace/public landing shells supply their own full-screen photo. Avoid
+   continuously animating and blurring the obscured background underneath them. */
+body:has(.crm-workspace) > .ambient-bg { display: none; }
+
 .ambient-bg-photo {
   position: absolute;
   inset: -8%;

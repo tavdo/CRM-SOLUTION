@@ -3,6 +3,7 @@ import { prisma } from "../db";
 import { ensureDbInitialized } from "../db-init";
 import { AppError } from "../errors";
 import { can, type Capability } from "../permissions";
+import { cache } from "react";
 import {
   getActiveWorkspaceId,
   getSessionUser,
@@ -25,17 +26,23 @@ export async function requireUser(): Promise<SessionUser> {
   return user;
 }
 
-export async function requireWorkspace(): Promise<WorkspaceContext> {
-  const user = await requireUser();
-  const memberships = await prisma.membership.findMany({
-    where: { userId: user.id },
+// React owns these entries for one render; no auth data survives across requests.
+// Route handlers have no React cache context, so each call reads current membership.
+const userMemberships = cache(async (userId: string) =>
+  prisma.membership.findMany({
+    where: { userId },
     include: {
       company: {
         include: { subscription: { include: { plan: true } } },
       },
     },
     orderBy: { createdAt: "asc" },
-  });
+  }),
+);
+
+export const requireWorkspace = cache(async function requireWorkspace(): Promise<WorkspaceContext> {
+  const user = await requireUser();
+  const memberships = await userMemberships(user.id);
 
   if (memberships.length === 0) {
     throw new AppError("No workspace", "NO_WORKSPACE", 403);
@@ -64,7 +71,7 @@ export async function requireWorkspace(): Promise<WorkspaceContext> {
     role: membership.role,
     subscription: membership.company.subscription,
   };
-}
+});
 
 export async function requireCapability(
   capability: Capability,
@@ -88,9 +95,5 @@ export function assertSameTenant(
 
 export async function listUserWorkspaces(userId: string) {
   await ensureDbInitialized();
-  return prisma.membership.findMany({
-    where: { userId },
-    include: { company: true },
-    orderBy: { createdAt: "asc" },
-  });
+  return userMemberships(userId);
 }

@@ -32,7 +32,7 @@ describe("contractor operations on an isolated migrated database", () => {
     const migrations = readdirSync("prisma/migrations").filter((n) => /^\d/.test(n)).sort();
     for (const migration of migrations) {
       // Insert representative legacy records before the construction migration, then verify preservation.
-      if (migration.startsWith("20261104")) {
+      if (migration === "20261104100000_contractor_workspace") {
         await prisma.$executeRawUnsafe(`INSERT INTO "Company" ("id", "name", "slug", "updatedAt") VALUES ('a', 'Contractor', 'contractor-a', CURRENT_TIMESTAMP), ('b', 'Other', 'contractor-b', CURRENT_TIMESTAMP)`);
         await prisma.$executeRawUnsafe(`INSERT INTO "User" ("id", "name", "email", "passwordHash", "updatedAt") VALUES ('admin', 'Admin', 'admin@test.local', 'excluded', CURRENT_TIMESTAMP), ('worker', 'Worker', 'worker@test.local', 'excluded', CURRENT_TIMESTAMP), ('stranger', 'Stranger', 'stranger@test.local', 'excluded', CURRENT_TIMESTAMP)`);
         await prisma.$executeRawUnsafe(`INSERT INTO "Customer" ("id", "companyId", "name", "ownerId", "updatedAt") VALUES ('client', 'a', 'Preserved client', 'worker', CURRENT_TIMESTAMP), ('foreign-client', 'b', 'Foreign client', 'stranger', CURRENT_TIMESTAMP)`);

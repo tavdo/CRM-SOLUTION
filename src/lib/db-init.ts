@@ -440,14 +440,18 @@ const SCHEMA_STATEMENTS = [
   `CREATE UNIQUE INDEX IF NOT EXISTS "Invoice_companyId_invoiceNumber_key" ON "Invoice"("companyId", "invoiceNumber")`,
 ];
 
-let initPromise: Promise<void> | null = null;
+// Route bundles and hot reloads share the same Prisma client. Bootstrap once per
+// client, rather than rehashing demo passwords and upserting accounts per bundle.
+const initialization = globalThis as unknown as {
+  crmDbInitialization?: { client: typeof prisma; promise: Promise<void> };
+};
 
 export async function ensureDbInitialized(): Promise<void> {
   // Production schema changes and seed data require explicit deployment tooling.
   if (process.env.NODE_ENV === "production") return;
-  if (initPromise) return initPromise;
+  if (initialization.crmDbInitialization?.client === prisma) return initialization.crmDbInitialization.promise;
 
-  initPromise = (async () => {
+  const promise = (async () => {
     try {
       const tables = await prisma.$queryRawUnsafe<{ name: string }[]>(
         `SELECT name FROM sqlite_master WHERE type='table' AND name='Lead'`,
@@ -461,10 +465,11 @@ export async function ensureDbInitialized(): Promise<void> {
         await ensureWorkspaceAccounts(prisma);
       }
     } catch (err) {
-      initPromise = null;
+      initialization.crmDbInitialization = undefined;
       console.error("[db-init]", err instanceof Error ? err.message : err);
     }
   })();
 
-  return initPromise;
+  initialization.crmDbInitialization = { client: prisma, promise };
+  return promise;
 }

@@ -227,6 +227,9 @@ model Customer {
 }
 
 model Contact {
+  inboxConversations InboxConversation[]
+  inboxIdentities ContactIdentity[]
+  inboxLeads Lead[] @relation("InboxLeadContact")
   id          String    @id @default(cuid())
   companyId   String
   customerId  String?
@@ -247,6 +250,8 @@ model Contact {
   deals    Deal[]    @relation("DealPrimaryContact")
 
   @@index([companyId, lastName, firstName])
+  @@index([companyId, phone])
+  @@unique([id, companyId])
   @@index([companyId, customerId])
   @@index([companyId, ownerId])
 }
@@ -413,6 +418,9 @@ model Task {
 
 // —— Bitrix24-style Leads Inbox (ლიდები) ——
 model Lead {
+  contactId String?
+  contact Contact? @relation("InboxLeadContact", fields: [contactId, companyId], references: [id, companyId], onDelete: Restrict)
+  inboxConversations InboxConversation[]
   id                  String   @id @default(cuid())
   companyId           String
   title               String
@@ -436,7 +444,9 @@ model Lead {
   owner   User?   @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
 
   @@index([companyId, status])
+  @@unique([id, companyId])
   @@index([companyId, source])
+  @@index([companyId, phone])
 }
 
 // —— Products & Services Catalog (პროდუქტები) ——
@@ -990,4 +1000,192 @@ model ProjectPayment {
   project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
   @@unique([companyId, operationKey])
   @@index([companyId, projectId])
+}
+
+// External messaging is separate from the internal team ChatMessage model.
+model InboxIntegration {
+  id String @id @default(cuid())
+  companyId String
+  provider String
+  name String
+  credentialsEncrypted String
+  verifyTokenHash String
+  status String @default("ACTIVE")
+  createdAt DateTime @default(now())
+  channels InboxChannel[]
+  events InboxWebhookEvent[]
+  @@unique([id, companyId])
+  @@index([companyId, status])
+}
+
+model InboxChannel {
+  id String @id @default(cuid())
+  companyId String
+  integrationId String
+  type String
+  name String
+  externalAccountId String
+  credentialsEncrypted String
+  status String @default("ACTIVE")
+  lastCheckedAt DateTime?
+  lastError String?
+  settingsJson String @default("{}")
+  createdAt DateTime @default(now())
+  integration InboxIntegration @relation(fields: [integrationId, companyId], references: [id, companyId], onDelete: Restrict)
+  conversations InboxConversation[]
+  identities ContactIdentity[]
+  @@unique([id, companyId])
+  @@unique([integrationId, type, externalAccountId])
+  @@unique([companyId, type, externalAccountId])
+  @@index([companyId, status])
+}
+
+model InboxConversation {
+  id String @id @default(cuid())
+  companyId String
+  channelId String
+  externalChatId String
+  contactId String
+  leadId String?
+  assignedUserId String?
+  status String @default("OPEN")
+  subscribed Boolean @default(true)
+  lastMessageAt DateTime @default(now())
+  lastIncomingAt DateTime?
+  welcomeSentAt DateTime?
+  awaySentAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  channel InboxChannel @relation(fields: [channelId, companyId], references: [id, companyId], onDelete: Restrict)
+  contact Contact @relation(fields: [contactId, companyId], references: [id, companyId], onDelete: Restrict)
+  lead Lead? @relation(fields: [leadId, companyId], references: [id, companyId], onDelete: Restrict)
+  messages InboxMessage[]
+  notes InboxInternalNote[]
+  readCursors InboxReadCursor[]
+  @@unique([id, companyId])
+  @@unique([channelId, externalChatId])
+  @@index([companyId, assignedUserId, status, lastMessageAt])
+  @@index([companyId, contactId, lastMessageAt])
+  @@index([companyId, leadId])
+}
+
+model InboxMessage {
+  id String @id @default(cuid())
+  companyId String
+  channelId String
+  conversationId String
+  direction String
+  externalMessageId String?
+  clientRequestId String?
+  type String @default("TEXT")
+  text String?
+  payloadJson String @default("{}")
+  status String @default("QUEUED")
+  errorCode String?
+  sentByUserId String?
+  createdAt DateTime @default(now())
+  providerTimestamp DateTime?
+  conversation InboxConversation @relation(fields: [conversationId, companyId], references: [id, companyId], onDelete: Restrict)
+  attachments InboxAttachment[]
+  @@unique([id, companyId])
+  @@unique([channelId, externalMessageId])
+  @@unique([companyId, clientRequestId])
+  @@index([conversationId, direction, createdAt])
+}
+
+model ContactIdentity {
+  id String @id @default(cuid())
+  companyId String
+  contactId String
+  channelId String
+  channelType String
+  externalUserId String
+  displayName String?
+  avatarUrl String?
+  phone String?
+  channel InboxChannel @relation(fields: [channelId, companyId], references: [id, companyId], onDelete: Restrict)
+  contact Contact @relation(fields: [contactId, companyId], references: [id, companyId], onDelete: Restrict)
+  @@unique([channelId, externalUserId])
+  @@index([companyId, contactId])
+  @@index([companyId, phone])
+}
+
+model InboxInternalNote {
+  id String @id @default(cuid())
+  companyId String
+  conversationId String
+  userId String
+  text String
+  createdAt DateTime @default(now())
+  conversation InboxConversation @relation(fields: [conversationId, companyId], references: [id, companyId], onDelete: Restrict)
+  @@index([companyId, conversationId, createdAt])
+}
+
+model InboxAttachment {
+  id String @id @default(cuid())
+  companyId String
+  messageId String
+  sourceEncrypted String?
+  storageKey String?
+  name String
+  mimeType String?
+  size Int?
+  status String @default("PENDING")
+  errorCode String?
+  message InboxMessage @relation(fields: [messageId, companyId], references: [id, companyId], onDelete: Restrict)
+  @@index([companyId, messageId])
+}
+
+model InboxWebhookEvent {
+  id String @id @default(cuid())
+  companyId String
+  integrationId String
+  digest String
+  payloadEncrypted String
+  status String @default("PENDING")
+  attempts Int @default(0)
+  createdAt DateTime @default(now())
+  integration InboxIntegration @relation(fields: [integrationId, companyId], references: [id, companyId], onDelete: Restrict)
+  @@unique([integrationId, digest])
+  @@index([status, createdAt])
+}
+
+model InboxOutboxEvent {
+  id String @id @default(cuid())
+  companyId String
+  kind String
+  recordId String
+  dispatchedAt DateTime?
+  createdAt DateTime @default(now())
+  @@unique([kind, recordId])
+  @@index([dispatchedAt, createdAt])
+  @@index([companyId, createdAt])
+}
+
+model InboxReadCursor {
+  id String @id @default(cuid())
+  companyId String
+  conversationId String
+  userId String
+  readAt DateTime @default(now())
+  conversation InboxConversation @relation(fields: [conversationId, companyId], references: [id, companyId], onDelete: Restrict)
+  @@unique([conversationId, userId])
+}
+
+model InboxAgent {
+  id String @id @default(cuid())
+  companyId String
+  userId String
+  available Boolean @default(true)
+  lastAssignedAt DateTime @default("1970-01-01T00:00:00Z")
+  @@unique([companyId, userId])
+  @@index([companyId, available, lastAssignedAt])
+}
+
+model InboxQuickReply {
+  id String @id @default(cuid())
+  companyId String
+  title String
+  text String
+  @@index([companyId])
 }

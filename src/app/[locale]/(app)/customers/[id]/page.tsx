@@ -15,17 +15,21 @@ import { formatDateTime } from "@/lib/dates";
 import { isAppError } from "@/lib/errors";
 import { isLocale } from "@/i18n/config";
 import { prisma } from "@/lib/db";
+import { ContactTimeline } from "@/components/inbox/ContactTimeline";
 
 export default async function CustomerDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { locale, id } = await params;
   if (!isLocale(locale)) redirect("/en");
   setRequestLocale(locale);
   const ctx = await requireWorkspace();
   const t = await getTranslations("customers");
+  const tab = (await searchParams).tab;
 
   let customer;
   try {
@@ -46,6 +50,8 @@ export default async function CustomerDetailPage({
       v.valueText ?? v.valueNumber?.toString() ?? (v.valueDate ? v.valueDate.toISOString().slice(0, 10) : ""),
     ]),
   );
+
+  if (tab === "messages" && ctx.role !== "EMPLOYEE") return <div className="construction-stack"><h1 className="page-title">{customer.name}</h1><section className="surface construction-panel"><nav className="construction-tabs"><Link href={`/${locale}/customers/${id}`}>{locale === "ka" ? "დეტალები" : "Details"}</Link><Link className="active" href={`/${locale}/customers/${id}?tab=messages`}>{locale === "ka" ? "შეტყობინებები" : "Messages"}</Link></nav><ContactTimeline ctx={ctx} locale={locale} customerId={id} /></section></div>;
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -69,6 +75,7 @@ export default async function CustomerDetailPage({
       </div>
 
       <Surface style={{ padding: "1.2rem" }}>
+        {ctx.role !== "EMPLOYEE" && <nav className="construction-tabs"><Link className="active" href={`/${locale}/customers/${id}`}>{locale === "ka" ? "დეტალები" : "Details"}</Link><Link href={`/${locale}/customers/${id}?tab=messages`}>{locale === "ka" ? "შეტყობინებები" : "Messages"}</Link></nav>}
         <form action={updateCustomerAction} style={{ display: "grid", gap: "0.85rem" }}>
           <input type="hidden" name="locale" value={locale} />
           <input type="hidden" name="id" value={customer.id} />
@@ -153,7 +160,7 @@ export default async function CustomerDetailPage({
             {customer.contacts.map((c) => (
               <li key={c.id} style={{ padding: "0.45rem 0", borderBottom: "1px solid var(--line)" }}>
                 <strong>
-                  {c.firstName} {c.lastName}
+                  <Link href={`/${locale}/contacts/${c.id}`}>{c.firstName} {c.lastName}</Link>
                 </strong>
                 <div className="muted" style={{ fontSize: "0.85rem" }}>
                   {c.email ?? c.phone ?? "—"}

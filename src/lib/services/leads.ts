@@ -161,87 +161,89 @@ export async function assignLeadOwner(
 }
 
 export async function convertLead(ctx: WorkspaceContext, leadId: string) {
-  const lead = await prisma.lead.findFirst({
-    where: { id: leadId, companyId: ctx.company.id },
+  return prisma.$transaction(async db => {
+    const lead = await db.lead.findFirst({
+      where: { id: leadId, companyId: ctx.company.id },
+    });
+    if (!lead) throw new AppError("Not found", "NOT_FOUND", 404);
+    if (!canAccessOwnedRecord(ctx.role, lead.ownerId, ctx.user.id)) {
+      throw new AppError("Forbidden", "FORBIDDEN", 403);
+    }
+    if (lead.status === "CONVERTED") {
+      throw new AppError("Already converted", "CONFLICT", 409);
+    }
+
+    const firstStage = await db.pipelineStage.findFirst({
+      where: {
+        companyId: ctx.company.id,
+        archivedAt: null,
+        isWon: false,
+        isLost: false,
+      },
+      orderBy: { sortOrder: "asc" },
+    });
+    if (!firstStage) throw new AppError("No pipeline stage", "BAD_REQUEST", 400);
+
+    const ownerId = lead.ownerId ?? ctx.user.id;
+
+    const linkedContact = lead.contactId ? await db.contact.findFirst({ where: { id: lead.contactId, companyId: ctx.company.id } }) : null;
+    if (lead.contactId && !linkedContact) throw new AppError("Linked contact not found", "NOT_FOUND", 404);
+    const existingCustomer = linkedContact?.customerId ? await db.customer.findFirst({ where: { id: linkedContact.customerId, companyId: ctx.company.id } }) : null;
+    if (linkedContact?.customerId && !existingCustomer) throw new AppError("Linked client not found", "NOT_FOUND", 404);
+    const customer = existingCustomer || await db.customer.create({
+      data: {
+        companyId: ctx.company.id,
+        name: lead.companyName || lead.contactName,
+        taxId: lead.taxId,
+        legalForm: "შპს",
+        phone: lead.phone,
+        email: lead.email,
+        ownerId,
+      },
+    });
+
+    const nameParts = lead.contactName.split(" ");
+    const contact = linkedContact ? await db.contact.update({ where: { id: linkedContact.id }, data: { customerId: customer.id } }) : await db.contact.create({
+      data: {
+        companyId: ctx.company.id,
+        customerId: customer.id,
+        firstName: nameParts[0] || lead.contactName,
+        lastName: nameParts.slice(1).join(" ") || "—",
+        phone: lead.phone,
+        email: lead.email,
+        ownerId,
+      },
+    });
+
+    const deal = await db.deal.create({
+      data: {
+        companyId: ctx.company.id,
+        contactId: contact.id,
+        title: lead.title,
+        customerId: customer.id,
+        stageId: firstStage.id,
+        ownerId,
+        amountMinor: lead.amountMinor,
+        currency: lead.currency,
+        expectedCloseAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    await db.lead.update({
+      where: { id: lead.id },
+      data: {
+        contactId: contact.id,
+        status: "CONVERTED",
+        convertedCustomerId: customer.id,
+        convertedDealId: deal.id,
+      },
+    });
+
+    await db.auditEvent.create({ data: { companyId: ctx.company.id, actorId: ctx.user.id, action: "lead.converted", entityType: "lead", entityId: lead.id,
+      detail: JSON.stringify({ customerId: customer.id, dealId: deal.id }) } });
+
+    return { customer, deal };
   });
-  if (!lead) throw new AppError("Not found", "NOT_FOUND", 404);
-  if (!canAccessOwnedRecord(ctx.role, lead.ownerId, ctx.user.id)) {
-    throw new AppError("Forbidden", "FORBIDDEN", 403);
-  }
-  if (lead.status === "CONVERTED") {
-    throw new AppError("Already converted", "CONFLICT", 409);
-  }
-
-  const firstStage = await prisma.pipelineStage.findFirst({
-    where: {
-      companyId: ctx.company.id,
-      archivedAt: null,
-      isWon: false,
-      isLost: false,
-    },
-    orderBy: { sortOrder: "asc" },
-  });
-  if (!firstStage) throw new AppError("No pipeline stage", "BAD_REQUEST", 400);
-
-  const ownerId = lead.ownerId ?? ctx.user.id;
-
-  const customer = await prisma.customer.create({
-    data: {
-      companyId: ctx.company.id,
-      name: lead.companyName || lead.contactName,
-      taxId: lead.taxId,
-      legalForm: "შპს",
-      phone: lead.phone,
-      email: lead.email,
-      ownerId,
-    },
-  });
-
-  const nameParts = lead.contactName.split(" ");
-  await prisma.contact.create({
-    data: {
-      companyId: ctx.company.id,
-      customerId: customer.id,
-      firstName: nameParts[0] || lead.contactName,
-      lastName: nameParts.slice(1).join(" ") || "—",
-      phone: lead.phone,
-      email: lead.email,
-      ownerId,
-    },
-  });
-
-  const deal = await prisma.deal.create({
-    data: {
-      companyId: ctx.company.id,
-      title: lead.title,
-      customerId: customer.id,
-      stageId: firstStage.id,
-      ownerId,
-      amountMinor: lead.amountMinor,
-      currency: lead.currency,
-      expectedCloseAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-    },
-  });
-
-  await prisma.lead.update({
-    where: { id: lead.id },
-    data: {
-      status: "CONVERTED",
-      convertedCustomerId: customer.id,
-      convertedDealId: deal.id,
-    },
-  });
-
-  await writeAudit({
-    companyId: ctx.company.id,
-    actorId: ctx.user.id,
-    action: "lead.converted",
-    entityType: "lead",
-    entityId: lead.id,
-    detail: { customerId: customer.id, dealId: deal.id },
-  });
-
-  return { customer, deal };
 }
 
 /** Public inbound (web form) — no session; scoped by company slug. */

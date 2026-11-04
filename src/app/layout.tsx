@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Manrope, Fraunces, Noto_Sans_Georgian } from "next/font/google";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import "./globals.css";
 import "./crm-workspace.css";
 import "./landing-workspace.css";
+import "./inbox.css";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -25,11 +27,12 @@ export const metadata: Metadata = {
   description: "Multi-tenant subscription CRM for growing teams",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const theme = (await cookies()).get("crm-theme")?.value === "light" ? "light" : "dark";
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning>
+    <html lang="en" data-theme={theme} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `try{document.documentElement.dataset.theme=localStorage.getItem("crm-theme")==="light"?"light":"dark"}catch{}` }} />
+        <script dangerouslySetInnerHTML={{ __html: `try{const saved=localStorage.getItem("crm-theme");if(saved==="light"||saved==="dark")document.documentElement.dataset.theme=saved}catch{}` }} />
       </head>
       <body className={`${manrope.variable} ${fraunces.variable} ${notoGeorgian.variable} antialiased`}>
         <AnimatedBackground />
