@@ -28,7 +28,8 @@ describe("Vercel SQLite deployment artifact", () => {
   it("only prepares Vercel file-database demos", () => {
     expect(isVercelSqliteDemo({})).toBe(false);
     expect(isVercelSqliteDemo({}, true)).toBe(true);
-    expect(isVercelSqliteDemo({ DATABASE_URL: "postgresql://example.invalid/db" }, true)).toBe(false);
+    // The explicit demo build always packages its own fixture; it never migrates the configured database.
+    expect(isVercelSqliteDemo({ DATABASE_URL: "postgresql://example.invalid/db" }, true)).toBe(true);
     expect(isVercelSqliteDemo({ VERCEL: "1", DATABASE_URL: "file:./demo-seed.db" })).toBe(true);
     expect(isVercelSqliteDemo({ VERCEL: "1", DATABASE_URL: "postgresql://example.invalid/db" })).toBe(false);
     expect(resolveDatabaseUrl({ env: { DATABASE_URL: "file:./existing.db" } })).toBe("file:./existing.db");
