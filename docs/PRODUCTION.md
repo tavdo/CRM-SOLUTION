@@ -4,7 +4,7 @@ The public Vercel demo uses **ephemeral SQLite** under `/tmp` plus console email
 
 ## Vercel demo schema preparation
 
-The Vercel build runs `npm run build`, which generates Prisma, then runs `scripts/prepare-demo-db.mjs` before Next.js. For the Vercel SQLite demo only, preparation copies the tracked `prisma/demo-seed.db` to the ignored `prisma/deployment-demo.db` artifact and applies pending migrations to that copy. If demo seeding is enabled, it adds the construction examples without overwriting existing records. It never resets or migrates the source database or the database named in the inherited `DATABASE_URL`.
+The Vercel build runs `npm run build:vercel`, which generates Prisma, then runs `scripts/prepare-demo-db.mjs --vercel` before Next.js. The explicit flag ensures preparation runs even when Vercel system variables are not exposed during the build. For the Vercel SQLite demo only, preparation copies the tracked `prisma/demo-seed.db` to the ignored `prisma/deployment-demo.db` artifact and applies pending migrations to that copy. If demo seeding is enabled, it adds the construction examples without overwriting existing records. It never resets or migrates the source database or the database named in the inherited `DATABASE_URL`.
 
 Next.js traces the migrated artifact into server functions. At runtime, it is copied once to `/tmp/crm-demo-contractor-v1.db`; an omitted artifact fails explicitly instead of silently opening an outdated seed or an empty database. `/api/health` checks construction tables and the new Task/Invoice columns, so a working SQLite connection with an outdated schema returns 503.
 

@@ -11,7 +11,11 @@ export function resolveDatabaseUrl({ env = process.env, root = process.cwd(), te
     const runtime = path.join(temporaryDirectory, "crm-demo-contractor-v1.db");
     if (!existsSync(runtime)) {
       const artifact = path.join(root, "prisma", "deployment-demo.db");
-      if (!existsSync(artifact)) throw new Error("Migrated deployment demo database is missing. Run the Vercel build preparation step.");
+      if (!existsSync(artifact)) {
+        const error = new Error("Migrated deployment demo database is missing. Run the Vercel build preparation step.");
+        Object.assign(error, { code: "DEPLOYMENT_DB_MISSING" });
+        throw error;
+      }
       copyFileSync(artifact, runtime);
     }
     return `file:${runtime.replaceAll("\\", "/")}`;

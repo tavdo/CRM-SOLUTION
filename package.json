@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && node scripts/prepare-demo-db.mjs && next build",
+    "build:vercel": "prisma generate && node scripts/prepare-demo-db.mjs --vercel && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

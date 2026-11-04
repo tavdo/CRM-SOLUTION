@@ -16,14 +16,20 @@ describe("production schema health", () => {
     expect((await response.json()).status).toBe("ok");
   });
   it("reports 503 for a pre-construction database without exposing database errors", async () => {
-    db.constructionProject.count.mockRejectedValue(new Error("ConstructionProject table missing: private database path"));
+    db.constructionProject.count.mockRejectedValue(Object.assign(new Error("ConstructionProject table missing: private database path"), { code: "P2021" }));
     const response = await GET();
     expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({ status: "degraded", db: false });
+    expect(await response.json()).toEqual({ status: "degraded", db: false, reason: "schema_not_ready" });
   });
   it("also detects missing project columns on legacy invoices", async () => {
     db.constructionProject.count.mockResolvedValue(0);
     db.invoice.findFirst.mockRejectedValue(new Error("Missing acceptanceId"));
     expect((await GET()).status).toBe(503);
+  });
+  it("reports a missing deployment artifact without exposing filesystem paths", async () => {
+    db.constructionProject.count.mockRejectedValue(Object.assign(new Error("private path"), { code: "DEPLOYMENT_DB_MISSING" }));
+    const response = await GET();
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ status: "degraded", db: false, reason: "deployment_artifact_missing" });
   });
 });

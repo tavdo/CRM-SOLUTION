@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build:vercel",
   "env": {
     "DATABASE_URL": "file:./demo-seed.db",
     "SESSION_SECRET": "vercel-owner-demo-session-secret-change-before-live",
