@@ -138,7 +138,18 @@ a {
 
 /* Workspace/public landing shells supply their own full-screen photo. Avoid
    continuously animating and blurring the obscured background underneath them. */
-body:has(.crm-workspace) > .ambient-bg { display: none; }
+body:has(.crm-workspace) > .ambient-bg,
+body:has([data-route-loading]) > .ambient-bg { display: none; }
+
+/* Authentication uses a static workspace photo, without background motion. */
+html:has(.auth-workspace) { scroll-behavior: auto !important; }
+body:has(.auth-workspace) > .ambient-bg,
+body:has(.auth-workspace) > .ambient-bg *,
+body:has(.auth-workspace) > .ambient-bg *::before,
+body:has(.auth-workspace) > .ambient-bg *::after {
+  animation: none !important;
+  transition: none !important;
+}
 
 .ambient-bg-photo {
   position: absolute;

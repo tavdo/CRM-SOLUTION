@@ -1,0 +1,134 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100dvh;
+}
+
+.shell,
+.shell::before,
+.shell::after,
+.shell *:not([data-loading-indicator], [data-loading-indicator] *),
+.shell *:not([data-loading-indicator], [data-loading-indicator] *)::before,
+.shell *:not([data-loading-indicator], [data-loading-indicator] *)::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+.shell :is(a, button, input, select, textarea, svg),
+.shell :global(.surface) {
+  transform: none !important;
+}
+
+.shell :global(.surface:hover) {
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  border-color: var(--line);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  min-height: 80px;
+  padding: 0.75rem clamp(1rem, 3vw, 2.5rem);
+  background: #000175f0;
+  border-bottom: 1px solid #ffffff24;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  color: #fff;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.shell .header .controls :global(.theme-switcher),
+.shell .header .controls :global(.lang-pill) {
+  color: #e6edff;
+  background: #ffffff0d;
+  border-color: #ffffff29;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.shell .header .controls :global(.theme-option),
+.shell .header .controls :global(.lang-pill-btn),
+.shell .header .controls :global(.lang-pill-icon) {
+  color: #e6edff;
+}
+
+.shell .header .controls :global(.theme-option[aria-pressed="true"]),
+.shell .header .controls :global(.lang-pill-btn.active) {
+  background: #0000e2;
+  color: #fff;
+  box-shadow: none;
+}
+
+.shell .header :focus-visible {
+  outline-color: #b6c6ff;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: clamp(1.5rem, 5vh, 3rem) 1.25rem;
+}
+
+.card {
+  width: min(480px, 100%);
+  min-width: 0;
+  padding: 2rem;
+}
+
+.title {
+  color: var(--ink);
+  font-size: 1.75rem;
+  font-weight: 650;
+  line-height: 1.25;
+  margin: 0.4rem 0 1.4rem;
+}
+
+.card p a {
+  color: var(--info-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+:global(:root[data-theme="dark"]) .header {
+  background: #00025ff2;
+}
+
+@media (max-width: 480px) {
+  .header {
+    gap: 0.9rem;
+    padding: 1rem;
+  }
+
+  .controls {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .main {
+    padding: 1.5rem 1rem;
+  }
+
+  .card {
+    padding: 1.5rem 1.25rem;
+  }
+}

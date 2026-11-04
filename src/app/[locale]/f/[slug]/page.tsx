@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { ensureDbInitialized } from "@/lib/db-init";
 import { isLocale } from "@/i18n/config";
+import { NativeSubmitForm } from "@/components/NativeSubmitForm";
 
 export const dynamic = "force-dynamic";
 
@@ -91,10 +92,13 @@ export default async function PublicLeadFormPage({
           </div>
         ) : null}
 
-        <form
+        <NativeSubmitForm
           action="/api/inbound/webform"
           method="post"
           style={{ display: "grid", gap: "0.75rem" }}
+          submitLabel={isKa ? "გაგზავნა" : "Send inquiry"}
+          loadingLabel={isKa ? "მოთხოვნის გაგზავნა" : "Sending inquiry"}
+          submitStyle={{ minHeight: 42 }}
         >
           <input type="hidden" name="companySlug" value={company.slug} />
           <input
@@ -132,10 +136,7 @@ export default async function PublicLeadFormPage({
             </span>
             <textarea className="textarea" name="message" rows={4} />
           </label>
-          <button type="submit" className="btn btn-primary" style={{ minHeight: 42 }}>
-            {isKa ? "გაგზავნა" : "Send inquiry"}
-          </button>
-        </form>
+        </NativeSubmitForm>
       </div>
     </div>
   );

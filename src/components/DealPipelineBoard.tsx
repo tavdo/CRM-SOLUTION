@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui";
 import { moveDealByIdAction } from "@/app/actions/crm";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
 
 export type PipelineDeal = {
   id: string;
@@ -67,9 +68,7 @@ export function DealPipelineBoard({
         </div>
       ) : null}
       {pending ? (
-        <div className="muted" style={{ fontSize: "0.8rem" }}>
-          {locale === "ka" ? "გადაადგილება…" : "Moving…"}
-        </div>
+        <LoadingIndicator compact label={locale === "ka" ? "გადაადგილება…" : "Moving…"} />
       ) : null}
       <div className="pipeline" role="list">
         {stages.map((stage) => (

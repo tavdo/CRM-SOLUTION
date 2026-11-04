@@ -6,6 +6,7 @@ import { MessageCircle, Search, Send, Settings, Inbox as InboxIcon, ArrowLeft, P
 import type { getConversation, inboxBootstrap, listConversations } from "@/lib/services/inbox";
 import { inboxApi } from "./api";
 import { createRefreshGate } from "./refresh";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
 
 type Detail = Awaited<ReturnType<typeof getConversation>>;
 type Summary = Awaited<ReturnType<typeof listConversations>>;
@@ -18,8 +19,12 @@ export function Inbox({ locale, bootstrap, initialConversation = "" }: { locale:
   const [selected, setSelected] = useState(initialConversation);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [filters, setFilters] = useState({ q: "", channel: "", status: "", assigned: "", unread: "" });
+  const filterKey = new URLSearchParams(filters).toString();
+  const [listLoad, setListLoad] = useState({ key: filterKey, pending: true });
+  const [detailLoad, setDetailLoad] = useState({ id: initialConversation, pending: !!initialConversation });
   const [text, setText] = useState(""); const [note, setNote] = useState(false);
   const [error, setError] = useState(""); const [pending, setPending] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"send" | "upload" | null>(null);
   const [available, setAvailable] = useState(bootstrap.available);
   const [attachment, setAttachment] = useState<{ id: string; name: string; type: string } | null>(null);
   const [template, setTemplate] = useState({ name: "", language: "en_US", parameters: "" });
@@ -27,7 +32,6 @@ export function Inbox({ locale, bootstrap, initialConversation = "" }: { locale:
   const [suggestions, setSuggestions] = useState<{ id: string; firstName: string; lastName: string }[]>([]);
   const request = useRef<{ fingerprint: string; id: string } | null>(null);
   const selectedRef = useRef(selected); selectedRef.current = selected;
-  const filterKey = new URLSearchParams(filters).toString();
   const filterKeyRef = useRef(filterKey); filterKeyRef.current = filterKey;
   const previousFilter = useRef(filterKey);
   const previousSelection = useRef(initialConversation);
@@ -41,8 +45,12 @@ export function Inbox({ locale, bootstrap, initialConversation = "" }: { locale:
       pending = inboxApi<Summary>(`conversations?${filterKey}`).finally(() => { listRequests.current.delete(filterKey); });
       listRequests.current.set(filterKey, pending);
     }
-    const next = await pending;
-    if (filterKeyRef.current === filterKey) setRows(next);
+    try {
+      const next = await pending;
+      if (filterKeyRef.current === filterKey) setRows(next);
+    } finally {
+      if (filterKeyRef.current === filterKey) setListLoad(current => current.key === filterKey && !current.pending ? current : { key: filterKey, pending: false });
+    }
   }, [filterKey]);
   const listLoader = useRef(loadList); listLoader.current = loadList;
   const loadDetail = useCallback(async (id: string) => {
@@ -54,11 +62,13 @@ export function Inbox({ locale, bootstrap, initialConversation = "" }: { locale:
     let next: Detail;
     try { next = await pending; }
     catch (error) {
-      if (selectedRef.current === id) setDetail(null);
+      if (selectedRef.current !== id) return;
+      setDetail(null); setDetailLoad({ id, pending: false });
       throw error;
     }
     if (selectedRef.current !== id) return;
     setDetail(next);
+    setDetailLoad(current => current.id === id && !current.pending ? current : { id, pending: false });
     const latestIncoming = [...next.messages].reverse().find(message => message.direction === "IN");
     if (document.visibilityState === "visible" && latestIncoming && lastReadMessage.current.get(id) !== latestIncoming.id) {
       lastReadMessage.current.set(id, latestIncoming.id);
@@ -74,14 +84,16 @@ export function Inbox({ locale, bootstrap, initialConversation = "" }: { locale:
   useEffect(() => {
     if (previousFilter.current === filterKey) return;
     previousFilter.current = filterKey;
-    const timer = setTimeout(() => { void loadList().catch(e => setError(e.message)); }, 200);
+    setListLoad({ key: filterKey, pending: true });
+    const timer = setTimeout(() => { void loadList().catch(e => { if (filterKeyRef.current === filterKey) setError(e.message); }); }, 200);
     return () => clearTimeout(timer);
   }, [filterKey, loadList]);
   useEffect(() => {
     if (previousSelection.current === selected) return;
     previousSelection.current = selected;
+    setDetailLoad({ id: selected, pending: !!selected });
     setDetail(null); setText(""); setAttachment(null); setError(""); setSuggestions([]); setUseTemplate(false);
-    if (selected) void loadDetail(selected).catch(e => setError(e.message));
+    if (selected) void loadDetail(selected).catch(e => { if (selectedRef.current === selected) setError(e.message); });
   }, [selected, loadDetail]);
   useEffect(() => {
     let stopped = false;
@@ -117,7 +129,7 @@ export function Inbox({ locale, bootstrap, initialConversation = "" }: { locale:
   }
   async function submit(event: React.FormEvent) {
     event.preventDefault(); if (!selected || pending) return;
-    setPending(true); setError("");
+    setPending(true); setPendingAction("send"); setError("");
     try {
       if (note) await inboxApi(`conversations/${selected}`, "PATCH", { note: text });
       else {
@@ -128,14 +140,14 @@ export function Inbox({ locale, bootstrap, initialConversation = "" }: { locale:
           ...(useTemplate ? { template: { name: template.name, language: template.language, parameters: template.parameters ? template.parameters.split("\n") : [] } } : {}) });
       }
       setText(""); setAttachment(null); request.current = null; await loadDetail(selected); await loadList();
-    } catch (e) { setError((e as Error).message); } finally { setPending(false); }
+    } catch (e) { setError((e as Error).message); } finally { setPending(false); setPendingAction(null); }
   }
   async function upload(file: File) {
-    if (!selected) return; setPending(true); setError("");
+    if (!selected) return; setPending(true); setPendingAction("upload"); setError("");
     try {
       const response = await fetch(`/api/inbox/conversations/${selected}/attachments`, { method: "POST", headers: { "Content-Type": file.type || "application/octet-stream", "X-File-Name": encodeURIComponent(file.name) }, body: file });
       const result = await response.json(); if (!response.ok) throw new Error(result.error?.message || "Upload failed"); setAttachment(result);
-    } catch (e) { setError((e as Error).message); } finally { setPending(false); }
+    } catch (e) { setError((e as Error).message); } finally { setPending(false); setPendingAction(null); }
   }
   async function merge(sourceId: string) {
     if (!detail) return;
@@ -147,6 +159,8 @@ export function Inbox({ locale, bootstrap, initialConversation = "" }: { locale:
     } catch (e) { setError((e as Error).message); }
   }
   const conversation = detail?.conversation;
+  const listLoading = listLoad.key !== filterKey || listLoad.pending;
+  const detailLoading = !!selected && (detailLoad.id !== selected || detailLoad.pending);
   const disconnected = conversation?.channel.status !== "ACTIVE";
   const closedWindow = conversation && conversation.channel.type !== "VIBER" && (!conversation.lastIncomingAt || Date.now() - new Date(conversation.lastIncomingAt).getTime() >= 86400000);
   return <div className="inbox-page">
@@ -167,12 +181,12 @@ export function Inbox({ locale, bootstrap, initialConversation = "" }: { locale:
           {bootstrap.admin && <select className="select" aria-label="Assigned manager" value={filters.assigned} onChange={e => setFilters({ ...filters, assigned: e.target.value })}><option value="">{label("All managers", "ყველა მენეჯერი")}</option><option value="unassigned">{label("Unassigned", "მიუნიჭებელი")}</option>{bootstrap.members.map(m => <option key={m.userId} value={m.userId}>{m.user.name}</option>)}</select>}
           <label className="inbox-check"><input type="checkbox" checked={filters.unread === "true"} onChange={e => setFilters({ ...filters, unread: e.target.checked ? "true" : "" })} />{label("Unread only", "მხოლოდ წაუკითხავი")}</label>
         </div>
-        <div className="inbox-conversation-list">{!rows.length && <p className="muted inbox-list-empty">{label("No conversations match these filters.", "საუბრები ვერ მოიძებნა.")}</p>}{rows.map(row => <button key={row.id} className={`inbox-conversation ${selected === row.id ? "selected" : ""}`} onClick={() => setSelected(row.id)}>
+        <div className="inbox-conversation-list" aria-busy={listLoading}>{listLoading && <div className="inbox-list-empty"><LoadingIndicator label={label("Loading conversations", "საუბრების ჩატვირთვა")} /></div>}{!listLoading && !rows.length && <p className="muted inbox-list-empty">{label("No conversations match these filters.", "საუბრები ვერ მოიძებნა.")}</p>}{rows.map(row => <button key={row.id} className={`inbox-conversation ${selected === row.id ? "selected" : ""}`} onClick={() => setSelected(row.id)}>
           <span className={`inbox-channel-icon ${row.channel.type.toLowerCase()}`}><MessageCircle size={19} /><small>{row.channel.type.slice(0, 1)}</small></span><span className="inbox-conversation-copy"><strong>{row.contact.firstName} {row.contact.lastName}</strong><span>{row.messages[0]?.text || row.messages[0]?.type || "—"}</span><small>{channelLabels[row.channel.type]} · {row.status}</small></span>{row.unreadCount > 0 && <span className="inbox-unread">{row.unreadCount}</span>}
         </button>)}</div>
       </aside>
-      <section className="surface inbox-chat-pane" aria-label={label("Conversation", "საუბარი")}>
-        {!conversation ? <div className="inbox-empty"><MessageCircle size={40} /><h2>{label("Select a conversation", "აირჩიეთ საუბარი")}</h2><p className="muted">{label("Messages and internal notes appear here.", "აქ გამოჩნდება შეტყობინებები და შიდა ჩანაწერები.")}</p></div> : <>
+      <section className="surface inbox-chat-pane" aria-label={label("Conversation", "საუბარი")} aria-busy={detailLoading}>
+        {detailLoading ? <div className="inbox-empty"><LoadingIndicator label={label("Loading conversation", "საუბრის ჩატვირთვა")} /></div> : !selected || !conversation ? <div className="inbox-empty"><MessageCircle size={40} /><h2>{label("Select a conversation", "აირჩიეთ საუბარი")}</h2><p className="muted">{label("Messages and internal notes appear here.", "აქ გამოჩნდება შეტყობინებები და შიდა ჩანაწერები.")}</p></div> : <>
           <div className="inbox-chat-header"><button className="btn btn-secondary inbox-back" onClick={() => setSelected("")} aria-label="Back"><ArrowLeft size={18} /></button><div><Link href={`/${locale}/contacts/${conversation.contactId}`}><strong>{conversation.contact.firstName} {conversation.contact.lastName}</strong></Link><small>{conversation.channel.name} · {channelLabels[conversation.channel.type]}</small></div>
             <select className="select" aria-label="Conversation status" value={conversation.status} onChange={e => void mutate({ status: e.target.value })}>{["OPEN", "PENDING", "CLOSED"].map(s => <option key={s}>{s}</option>)}</select>
             {bootstrap.admin && <select className="select" aria-label="Reassign conversation" value={conversation.assignedUserId || ""} onChange={e => void mutate({ assignedUserId: e.target.value || null })}><option value="">{label("Unassigned", "მიუნიჭებელი")}</option>{bootstrap.members.map(m => <option key={m.userId} value={m.userId}>{m.user.name}</option>)}</select>}
@@ -196,11 +210,11 @@ export function Inbox({ locale, bootstrap, initialConversation = "" }: { locale:
           <form className={`inbox-composer ${note ? "internal" : ""}`} onSubmit={submit}>
             {!note && <div className="inbox-composer-options"><select className="select" aria-label="Quick reply" defaultValue="" onChange={e => { setText(e.target.value); e.currentTarget.value = ""; }}><option value="">{label("Quick replies", "სწრაფი პასუხები")}</option>{bootstrap.quickReplies.map(r => <option key={r.id} value={r.text}>{r.title}</option>)}</select>
               {conversation.channel.type === "WHATSAPP" && <label className="inbox-check"><input type="checkbox" checked={useTemplate} onChange={e => setUseTemplate(e.target.checked)} />{label("Template", "შაბლონი")}</label>}
-              <input hidden type="file" ref={fileInput} onChange={e => { if (e.target.files?.[0]) void upload(e.target.files[0]); e.target.value = ""; }} /><button className="btn btn-secondary" type="button" onClick={() => fileInput.current?.click()} disabled={pending || !!closedWindow || disconnected} aria-label={label("Attach file", "ფაილის მიმაგრება")}><Paperclip size={16} /></button>
+              <input hidden type="file" ref={fileInput} onChange={e => { if (e.target.files?.[0]) void upload(e.target.files[0]); e.target.value = ""; }} /><button className="btn btn-secondary" type="button" onClick={() => fileInput.current?.click()} disabled={pending || !!closedWindow || disconnected} aria-busy={pending && pendingAction === "upload"} aria-label={label("Attach file", "ფაილის მიმაგრება")}>{pending && pendingAction === "upload" ? <LoadingIndicator compact label={label("Uploading file", "ფაილის ატვირთვა")} /> : <Paperclip size={16} />}</button>
             </div>}
             {useTemplate && !note && <div className="inbox-template"><input required className="input" placeholder="Approved template name" value={template.name} onChange={e => setTemplate({ ...template, name: e.target.value })} /><input required className="input" aria-label="Template language code" value={template.language} onChange={e => setTemplate({ ...template, language: e.target.value })} /><textarea className="textarea" placeholder="Body parameters, one per line" value={template.parameters} onChange={e => setTemplate({ ...template, parameters: e.target.value })} /></div>}
             {attachment && !note && <span>{attachment.name} <button type="button" onClick={() => setAttachment(null)} aria-label="Remove attachment">×</button></span>}
-            <div className="inbox-send-row"><textarea className="textarea" aria-label={note ? label("Internal note", "შიდა ჩანაწერი") : label("Reply", "პასუხი")} placeholder={note ? label("Only your team can see this note", "ჩანაწერი ხილულია მხოლოდ გუნდისთვის") : label("Write a reply…", "დაწერეთ პასუხი…")} value={text} onChange={e => setText(e.target.value)} maxLength={note ? 5000 : 4000} disabled={!note && (disconnected || (!!closedWindow && !useTemplate))} /><button className="btn btn-primary" disabled={pending || (!note && (disconnected || (!!closedWindow && !useTemplate)))}><Send size={16} />{label(note ? "Add note" : "Send", note ? "ჩანაწერი" : "გაგზავნა")}</button></div>
+            <div className="inbox-send-row"><textarea className="textarea" aria-label={note ? label("Internal note", "შიდა ჩანაწერი") : label("Reply", "პასუხი")} placeholder={note ? label("Only your team can see this note", "ჩანაწერი ხილულია მხოლოდ გუნდისთვის") : label("Write a reply…", "დაწერეთ პასუხი…")} value={text} onChange={e => setText(e.target.value)} maxLength={note ? 5000 : 4000} disabled={!note && (disconnected || (!!closedWindow && !useTemplate))} /><button className="btn btn-primary" disabled={pending || (!note && (disconnected || (!!closedWindow && !useTemplate)))} aria-busy={pending && pendingAction === "send"}>{pending && pendingAction === "send" ? <LoadingIndicator compact label={note ? label("Saving note", "ჩანაწერის შენახვა") : label("Sending message", "შეტყობინების გაგზავნა")} /> : <Send size={16} />}{label(note ? "Add note" : "Send", note ? "ჩანაწერი" : "გაგზავნა")}</button></div>
           </form>
         </>}
       </section>

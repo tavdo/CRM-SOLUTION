@@ -1,0 +1,103 @@
+/* Glass pill navigation adapted from Uiverse.io by mymiamo. */
+.nav {
+  --menu-ease: var(--ease, cubic-bezier(0.22, 1, 0.36, 1));
+  position: fixed;
+  z-index: 80;
+  left: env(safe-area-inset-left, 0px);
+  right: env(safe-area-inset-right, 0px);
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  display: none;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 8px;
+  width: min(520px, calc(100% - 20px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+  margin-inline: auto;
+  padding: 8px;
+  border: 1px solid #ffffff38;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #00025fe8, #000175d9);
+  box-shadow: 0 12px 32px #00025f66, inset 0 1px 0 #ffffff24;
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  backdrop-filter: blur(18px) saturate(1.35);
+  color: #fff;
+}
+
+.link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 6px 3px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: #edf2ff;
+  text-align: center;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 160ms var(--menu-ease, ease), box-shadow 160ms var(--menu-ease, ease);
+}
+
+.link svg {
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  max-width: 100%;
+  max-height: 2.4em;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.nav .link[aria-current="page"] {
+  border-color: #ffffff3d;
+  background: linear-gradient(135deg, #0000e2, #0003d4);
+  box-shadow: 0 3px 12px #00008b70, inset 0 1px 0 #ffffff24;
+  color: #fff;
+}
+
+.nav .link:focus-visible {
+  outline: 2px solid #c7d6ff;
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav .link:hover:not([aria-current="page"]) {
+    background: #0003d480;
+    color: #fff;
+  }
+}
+
+@media (max-width: 1100px) {
+  .nav {
+    display: grid;
+  }
+}
+
+@media (max-width: 360px) {
+  .label {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link {
+    transition: none;
+  }
+}
+
+@media print {
+  .nav {
+    display: none !important;
+  }
+}

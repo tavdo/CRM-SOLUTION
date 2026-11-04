@@ -1,4 +1,5 @@
 import { clsx } from "clsx";
+import { PendingButton } from "./PendingButton";
 import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
@@ -19,7 +20,7 @@ export function Button({
   variant?: "primary" | "secondary" | "danger";
 }) {
   return (
-    <button
+    <PendingButton
       className={cn(
         "btn",
         variant === "primary" && "btn-primary",

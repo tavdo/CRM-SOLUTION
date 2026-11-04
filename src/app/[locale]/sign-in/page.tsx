@@ -25,7 +25,7 @@ export default async function SignInPage({
   return (
     <AuthShell title={t("signIn")} brand={brand("name")} locale={locale}>
       <div style={{ marginBottom: "1.15rem" }}>
-        <QuickDemoLogin locale={locale} compact />
+        <QuickDemoLogin locale={locale} compact appearance="workspace" />
       </div>
       {sp.reset ? <Alert tone="ok">{t("resetSuccess")}</Alert> : null}
       <AuthForm

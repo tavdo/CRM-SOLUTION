@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { moveDealAction } from "@/app/actions/crm";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
 
 export function MoveDealSelect({
   locale,
@@ -26,6 +27,7 @@ export function MoveDealSelect({
         });
       }}
       style={{ marginTop: 8 }}
+      aria-busy={pending}
     >
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="dealId" value={dealId} />
@@ -46,6 +48,7 @@ export function MoveDealSelect({
           </option>
         ))}
       </select>
+      {pending ? <LoadingIndicator compact label={locale === "ka" ? "გადაადგილება…" : "Moving…"} /> : null}
     </form>
   );
 }

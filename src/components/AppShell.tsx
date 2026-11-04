@@ -8,9 +8,11 @@ import { LayoutDashboard, Inbox, Users, Kanban, FileSpreadsheet, Package, CheckS
   CalendarDays, Headset, Bot, Settings, LogOut, Menu, X, Building2, ChevronDown,
   Search, Plus, PanelsTopLeft, type LucideIcon } from "lucide-react";
 import { signOutAction, switchWorkspaceAction } from "@/app/actions/auth";
-import { LanguageSwitcher } from "./LanguageSwitcher";
-import { ThemeSwitcher } from "./ThemeSwitcher";
+import { MobileBottomNav } from "./MobileBottomNav";
+import { WorkspaceQuickControls } from "./WorkspaceQuickControls";
 import { BrandLogo } from "./BrandLogo";
+import { LoadingIndicator } from "./LoadingIndicator";
+import { PendingButton } from "./PendingButton";
 import brandStyles from "./BrandLogo.module.css";
 
 type Workspace = { id: string; name: string };
@@ -73,7 +75,7 @@ export function AppShell({ locale, brand, labels, userName, workspaces, activeCo
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
     };
-    const resize = () => { if (window.innerWidth > 920) setOpen(false); };
+    const resize = () => { if (window.innerWidth > 1100) setOpen(false); };
     document.addEventListener("keydown", keydown);
     window.addEventListener("resize", resize);
     return () => {
@@ -104,15 +106,17 @@ export function AppShell({ locale, brand, labels, userName, workspaces, activeCo
           aria-expanded={mobile ? open : !collapsed} onClick={() => mobile ? setOpen(false) : setCollapsed(!collapsed)}>
           {mobile ? <X size={22} /> : <Menu size={22} />}
         </button>
-        <Link href={href("dashboard")} className="workspace-brand-name" title={brand}><BrandLogo name={brand} /></Link>
+        <Link href={href("dashboard")} className="workspace-brand-name" title={brand} onClick={() => setOpen(false)}><BrandLogo name={brand} /></Link>
       </div>
       <div className="workspace-selector">
         {workspaces.length > 1 ? <>
           <label htmlFor={mobile ? "mobile-workspace" : "sidebar-workspace"} className="sr-only">{labels.switchWorkspace}</label>
           <select id={mobile ? "mobile-workspace" : "sidebar-workspace"} value={activeCompanyId} disabled={pending}
-            onChange={(event) => { const id = event.target.value; startTransition(() => { void switchWorkspaceAction(id, locale); }); }}>
+            aria-busy={pending}
+            onChange={(event) => { const id = event.target.value; startTransition(async () => { await switchWorkspaceAction(id, locale); }); }}>
             {workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}
           </select>
+          {pending && mobile === open ? <LoadingIndicator compact label={labels.switchWorkspace} /> : null}
         </> : <span title={activeWorkspace?.name}>{activeWorkspace?.name}</span>}
       </div>
       <nav className="app-nav" aria-label={labels.menu}>
@@ -138,7 +142,7 @@ export function AppShell({ locale, brand, labels, userName, workspaces, activeCo
         </details>}
         <div className="workspace-user"><span className="workspace-avatar" aria-hidden="true">{userName.slice(0, 1).toUpperCase()}</span>
           <span className="workspace-user-name">{userName}<small>{activeWorkspace?.name}</small></span>
-          <form action={signOutAction}><button className="chrome-icon" type="submit" aria-label={labels.signOut} title={labels.signOut}><LogOut size={18} /></button></form>
+          <form action={signOutAction}><PendingButton className="chrome-icon" type="submit" aria-label={labels.signOut} title={labels.signOut}><LogOut size={18} /></PendingButton></form>
         </div>
       </div>
     </>;
@@ -161,6 +165,7 @@ export function AppShell({ locale, brand, labels, userName, workspaces, activeCo
             aria-controls="workspace-search" onClick={() => setSearchOpen(!searchOpen)}><Search size={21} /></button>
           {canManageMembers && <Link className="chrome-pill workspace-invite" href={href("settings#members")}><Plus size={14} />{t("invite")}</Link>}
           <Link className="workspace-avatar" href={href("settings")} title={`${userName} · ${labels.settings}`} aria-label={`${userName} · ${labels.settings}`}>{userName.slice(0, 1).toUpperCase()}</Link>
+          <WorkspaceQuickControls locale={locale} dashboardLabel={labels.dashboard} onOpen={() => setSearchOpen(false)} />
         </div>
         {searchOpen && <form id="workspace-search" className="workspace-search-popover" action={href("deals")} onKeyDown={(event) => { if (event.key === "Escape") setSearchOpen(false); }}>
           <label htmlFor="workspace-deal-query">{t("searchDeals")}</label>
@@ -170,7 +175,8 @@ export function AppShell({ locale, brand, labels, userName, workspaces, activeCo
         </form>}
       </header>
       <main id="main-content" className="app-content">{children}</main>
-      <footer className="workspace-footer"><Link href={href("dashboard")} className="chrome-pill">{brand}</Link><LanguageSwitcher locale={locale} /><ThemeSwitcher /><span>© {new Date().getFullYear()} {brand}</span></footer>
+      <footer className="workspace-footer"><span>© {new Date().getFullYear()} {brand}</span></footer>
+      <MobileBottomNav locale={locale} labels={labels} />
     </div>
     <aside className="workspace-utility-rail" aria-label={t("quickAccess")}>
       <Link className="chrome-icon" href={href("leads")} title={labels.leads} aria-label={`${labels.leads}${newLeadsCount ? ` (${newLeadsCount})` : ""}`}><Inbox size={21} />{newLeadsCount > 0 && <span className="rail-counter">{newLeadsCount}</span>}</Link>

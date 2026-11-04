@@ -1,0 +1,18 @@
+.loading {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: min(65dvh, 560px);
+  padding: 2rem 1rem;
+  color: var(--ink);
+}
+
+.fullPage {
+  --ink: #edf2ff;
+  --ink-secondary: #dce6ff;
+  --ink-muted: #c7d5f7;
+  min-height: 100dvh;
+  background: linear-gradient(180deg, #06132bcc, #06132b99), url('/images/dashboard-crm.webp') center / cover no-repeat;
+  color: var(--ink);
+}

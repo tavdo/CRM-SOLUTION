@@ -199,8 +199,9 @@
 @media (min-width: 1600px) { .crm-workspace { grid-template-columns: 300px minmax(0, 1fr) 65px; } .crm-workspace .app-nav-link { font-size: 15px; min-height: 48px; } .crm-workspace .workspace-subnav .app-nav-link { font-size: 13px; min-height: 42px; } }
 @media (max-width: 1220px) { .crm-workspace { grid-template-columns: 235px minmax(0, 1fr) 50px; } .crm-workspace .app-topbar { padding-inline: 18px; } .overview-columns { grid-template-columns: minmax(0, 1fr) 255px; gap: 15px; } .overview-kpis { gap: 12px; } .overview-kpi { padding: 16px; } .workspace-brand-name { font-size: 18px; } }
 @media (max-width: 1100px) { .overview-columns { grid-template-columns: 1fr; } .overview-secondary { grid-template-columns: 1fr 1fr; } .overview-secondary .overview-panel:first-child { grid-column: 1 / -1; } .workspace-invite { display: none; } }
-@media (max-width: 920px) {
+@media (max-width: 1100px) {
   .crm-workspace, .crm-workspace.nav-collapsed { grid-template-columns: minmax(0, 1fr); }
+  .crm-workspace .app-sidebar { display: none; }
   .workspace-utility-rail { display: none; }
   .workspace-mobile-menu { display: inline-flex; }
   .crm-workspace .app-topbar { flex-wrap: nowrap; min-height: 65px; padding: 10px 14px; gap: 10px; }
@@ -210,6 +211,8 @@
   .workspace-scrim { position: absolute; inset: 0; width: 100%; border: 0; background: #00025f80; backdrop-filter: blur(3px); }
   .workspace-drawer { position: relative; width: min(300px, calc(100vw - 45px)); height: 100dvh; overflow-y: auto; display: flex; flex-direction: column; padding: 0 15px 15px; color: white; background: #000175fa; box-shadow: 10px 0 40px #00025f33; }
   .workspace-footer { padding-inline: 18px; }
+  .app-frame .workspace-main { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
+  html:has(.app-frame) { scroll-padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (max-width: 600px) {
   .overview-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
