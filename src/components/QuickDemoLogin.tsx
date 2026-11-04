@@ -3,9 +3,11 @@ import { Zap, Shield, Briefcase, UserCheck, ArrowUpRight } from "lucide-react";
 export function QuickDemoLogin({
   locale,
   compact = false,
+  appearance = "default",
 }: {
   locale: string;
   compact?: boolean;
+  appearance?: "default" | "workspace";
 }) {
   if (process.env.NODE_ENV === "production") return null;
   const isKa = locale === "ka";
@@ -39,12 +41,12 @@ export function QuickDemoLogin({
 
   return (
     <div
-      className="surface"
+      className={`surface quick-demo${appearance === "workspace" ? " quick-demo-workspace" : ""}`}
       style={{
         padding: compact ? "1rem" : "1.15rem 1.25rem",
-        border: "1px solid rgba(16, 185, 129, 0.28)",
+        border: appearance === "workspace" ? undefined : "1px solid rgba(16, 185, 129, 0.28)",
         background:
-          "linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, rgba(9, 14, 23, 0.88) 100%)",
+          appearance === "workspace" ? undefined : "linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, rgba(9, 14, 23, 0.88) 100%)",
       }}
     >
       <div
@@ -69,6 +71,7 @@ export function QuickDemoLogin({
       </div>
 
       <div
+        className="quick-demo-personas"
         style={{
           display: "grid",
           gap: "0.55rem",
@@ -84,7 +87,7 @@ export function QuickDemoLogin({
             <a
               key={p.email}
               href={href}
-              className="surface-interactive"
+              className={`surface-interactive${appearance === "workspace" ? " quick-demo-persona" : ""}`}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -92,10 +95,10 @@ export function QuickDemoLogin({
                 gap: "0.65rem",
                 padding: "0.65rem 0.85rem",
                 borderRadius: 12,
-                background: p.primary
+                background: appearance === "workspace" ? undefined : p.primary
                   ? "linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(5, 150, 105, 0.12) 100%)"
                   : "rgba(255, 255, 255, 0.04)",
-                border: p.primary
+                border: appearance === "workspace" ? undefined : p.primary
                   ? "1px solid rgba(16, 185, 129, 0.48)"
                   : "1px solid rgba(255, 255, 255, 0.1)",
               }}
@@ -108,10 +111,10 @@ export function QuickDemoLogin({
                     borderRadius: 8,
                     display: "grid",
                     placeItems: "center",
-                    background: p.primary
+                    background: appearance === "workspace" ? "#e9f5ff" : p.primary
                       ? "rgba(16, 185, 129, 0.25)"
                       : "rgba(255, 255, 255, 0.06)",
-                    color: p.primary ? "#6ee7b7" : "#cbd5e1",
+                    color: appearance === "workspace" ? "#2192c4" : p.primary ? "#6ee7b7" : "#cbd5e1",
                     flexShrink: 0,
                   }}
                 >

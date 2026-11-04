@@ -1,0 +1,64 @@
+/* Dashboard surfaces and controls, with a separate mountain landscape photo. */
+.landing-workspace.crm-workspace::before,
+:root[data-theme="light"] .landing-workspace.crm-workspace::before {
+  background: linear-gradient(100deg, #29216bcc, #41358c69), url('/images/landing-mountains.jpg') center / cover no-repeat;
+}
+:root[data-theme="light"] .landing-workspace.crm-workspace::before {
+  background-image: linear-gradient(100deg, #383075c4, #6554a34d), url('/images/landing-mountains.jpg');
+}
+:root[data-theme] .landing-workspace .landing-nav { background: #51449ae8; border: 0; backdrop-filter: blur(20px); }
+.landing-workspace .landing-nav-inner { min-height: 74px; padding-block: 12px; }
+.landing-workspace .landing-nav-actions { flex-wrap: wrap; justify-content: flex-end; }
+:root[data-theme] .landing-workspace .landing-nav :is(.theme-switcher, .lang-pill) { background: #ffffff17; border-color: #ffffff29; box-shadow: none; }
+:root[data-theme] .landing-workspace .landing-nav :is(.theme-option, .lang-pill-btn, .lang-pill-icon) { color: #e6e1ff; }
+:root[data-theme] .landing-workspace .landing-nav :is(.theme-option[aria-pressed="true"], .lang-pill-btn.active) { background: #ffffff2c; color: #fff; box-shadow: none; }
+.landing-workspace .contractor-hero { grid-template-columns: 1.1fr 1fr; gap: clamp(24px, 4vw, 64px); padding-block: 64px 36px; }
+.landing-workspace .landing-intro { min-width: 0; }
+:root[data-theme] .landing-workspace .landing-title { color: #fff; background: none; -webkit-text-fill-color: currentColor; font-size: clamp(30px, 3.6vw, 48px); font-weight: 650; line-height: 1.2; letter-spacing: -.8px; margin-top: 14px; }
+.landing-workspace .landing-subtitle { color: #eeebff; font-size: 15px; line-height: 1.85; margin-top: 16px; }
+.landing-workspace .landing-cta { margin-block: 24px; gap: 10px; }
+.landing-workspace .landing-cta .btn { padding: 10px 17px; }
+.landing-workspace .contractor-flow { overflow: hidden; }
+.landing-workspace .overview-panel-header h2 { font-size: 15px; }
+.landing-workspace .overview-panel-header > svg { color: #2192c4; flex-shrink: 0; }
+.landing-workflow-body { padding: 20px 21px; }
+.landing-workflow-body > p { margin: 0 0 24px; color: var(--ink-muted); font-size: 13px; line-height: 1.9; }
+.landing-workflow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; }
+.landing-workflow-icon { display: flex; align-items: center; height: 67px; padding: 16px; border-radius: 6px; background: var(--stage-color); color: #fff; }
+.landing-workflow-item strong { display: block; margin-top: 8px; font-size: 11px; font-weight: 550; color: var(--ink-secondary); }
+.landing-workflow-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); color: #147ba6; font-size: 12px; }
+.landing-workflow-link:hover { color: #087750; }
+.landing-workspace .quick-demo-workspace { margin-top: 24px; }
+.quick-demo-workspace .quick-demo-persona { background: #f6f9fd; border: 1px solid #e9edf2; box-shadow: none; }
+.quick-demo-workspace .quick-demo-persona:hover { background: #edf5fd; border-color: #b9ddef; transform: none; box-shadow: none; }
+.landing-workspace .landing-bento { gap: 20px; padding-top: 0; padding-bottom: 28px; }
+.landing-workspace .landing-card { gap: 12px; padding: 24px; transition: none; }
+.landing-workspace .landing-card:hover { transform: none; }
+.landing-workspace .landing-card::before { display: none; }
+.landing-workspace .landing-card::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 3px; background: var(--metric-color); }
+.landing-workspace .landing-card > svg { color: var(--metric-color); }
+.landing-workspace .landing-card h2 { margin: 0; font-size: 14px; font-weight: 650; }
+.landing-workspace .landing-card p { margin: 0; font-size: 12px; line-height: 1.85; }
+.landing-workspace .contractor-cta { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 25px; margin-block: 0 36px; }
+.landing-workspace .contractor-cta h2 { font-size: 18px; font-weight: 650; margin: 0 0 8px; }
+.landing-workspace .contractor-cta p { font-size: 12px; margin: 0; }
+.landing-workspace .landing-footer { color: #eeebff; font-size: 11px; border-color: #ffffff29; }
+@media (max-width: 920px) {
+  .landing-workspace .contractor-hero { grid-template-columns: 1fr; gap: 28px; padding-top: 36px; }
+  .landing-workspace .landing-bento { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .landing-workspace .landing-card { padding: 20px 16px; }
+}
+@media (max-width: 600px) {
+  .landing-workspace .landing-nav-inner { display: grid; grid-template-columns: 1fr auto; gap: 12px 8px; padding: 16px; }
+  .landing-workspace .landing-nav-actions { display: contents; }
+  .landing-workspace .landing-nav-actions > .btn { grid-column: 2; grid-row: 1; }
+  .landing-workspace .landing-nav-actions > .theme-switcher { grid-column: 1; grid-row: 2; justify-self: start; }
+  .landing-workspace .landing-nav-actions > .lang-pill { grid-column: 2; grid-row: 2; }
+  .landing-workspace :is(.contractor-hero, .landing-bento, .landing-footer) { padding-inline: 16px; }
+  .landing-workspace .landing-bento { grid-template-columns: 1fr; }
+  .landing-workspace .contractor-cta { margin-inline: 16px; padding: 22px; }
+  :root[data-theme] .landing-workspace .landing-title { font-size: 32px; }
+  .landing-workspace .landing-subtitle { font-size: 14px; }
+  .quick-demo-workspace .quick-demo-personas { grid-template-columns: 1fr !important; }
+  .quick-demo-workspace .quick-demo-persona > span { min-width: 0; }
+}
