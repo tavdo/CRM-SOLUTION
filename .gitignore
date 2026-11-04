@@ -52,3 +52,5 @@ next-env.d.ts
 /storage/
 prisma/contractor-preview.db
 prisma/contractor-preview.db-*
+prisma/deployment-demo.db
+prisma/deployment-demo.db-*

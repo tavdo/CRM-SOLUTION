@@ -1,28 +1,35 @@
-import { execSync } from "child_process";
-import fs from "fs";
-import path from "path";
+import { execFileSync } from "node:child_process";
+import { copyFileSync, existsSync } from "node:fs";
+import { createRequire } from "node:module";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = process.cwd();
-const prismaDir = path.join(root, "prisma");
-const demoSeedDb = path.join(prismaDir, "demo-seed.db");
-const devDb = path.join(prismaDir, "dev.db");
+const require = createRequire(import.meta.url);
 
-const env = {
-  ...process.env,
-  DATABASE_URL: "file:./demo-seed.db",
-  SEED_DEMO_DATA: "true",
-};
-
-if (fs.existsSync(demoSeedDb)) {
-  fs.rmSync(demoSeedDb, { force: true });
+/** @param {Record<string, string | undefined>} env */
+export function isVercelSqliteDemo(env = process.env) {
+  return Boolean(env.VERCEL) && (!env.DATABASE_URL || env.DATABASE_URL.startsWith("file:"));
 }
 
-console.log("[prepare-demo-db] Creating & migrating prisma/demo-seed.db ...");
-execSync("npx prisma migrate deploy", { stdio: "inherit", env });
-execSync("npx tsx prisma/seed.ts", { stdio: "inherit", env });
-
-if (!fs.existsSync(devDb)) {
-  fs.copyFileSync(demoSeedDb, devDb);
+/** Migrate a disposable deployment artifact; never migrate/reset the source or configured DB. */
+export function prepareDemoDatabase({ root = process.cwd(), seedDemo = false } = {}) {
+  const source = path.join(root, "prisma", "demo-seed.db");
+  const artifact = path.join(root, "prisma", "deployment-demo.db");
+  if (!existsSync(source)) throw new Error("The bundled demo baseline is missing");
+  copyFileSync(source, artifact);
+  const env = { ...process.env, DATABASE_URL: `file:${artifact.replaceAll("\\", "/")}`, SEED_DEMO_DATA: "false" };
+  execFileSync(process.execPath, [require.resolve("prisma/build/index.js"), "migrate", "deploy"], { cwd: root, env, stdio: "inherit" });
+  if (seedDemo) {
+    execFileSync(process.execPath, [require.resolve("tsx/cli"), path.join(fileURLToPath(new URL(".", import.meta.url)), "seed-construction-demo.ts")], { cwd: root, env, stdio: "inherit" });
+  }
+  return artifact;
 }
 
-console.log("[prepare-demo-db] Ready: prisma/demo-seed.db");
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (isVercelSqliteDemo()) {
+    prepareDemoDatabase({ seedDemo: process.env.SEED_DEMO_DATA === "true" });
+    console.log("[prepare-demo-db] Migrated deployment artifact ready; source databases unchanged.");
+  } else {
+    console.log("[prepare-demo-db] No Vercel SQLite demo artifact needed.");
+  }
+}
