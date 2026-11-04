@@ -8,7 +8,7 @@ import {
   inviteMemberAction,
   removeMemberAction,
   updateCompanyAction,
-  updateMemberRoleAction,
+  updateMemberRolesAction,
 } from "@/app/actions/crm";
 import { Alert, Badge, Button, Field, Input, Surface } from "@/components/ui";
 import { requireWorkspace } from "@/lib/auth/workspace";
@@ -20,6 +20,7 @@ import { ProviderStatus } from "@/components/ProviderStatus";
 import { billingProvider, emailProvider, smsProvider } from "@/lib/providers";
 import { isLocale } from "@/i18n/config";
 import { redirect } from "next/navigation";
+import styles from "./settings.module.css";
 
 export default async function SettingsPage({
   params,
@@ -86,11 +87,11 @@ export default async function SettingsPage({
       ) : null}
 
       {isAdmin ? (
-        <Surface style={{ padding: "1.2rem" }}>
+        <Surface className={styles.panel} style={{ padding: "1.2rem" }}>
           <h2 id="company" style={{ marginTop: 0, scrollMarginTop: 90 }}>{t("company")}</h2>
-          <form action={updateCompanyAction} style={{ display: "grid", gap: "0.85rem", maxWidth: 680 }}>
+          <form action={updateCompanyAction} className={styles.companyForm}>
             <input type="hidden" name="locale" value={locale} />
-            <div style={{ display: "grid", gridTemplateColumns: "130px 1fr 160px", gap: "0.65rem" }}>
+            <div className={styles.companyRow}>
               <Field label={t("legalForm")} htmlFor="legalForm">
                 <select id="legalForm" name="legalForm" className="select" defaultValue={ctx.company.legalForm || "შპს"}>
                   <option value="შპს">შპს (LLC)</option>
@@ -105,7 +106,7 @@ export default async function SettingsPage({
                 <Input id="taxId" name="taxId" defaultValue={ctx.company.taxId ?? ""} />
               </Field>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: "0.65rem" }}>
+            <div className={styles.bankRow}>
               <Field label={t("bogIban")} htmlFor="bogIban">
                 <Input id="bogIban" name="bogIban" defaultValue={ctx.company.bogIban ?? ""} />
               </Field>
@@ -113,7 +114,7 @@ export default async function SettingsPage({
                 <Input id="tbcIban" name="tbcIban" defaultValue={ctx.company.tbcIban ?? ""} />
               </Field>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))", gap: "0.65rem" }}>
+            <div className={styles.companyRow}>
               <Field label={t("address")} htmlFor="address">
                 <Input id="address" name="address" defaultValue={ctx.company.address ?? ""} />
               </Field>
@@ -127,7 +128,7 @@ export default async function SettingsPage({
                 </select>
               </Field>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))", gap: "0.65rem" }}>
+            <div className={styles.companyRow}>
               <Field label={t("timezone")} htmlFor="timezone">
                 <Input id="timezone" name="timezone" defaultValue={ctx.company.timezone} />
               </Field>
@@ -141,13 +142,16 @@ export default async function SettingsPage({
                 <Input id="currency" name="currency" defaultValue={ctx.company.currency} />
               </Field>
             </div>
-            <Button type="submit">{t("save")}</Button>
+            <div className={styles.actions}>
+              <Button type="submit">{t("save")}</Button>
+            </div>
           </form>
         </Surface>
       ) : null}
 
-      <Surface style={{ padding: "1.2rem" }}>
+      <Surface className={styles.panel} style={{ padding: "1.2rem" }}>
         <h2 id="members" style={{ marginTop: 0, scrollMarginTop: 90 }}>{t("members")}</h2>
+        <div className={styles.tableWrap}>
         <table className="table">
           <thead>
             <tr>
@@ -164,18 +168,17 @@ export default async function SettingsPage({
                 <td>{m.user.email}</td>
                 <td>
                   {isAdmin ? (
-                    <form action={updateMemberRoleAction} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <input type="hidden" name="locale" value={locale} />
-                      <input type="hidden" name="membershipId" value={m.id} />
-                      <select name="role" className="select" defaultValue={m.role}>
-                        <option value="ADMIN">{t("roles.ADMIN")}</option>
-                        <option value="MANAGER">{t("roles.MANAGER")}</option>
-                        <option value="EMPLOYEE">{t("roles.EMPLOYEE")}</option>
-                      </select>
-                      <Button type="submit" variant="secondary">
-                        {t("save")}
-                      </Button>
-                    </form>
+                    <select
+                      form="member-roles-form"
+                      name={`role:${m.id}`}
+                      aria-label={`${t("role")}: ${m.user.name}`}
+                      className="select"
+                      defaultValue={m.role}
+                    >
+                      <option value="ADMIN">{t("roles.ADMIN")}</option>
+                      <option value="MANAGER">{t("roles.MANAGER")}</option>
+                      <option value="EMPLOYEE">{t("roles.EMPLOYEE")}</option>
+                    </select>
                   ) : (
                     t(`roles.${m.role}`)
                   )}
@@ -197,19 +200,27 @@ export default async function SettingsPage({
             ))}
           </tbody>
         </table>
+        </div>
 
         {isAdmin ? (
-          <form action={inviteMemberAction} style={{ display: "grid", gap: "0.75rem", marginTop: "1rem", maxWidth: 480 }}>
-            <h3 style={{ margin: 0 }}>{t("invite")}</h3>
+          <form id="member-roles-form" action={updateMemberRolesAction} style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
             <input type="hidden" name="locale" value={locale} />
-            <Input name="email" type="email" placeholder="email@company.com" required />
-            <select name="role" className="select" defaultValue="EMPLOYEE">
+            <Button type="submit">{t("save")}</Button>
+          </form>
+        ) : null}
+
+        {isAdmin ? (
+          <form action={inviteMemberAction} className={`${styles.inlineForm} ${styles.inviteForm}`}>
+            <h3 className={styles.fullRow} style={{ margin: 0 }}>{t("invite")}</h3>
+            <input type="hidden" name="locale" value={locale} />
+            <Input name="email" type="email" aria-label={t("email")} placeholder="email@company.com" required />
+            <select name="role" aria-label={t("role")} className="select" defaultValue="EMPLOYEE">
               <option value="MANAGER">{t("roles.MANAGER")}</option>
               <option value="EMPLOYEE">{t("roles.EMPLOYEE")}</option>
               <option value="ADMIN">{t("roles.ADMIN")}</option>
             </select>
             <Button type="submit">{t("invite")}</Button>
-            <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
+            <p className={`muted ${styles.fullRow}`} style={{ margin: 0, fontSize: "0.85rem" }}>
               {t("invitationDelivery")}
             </p>
           </form>
@@ -217,7 +228,7 @@ export default async function SettingsPage({
       </Surface>
 
       {can(ctx.role, "company.pipeline") ? (
-        <Surface style={{ padding: "1.2rem" }}>
+        <Surface className={styles.panel} style={{ padding: "1.2rem" }}>
           <h2 id="pipeline" style={{ marginTop: 0, scrollMarginTop: 90 }}>{t("pipeline")}</h2>
           <ul style={{ listStyle: "none", padding: 0 }}>
             {stages.map((s) => (
@@ -245,7 +256,7 @@ export default async function SettingsPage({
               </li>
             ))}
           </ul>
-          <form action={addStageAction} style={{ display: "flex", gap: 8, marginTop: "1rem", flexWrap: "wrap" }}>
+          <form action={addStageAction} className={styles.inlineForm}>
             <input type="hidden" name="locale" value={locale} />
             <Input name="name" placeholder={t("stageName")} required />
             <Button type="submit">{t("addStage")}</Button>
@@ -254,7 +265,7 @@ export default async function SettingsPage({
       ) : null}
 
       {can(ctx.role, "company.customFields") ? (
-        <Surface style={{ padding: "1.2rem" }}>
+        <Surface className={styles.panel} style={{ padding: "1.2rem" }}>
           <h2 style={{ marginTop: 0 }}>{t("fields")}</h2>
           <ul style={{ listStyle: "none", padding: 0 }}>
             {fields.map((f) => (
@@ -272,17 +283,17 @@ export default async function SettingsPage({
               </li>
             ))}
           </ul>
-          <form action={addCustomFieldAction} style={{ display: "grid", gap: "0.75rem", marginTop: "1rem", maxWidth: 480 }}>
+          <form action={addCustomFieldAction} className={`${styles.inlineForm} ${styles.customFieldForm}`}>
             <input type="hidden" name="locale" value={locale} />
-            <Input name="name" placeholder={t("fieldName")} required />
+            <Input name="name" aria-label={t("fieldName")} placeholder={t("fieldName")} required />
             <select name="fieldType" className="select" defaultValue="TEXT">
               <option value="TEXT">TEXT</option>
               <option value="NUMBER">NUMBER</option>
               <option value="DATE">DATE</option>
               <option value="SELECT">SELECT</option>
             </select>
-            <Input name="options" placeholder={t("fieldOptions")} />
-            <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <Input name="options" className={`input ${styles.customFieldOptions}`} aria-label={t("fieldOptions")} placeholder={t("fieldOptions")} />
+            <label className={styles.requiredField}>
               <input type="checkbox" name="required" /> {t("required")}
             </label>
             <Button type="submit">{t("addField")}</Button>
@@ -291,25 +302,19 @@ export default async function SettingsPage({
       ) : null}
 
       {can(ctx.role, "company.billing") ? (
-        <Surface style={{ padding: "1.2rem" }}>
+        <Surface className={styles.panel} style={{ padding: "1.2rem" }}>
           <h2 style={{ marginTop: 0 }}>{t("subscription")}</h2>
           <p className="muted">{t("costScope")}</p>
           {ctx.subscription ? (
             <div style={{ marginTop: "1rem" }}>
-              <p>
-                <strong>{t("plan")}:</strong> {ctx.subscription.plan.name}
-                <br />
-                <strong>{t("status")}:</strong> {ctx.subscription.status}
-                <br />
-                <strong>{t("trialEnds")}:</strong>{" "}
-                {formatDate(ctx.subscription.trialEndsAt, locale, ctx.company.timezone)}
-                <br />
-                <strong>{t("limits")}:</strong> {ctx.subscription.plan.maxUsers} {t("users")} /{" "}
-                {ctx.subscription.plan.maxCustomers} {t("customers")} / {ctx.subscription.plan.maxDeals} {t("deals")}
-                <br />
-                <strong>{t("usage")}:</strong> {members.length} {t("users")} / {usage[0]} {t("customers")} / {usage[1]} {t("deals")}
-              </p>
-              <form action={changePlanAction} style={{ display: "grid", gap: "0.75rem", maxWidth: 420 }}>
+              <dl className={styles.subscriptionFacts}>
+                <div><dt>{t("plan")}</dt><dd>{ctx.subscription.plan.name}</dd></div>
+                <div><dt>{t("status")}</dt><dd>{ctx.subscription.status}</dd></div>
+                <div><dt>{t("trialEnds")}</dt><dd>{formatDate(ctx.subscription.trialEndsAt, locale, ctx.company.timezone)}</dd></div>
+                <div><dt>{t("limits")}</dt><dd>{ctx.subscription.plan.maxUsers} {t("users")} / {ctx.subscription.plan.maxCustomers} {t("customers")} / {ctx.subscription.plan.maxDeals} {t("deals")}</dd></div>
+                <div><dt>{t("usage")}</dt><dd>{members.length} {t("users")} / {usage[0]} {t("customers")} / {usage[1]} {t("deals")}</dd></div>
+              </dl>
+              <form action={changePlanAction} className={styles.inlineForm}>
                 <input type="hidden" name="locale" value={locale} />
                 <select name="planId" className="select" defaultValue={ctx.subscription.planId}>
                   {plans.map((p) => (

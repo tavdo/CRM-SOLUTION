@@ -1,8 +1,8 @@
 # CRM workspace design
 
-The authenticated workspace follows the supplied Bitrix24 screenshots: an indigo glass-flower wallpaper, translucent navigation, contextual horizontal tabs, green creation buttons, white work panels, colored Kanban stages, a utility rail, a settings popover and language/theme controls. CRM Solution keeps its own branding.
+The authenticated workspace follows the supplied Bitrix24 layout: translucent sidebar navigation, work panels, Kanban stages, a utility rail, a settings popover and language/theme controls. Module links appear in the sidebar and mobile drawer; the top bar contains header actions without duplicate module links. The supplied CRM Solution logo appears in the desktop brand area and mobile header. Branding uses the supplied blue palette: royal blue `#0000e2`, hover blue `#0003d4`, secondary blue `#00008b`, navy `#000175` and deep navy `#00025f`. Day mode uses muted blue-gray panels (`#c9d6e7`) with softer inset areas and slightly lighter inputs, avoiding bright white cards. Night mode has dark navy panels with lighter blue text and accents.
 
-The same shell and scoped visual tokens apply to existing CRM, task, calendar, project, invoice and settings routes. Public and authentication pages retain their independent styles. The schema is unchanged. Construction workflows remain available through Projects; the subsequent user-approved demo cleanup removes the old sample records.
+The same shell and scoped visual tokens apply to existing CRM, task, calendar, project, invoice and settings routes. The public landing page shares the logo and blue branding while retaining its mountain photo. Authentication pages use the same primary brand colors. The schema is unchanged. Construction workflows remain available through Projects; the subsequent user-approved demo cleanup removes the old sample records.
 
 ## Clean starting workspace
 
@@ -26,6 +26,9 @@ The sidebar collapses on desktop. On mobile it becomes a modal drawer with focus
 
 ## Wallpaper provenance
 
+- Authenticated CRM pages: user-supplied `customer-relationship-management-concept.jpg`, optimized to `public/images/dashboard-crm.webp` (2400 × 1602, approximately 160 KB). The source file is unchanged. All authenticated routes share this photo, with lighter tint in the middle so the image remains visible and darker edges for heading/footer contrast.
+- Header logo: user-supplied `Firefly_Gemini Flash_remove background 428947.png`, with the baked-in checkerboard removed using imagegen and transparent output stored as `public/images/crm-logo.png`.
+- The landing page retains `public/images/landing-mountains.jpg`. The original generated wallpaper below is retained as an unused asset.
 - Mode: original image generation (`image_gen.imagegen`), no reference image editing.
 - Asset: `public/images/crm-workspace-v1.png`.
 - Prompt: “Use case: stylized-concept. Asset type: wide desktop wallpaper background for a working business CRM dashboard, not a UI mockup. Create an original premium 3D abstract translucent glass flower with large flowing curled petals and fluid glass ribbons. Deep indigo-violet and royal blue background, luminous cyan and icy blue highlights inside the flower, subtly pearlescent reflective glass surfaces, thin bright curved glass edges and tiny cyan light particles. Main flower occupies the right half and extends off the right and bottom edges; the entire left half and top-left are calm mostly flat indigo (#38348d) with a soft diffuse violet gradient, suitable for overlaying navigation and application text. Broad horizontal 16:9 composition. Rich atmospheric soft light, fine realistic refractive caustics, restrained detail, smooth rendering. No lettering, no typography, no logos, no people, no interface elements, no watermarks. This image must only be the wallpaper.”

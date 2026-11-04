@@ -405,6 +405,19 @@ export async function updateMemberRoleAction(formData: FormData) {
   revalidatePath(localePath(locale, "/settings"));
 }
 
+export async function updateMemberRolesAction(formData: FormData) {
+  const locale = s(formData, "locale") || "en";
+  const ctx = await requireCapability("company.members");
+  const changes = Array.from(formData.entries())
+    .filter(([key]) => key.startsWith("role:"))
+    .map(([key, value]) => ({
+      membershipId: key.slice("role:".length),
+      role: String(value).trim() as Role,
+    }));
+  await members.updateMemberRoles(ctx, changes);
+  revalidatePath(localePath(locale, "/settings"));
+}
+
 export async function updateCompanyAction(formData: FormData) {
   const locale = s(formData, "locale") || "en";
   const ctx = await requireCapability("company.settings");

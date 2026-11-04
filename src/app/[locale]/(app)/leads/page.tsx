@@ -11,7 +11,7 @@ import {
   CheckCircle2,
   Plus,
 } from "lucide-react";
-import { Badge, Button, EmptyState, Field, Input, Surface, Textarea } from "@/components/ui";
+import { Badge, Button, Field, Input, Surface, Textarea } from "@/components/ui";
 import {
   assignLeadOwnerAction,
   convertLeadAction,
@@ -24,6 +24,7 @@ import { can } from "@/lib/permissions";
 import { leadStatusCounts, listLeads } from "@/lib/services/leads";
 import { formatMoney } from "@/lib/money";
 import { isLocale } from "@/i18n/config";
+import styles from "./leads.module.css";
 
 export default async function LeadsPage({
   params,
@@ -55,17 +56,8 @@ export default async function LeadsPage({
   ]);
 
   return (
-    <div style={{ display: "grid", gap: "1.35rem" }}>
-      <div
-        className="rise"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
-          gap: "1rem",
-          flexWrap: "wrap",
-        }}
-      >
+    <div className={styles.page}>
+      <div className="rise">
         <div>
           <span className="kicker">
             {isKa ? "OMNICHANNEL · ლიდების მართვა" : "OMNICHANNEL · LEADS INBOX"}
@@ -73,27 +65,6 @@ export default async function LeadsPage({
           <h1 className="page-title" style={{ marginTop: 4 }}>
             {isKa ? "შემომავალი ლიდები" : "Incoming Leads Inbox"}
           </h1>
-        </div>
-        <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
-          {[
-            { key: "ALL", label: isKa ? "ყველა" : "All" },
-            { key: "NEW", label: `${isKa ? "ახალი" : "New"} (${countMap.NEW ?? 0})` },
-            { key: "CONTACTED", label: `${isKa ? "დაკავშირებული" : "Contacted"} (${countMap.CONTACTED ?? 0})` },
-            { key: "QUALIFIED", label: `${isKa ? "კვალიფიციური" : "Qualified"} (${countMap.QUALIFIED ?? 0})` },
-            { key: "CONVERTED", label: `${isKa ? "კონვერტირებული" : "Converted"} (${countMap.CONVERTED ?? 0})` },
-          ].map((f) => {
-            const active = (sp.status ?? "ALL") === f.key;
-            return (
-              <Link
-                key={f.key}
-                href={`/${locale}/leads?status=${f.key}`}
-                className={`btn ${active ? "btn-primary" : "btn-secondary"}`}
-                style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem" }}
-              >
-                {f.label}
-              </Link>
-            );
-          })}
         </div>
       </div>
 
@@ -119,20 +90,38 @@ export default async function LeadsPage({
         </Surface>
       ) : null}
 
-      <div
-        style={{
-          display: "grid",
-          gap: "1.15rem",
-          gridTemplateColumns: "minmax(0, 1.9fr) minmax(300px, 1fr)",
-          alignItems: "start",
-        }}
-      >
-        <div style={{ display: "grid", gap: "0.85rem" }}>
+      <div className={styles.content}>
+        <div className={styles.results}>
+          <Surface>
+            <nav className={styles.filters} aria-label={isKa ? "ლიდების სტატუსი" : "Lead status"}>
+              {[
+                { key: "ALL", label: isKa ? "ყველა" : "All" },
+                { key: "NEW", label: `${isKa ? "ახალი" : "New"} (${countMap.NEW ?? 0})` },
+                { key: "CONTACTED", label: `${isKa ? "დაკავშირებული" : "Contacted"} (${countMap.CONTACTED ?? 0})` },
+                { key: "QUALIFIED", label: `${isKa ? "კვალიფიციური" : "Qualified"} (${countMap.QUALIFIED ?? 0})` },
+                { key: "CONVERTED", label: `${isKa ? "კონვერტირებული" : "Converted"} (${countMap.CONVERTED ?? 0})` },
+              ].map((f) => {
+                const active = (sp.status ?? "ALL") === f.key;
+                return (
+                  <Link
+                    key={f.key}
+                    href={`/${locale}/leads?status=${f.key}`}
+                    aria-current={active ? "page" : undefined}
+                    className={`btn ${active ? "btn-primary" : "btn-secondary"}`}
+                    style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem" }}
+                  >
+                    {f.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </Surface>
           {leads.length === 0 ? (
             <Surface>
-              <EmptyState>
-                {isKa ? "ამ ფილტრით ლიდები არ მოიძებნა." : "No leads in this view yet."}
-              </EmptyState>
+              <div className={styles.emptyState}>
+                <Inbox size={24} aria-hidden="true" />
+                <p>{isKa ? "ამ ფილტრით ლიდები არ მოიძებნა." : "No leads in this view yet."}</p>
+              </div>
             </Surface>
           ) : (
             leads.map((lead) => (
@@ -290,14 +279,14 @@ export default async function LeadsPage({
         </div>
 
         {/* Create Lead Card */}
-        <Surface style={{ padding: "1.25rem" }}>
+        <Surface className={styles.createPanel} style={{ padding: "1.25rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.9rem" }}>
-            <Plus size={16} color="#10b981" />
+            <Plus size={16} color="var(--info-ink)" />
             <h2 className="section-title">
               {isKa ? "ახალი ლიდის დამატება" : "Capture New Lead"}
             </h2>
           </div>
-          <form action={createLeadAction} style={{ display: "grid", gap: "0.75rem" }}>
+          <form action={createLeadAction} className={styles.form}>
             <input type="hidden" name="locale" value={locale} />
             <Field label={isKa ? "ლიდის სათაური / მოთხოვნა" : "Lead title / inquiry"} htmlFor="title">
               <Input
@@ -310,34 +299,30 @@ export default async function LeadsPage({
             <Field label={isKa ? "საკონტაქტო პირი" : "Contact person"} htmlFor="contactName">
               <Input id="contactName" name="contactName" required />
             </Field>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 125px", gap: "0.6rem" }}>
-              <Field label={isKa ? "კომპანია (შპს / სს)" : "Company name"} htmlFor="companyName">
-                <Input id="companyName" name="companyName" placeholder="შპს ..." />
-              </Field>
-              <Field label={isKa ? "ს/კ (9 ციფრი)" : "Tax ID (ს/კ)"} htmlFor="taxId">
-                <Input id="taxId" name="taxId" placeholder="405..." maxLength={11} />
-              </Field>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
-              <Field label={isKa ? "ტელეფონი" : "Phone"} htmlFor="phone">
-                <Input id="phone" name="phone" placeholder="+995 5..." />
-              </Field>
-              <Field label={isKa ? "არხი (Source)" : "Channel / Source"} htmlFor="source">
-                <select id="source" name="source" className="select" defaultValue="FACEBOOK">
-                  <option value="FACEBOOK">Facebook Messenger</option>
-                  <option value="WHATSAPP">WhatsApp</option>
-                  <option value="INSTAGRAM">Instagram DM</option>
-                  <option value="MYPHONE">MyPhone / Silknet SIP</option>
-                  <option value="WEBSITE">Website Lead Form</option>
-                  <option value="REFERRAL">Referral</option>
-                </select>
-              </Field>
-            </div>
-            <Field label={isKa ? "სავარაუდო ბიუჯეტი (GEL)" : "Estimated Value (GEL)"} htmlFor="amount">
-              <Input id="amount" name="amount" type="number" step="0.01" defaultValue="1500" />
+            <Field label={isKa ? "კომპანია (შპს / სს)" : "Company name"} htmlFor="companyName">
+              <Input id="companyName" name="companyName" placeholder="შპს ..." />
+            </Field>
+            <Field label={isKa ? "ს/კ (9 ციფრი)" : "Tax ID (ს/კ)"} htmlFor="taxId">
+              <Input id="taxId" name="taxId" placeholder="405..." maxLength={11} />
+            </Field>
+            <Field label={isKa ? "ტელეფონი" : "Phone"} htmlFor="phone">
+              <Input id="phone" name="phone" placeholder="+995 5..." />
             </Field>
             <Field label={isKa ? "ელფოსტა" : "Email"} htmlFor="email">
               <Input id="email" name="email" type="email" />
+            </Field>
+            <Field label={isKa ? "არხი (Source)" : "Channel / Source"} htmlFor="source">
+              <select id="source" name="source" className="select" defaultValue="FACEBOOK">
+                <option value="FACEBOOK">Facebook Messenger</option>
+                <option value="WHATSAPP">WhatsApp</option>
+                <option value="INSTAGRAM">Instagram DM</option>
+                <option value="MYPHONE">MyPhone / Silknet SIP</option>
+                <option value="WEBSITE">Website Lead Form</option>
+                <option value="REFERRAL">Referral</option>
+              </select>
+            </Field>
+            <Field label={isKa ? "სავარაუდო ბიუჯეტი (GEL)" : "Estimated Value (GEL)"} htmlFor="amount">
+              <Input id="amount" name="amount" type="number" step="0.01" defaultValue="1500" />
             </Field>
             {canAssign ? (
               <Field label={isKa ? "პასუხისმგებელი" : "Owner"} htmlFor="ownerId">
@@ -350,25 +335,21 @@ export default async function LeadsPage({
                 </select>
               </Field>
             ) : null}
-            <Field label={isKa ? "შენიშვნა" : "Notes"} htmlFor="notes">
-              <Textarea id="notes" name="notes" style={{ minHeight: 68 }} />
-            </Field>
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: "0.8rem",
-                color: "var(--ink-muted)",
-              }}
-            >
-              <input type="checkbox" name="forceDuplicate" value="1" />
-              {isKa ? "იძულებითი შექმნა (დუბლიკატის იგნორი)" : "Force create (ignore duplicate)"}
-            </label>
-            <Button type="submit">
-              <Inbox size={15} />
-              <span>{isKa ? "ლიდის შენახვა" : "Save Lead"}</span>
-            </Button>
+            <div className={styles.fullRow}>
+              <Field label={isKa ? "შენიშვნა" : "Notes"} htmlFor="notes">
+                <Textarea id="notes" name="notes" style={{ minHeight: 68 }} />
+              </Field>
+            </div>
+            <div className={styles.formActions}>
+              <label className={styles.duplicateOption}>
+                <input type="checkbox" name="forceDuplicate" value="1" />
+                {isKa ? "იძულებითი შექმნა (დუბლიკატის იგნორი)" : "Force create (ignore duplicate)"}
+              </label>
+              <Button type="submit">
+                <Inbox size={15} />
+                <span>{isKa ? "ლიდის შენახვა" : "Save Lead"}</span>
+              </Button>
+            </div>
           </form>
         </Surface>
       </div>

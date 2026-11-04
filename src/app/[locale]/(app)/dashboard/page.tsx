@@ -9,7 +9,7 @@ import { formatMoney } from "@/lib/money";
 import { can } from "@/lib/permissions";
 import { Badge, EmptyState, Surface } from "@/components/ui";
 
-const stageColors = ["#09b4ed", "#1ac4db", "#40a7ef", "#7495ec", "#9d82df", "#f0b348"];
+const stageColors = ["#0000e2", "#0003d4", "#00008b", "#000175", "#00025f", "#3b51ef"];
 
 export default async function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -20,10 +20,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   const currencyValues = Object.entries(d.pipelineValue);
   const money = currencyValues.length ? currencyValues.map(([currency, minor]) => formatMoney(minor, currency, locale)) : [formatMoney(0, ctx.company.currency, locale)];
   const metrics = [
-    { label: t("activeDeals"), value: String(d.activeDeals), note: t("openDealsNote"), icon: Kanban, color: "#14b5e7", href: "deals?status=OPEN" },
-    { label: t("pipelineValue"), value: money, note: t("currencyNote"), icon: Wallet, color: "#a28be8", href: "deals?status=OPEN", money: true },
-    { label: t("newLeads"), value: String(d.newLeads), note: t("leadsNote"), icon: Inbox, color: "#34c1af", href: "leads?status=NEW" },
-    { label: t("openTasks"), value: String(d.openTasks), note: t("overdueCount", { count: d.overdueTasks }), icon: CheckSquare, color: "#f0b14c", href: "tasks?status=OPEN" },
+    { label: t("activeDeals"), value: String(d.activeDeals), note: t("openDealsNote"), icon: Kanban, color: "var(--chart-1)", href: "deals?status=OPEN" },
+    { label: t("pipelineValue"), value: money, note: t("currencyNote"), icon: Wallet, color: "var(--chart-2)", href: "deals?status=OPEN", money: true },
+    { label: t("newLeads"), value: String(d.newLeads), note: t("leadsNote"), icon: Inbox, color: "var(--chart-3)", href: "leads?status=NEW" },
+    { label: t("openTasks"), value: String(d.openTasks), note: t("overdueCount", { count: d.overdueTasks }), icon: CheckSquare, color: "var(--chart-4)", href: "tasks?status=OPEN" },
   ];
   const panelHeader = (title: string, path: string) => <div className="overview-panel-header"><h2>{title}</h2><Link href={`/${locale}/${path}`}>{t("viewAll")}<ArrowUpRight size={14} /></Link></div>;
   return <div>

@@ -1,0 +1,109 @@
+.panel {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.companyForm {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.companyRow,
+.bankRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.bankRow {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.companyRow > div,
+.bankRow > div {
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.inlineForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.inlineForm > input,
+.inlineForm > select {
+  min-width: 0;
+}
+
+.inviteForm {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+}
+
+.customFieldForm {
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 0.65fr) minmax(0, 1.5fr) auto auto;
+}
+
+.fullRow {
+  grid-column: 1 / -1;
+}
+
+.requiredField {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subscriptionFacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.subscriptionFacts > div {
+  min-width: 0;
+}
+
+.subscriptionFacts dt {
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.subscriptionFacts dd {
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+@container (max-width: 950px) {
+  .customFieldForm {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .customFieldOptions {
+    grid-column: 1 / -1;
+  }
+}
+
+@container (max-width: 600px) {
+  .companyRow,
+  .bankRow,
+  .inlineForm {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .actions > button {
+    width: 100%;
+  }
+}

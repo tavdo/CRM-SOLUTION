@@ -1,0 +1,118 @@
+.page,
+.sectionStack {
+  display: grid;
+  gap: 1.35rem;
+  min-width: 0;
+}
+
+.formPanel {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.sectionHeader,
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.sectionHeader {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.sectionHeader > h2,
+.sectionHeading {
+  flex: 1;
+}
+
+.sectionHeader svg {
+  flex-shrink: 0;
+}
+
+.invoiceForm,
+.productForm {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.productForm {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.invoiceForm > div,
+.productForm > div {
+  min-width: 0;
+}
+
+.formActions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.formActions > button {
+  min-width: 180px;
+}
+
+.productActions {
+  justify-content: flex-end;
+}
+
+.quoteOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-secondary);
+  font-size: 0.85rem;
+}
+
+.catalog {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 0.75rem;
+}
+
+.catalog > li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.emptyState {
+  display: grid;
+  place-content: center;
+  min-height: 150px;
+  padding: 1.5rem;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+@container (max-width: 1000px) {
+  .invoiceForm,
+  .productForm {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 600px) {
+  .invoiceForm,
+  .productForm {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .formActions > button {
+    width: 100%;
+  }
+}

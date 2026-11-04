@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   Building2,
 } from "lucide-react";
-import { Badge, Button, EmptyState, Field, Input, Surface } from "@/components/ui";
+import { Badge, Button, Field, Input, Surface } from "@/components/ui";
 import {
   createInvoiceAction,
   createProductAction,
@@ -24,6 +24,7 @@ import { formatDate } from "@/lib/dates";
 import { ProviderStatus } from "@/components/ProviderStatus";
 import { bankAccountProvider, rsGeProvider } from "@/lib/providers";
 import { isLocale } from "@/i18n/config";
+import styles from "./invoices.module.css";
 
 export default async function InvoicesPage({
   params,
@@ -61,7 +62,7 @@ export default async function InvoicesPage({
     .reduce((acc, i) => acc + i.totalMinor, 0);
 
   return (
-    <div style={{ display: "grid", gap: "1.35rem" }}>
+    <div className={styles.page}>
       <div
         className="rise"
         style={{
@@ -118,7 +119,9 @@ export default async function InvoicesPage({
       </Surface>
       <Surface style={{ overflowX: "auto" }}>
         {invoices.length === 0 ? (
-          <EmptyState>{isKa ? "ინვოისები ჯერ არ არის." : "No invoices generated yet."}</EmptyState>
+          <div className={styles.emptyState}>
+            {isKa ? "ინვოისები ჯერ არ არის." : "No invoices generated yet."}
+          </div>
         ) : (
           <table className="table">
             <thead>
@@ -213,23 +216,16 @@ export default async function InvoicesPage({
         )}
       </Surface>
 
-      {/* Two-Column: Issue New Invoice + Products Catalog */}
-      <div
-        style={{
-          display: "grid",
-          gap: "1.15rem",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
-          alignItems: "start",
-        }}
-      >
-        <Surface style={{ padding: "1.25rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.9rem" }}>
-            <FileSpreadsheet size={16} color="#10b981" />
+      {/* Invoice creation and catalog each use the full content width. */}
+      <div className={styles.sectionStack}>
+        <Surface className={styles.formPanel} style={{ padding: "1.25rem" }}>
+          <div className={styles.sectionHeader}>
+            <FileSpreadsheet size={16} color="var(--info-ink)" />
             <h2 className="section-title">
               {isKa ? "შეთავაზება ან ინვოისი (დღგ 18%)" : "Quote or Invoice (18% VAT)"}
             </h2>
           </div>
-          <form action={createInvoiceAction} style={{ display: "grid", gap: "0.75rem" }}>
+          <form action={createInvoiceAction} className={styles.invoiceForm}>
             <input type="hidden" name="locale" value={locale} />
             <Field label={isKa ? "კლიენტი (მყიდველი)" : "Customer (Buyer)"} htmlFor="customerId">
               <select id="customerId" name="customerId" className="select" required>
@@ -270,51 +266,41 @@ export default async function InvoicesPage({
                 required
               />
             </Field>
-            <div style={{ display: "grid", gridTemplateColumns: "90px 110px 1fr", gap: "0.6rem" }}>
-              <Field label={isKa ? "რაოდ." : "Qty"} htmlFor="quantity">
-                <Input id="quantity" name="quantity" type="number" defaultValue="1" min={1} required />
-              </Field>
-              <Field label={isKa ? "ერთეული" : "Unit"} htmlFor="unit">
-                <Input id="unit" name="unit" defaultValue="პაკეტი" />
-              </Field>
-              <Field label={isKa ? "ერთეულის ფასი (GEL, დღგ-ს გარეშე)" : "Unit Price (GEL Net)"} htmlFor="unitPrice">
-                <Input id="unitPrice" name="unitPrice" type="number" step="0.01" defaultValue="0" required />
-              </Field>
+            <Field label={isKa ? "რაოდ." : "Qty"} htmlFor="quantity">
+              <Input id="quantity" name="quantity" type="number" defaultValue="1" min={1} required />
+            </Field>
+            <Field label={isKa ? "ერთეული" : "Unit"} htmlFor="unit">
+              <Input id="unit" name="unit" defaultValue="პაკეტი" />
+            </Field>
+            <Field label={isKa ? "ერთეულის ფასი (GEL, დღგ-ს გარეშე)" : "Unit Price (GEL Net)"} htmlFor="unitPrice">
+              <Input id="unitPrice" name="unitPrice" type="number" step="0.01" defaultValue="0" required />
+            </Field>
+            <Field label={isKa ? "დღგ-ს დარიცხვა (18%)" : "Apply 18% Georgian VAT"} htmlFor="includeVat">
+              <select id="includeVat" name="includeVat" className="select" defaultValue={ctx.company.isVatPayer ? "true" : "false"}>
+                <option value="true">{isKa ? "დიახ (+18% დღგ)" : "Yes (+18% VAT / დღგ)"}</option>
+                <option value="false">{isKa ? "არა (დღგ-ს გარეშე)" : "No (0% VAT)"}</option>
+              </select>
+            </Field>
+            <Field label={isKa ? "RS.ge ზედნადების / ფაქტურის №" : "RS.ge Waybill Ref"} htmlFor="rsGeWaybillRef">
+              <Input id="rsGeWaybillRef" name="rsGeWaybillRef" placeholder="RS-0749..." />
+            </Field>
+            <div className={styles.formActions}>
+              <label className={styles.quoteOption}>
+                <input type="checkbox" name="asQuote" value="1" />
+                {isKa ? "შეინახე როგორც შეთავაზება (QTE) — არა ინვოისი" : "Save as Quote (QTE) — not an invoice yet"}
+              </label>
+              <Button type="submit">
+                <Plus size={15} />
+                <span>{isKa ? "გენერირება" : "Generate"}</span>
+              </Button>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
-              <Field label={isKa ? "დღგ-ს დარიცხვა (18%)" : "Apply 18% Georgian VAT"} htmlFor="includeVat">
-                <select id="includeVat" name="includeVat" className="select" defaultValue={ctx.company.isVatPayer ? "true" : "false"}>
-                  <option value="true">{isKa ? "დიახ (+18% დღგ)" : "Yes (+18% VAT / დღგ)"}</option>
-                  <option value="false">{isKa ? "არა (დღგ-ს გარეშე)" : "No (0% VAT)"}</option>
-                </select>
-              </Field>
-              <Field label={isKa ? "RS.ge ზედნადების / ფაქტურის №" : "RS.ge Waybill Ref"} htmlFor="rsGeWaybillRef">
-                <Input id="rsGeWaybillRef" name="rsGeWaybillRef" placeholder="RS-0749..." />
-              </Field>
-            </div>
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: "0.85rem",
-                color: "var(--ink-secondary)",
-              }}
-            >
-              <input type="checkbox" name="asQuote" value="1" />
-              {isKa ? "შეინახე როგორც შეთავაზება (QTE) — არა ინვოისი" : "Save as Quote (QTE) — not an invoice yet"}
-            </label>
-            <Button type="submit">
-              <Plus size={15} />
-              <span>{isKa ? "გენერირება" : "Generate"}</span>
-            </Button>
           </form>
         </Surface>
 
-        <Surface style={{ padding: "1.25rem" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: "0.9rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Package size={16} color="#38bdf8" />
+        <Surface className={styles.formPanel} style={{ padding: "1.25rem" }}>
+          <div className={styles.sectionHeader}>
+            <div className={styles.sectionHeading}>
+              <Package size={16} color="var(--info-ink)" />
               <h2 className="section-title">
                 {isKa ? "პროდუქტების კატალოგი" : "Products catalog"}
               </h2>
@@ -323,7 +309,7 @@ export default async function InvoicesPage({
               {isKa ? "სრული კატალოგი" : "Full catalog"}
             </Link>
           </div>
-          <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1rem", display: "grid", gap: "0.5rem" }}>
+          <ul className={styles.catalog}>
             {products.map((p) => (
               <li
                 key={p.id}
@@ -351,24 +337,31 @@ export default async function InvoicesPage({
             ))}
           </ul>
 
-          <form action={createProductAction} style={{ display: "grid", gap: "0.6rem" }}>
+          <form action={createProductAction} className={styles.productForm}>
             <input type="hidden" name="locale" value={locale} />
-            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: "0.55rem" }}>
-              <Input name="sku" placeholder="SKU-01" />
+            <Field label="SKU" htmlFor="productSku">
+              <Input id="productSku" name="sku" placeholder="SKU-01" />
+            </Field>
+            <Field label={isKa ? "პროდუქტის დასახელება" : "Product / service name"} htmlFor="productName">
               <Input
+                id="productName"
                 name="name"
                 placeholder={isKa ? "პროდუქტის დასახელება" : "Product / service name"}
                 required
               />
+            </Field>
+            <Field label={isKa ? "ერთეული" : "Unit"} htmlFor="productUnit">
+              <Input id="productUnit" name="unit" defaultValue="ცალი" placeholder="ერთეული" />
+            </Field>
+            <Field label={isKa ? "ფასი (GEL)" : "Price (GEL)"} htmlFor="productPrice">
+              <Input id="productPrice" name="price" type="number" step="0.01" placeholder="ფასი (GEL)" required />
+            </Field>
+            <div className={`${styles.formActions} ${styles.productActions}`}>
+              <Button type="submit" variant="secondary">
+                <Plus size={14} />
+                <span>{isKa ? "კატალოგში დამატება" : "Add to Catalog"}</span>
+              </Button>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: "0.55rem" }}>
-              <Input name="unit" defaultValue="ცალი" placeholder="ერთეული" />
-              <Input name="price" type="number" step="0.01" placeholder="ფასი (GEL)" required />
-            </div>
-            <Button type="submit" variant="secondary">
-              <Plus size={14} />
-              <span>{isKa ? "კატალოგში დამატება" : "Add to Catalog"}</span>
-            </Button>
           </form>
         </Surface>
       </div>

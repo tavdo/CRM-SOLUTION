@@ -1,0 +1,113 @@
+.page,
+.content,
+.results {
+  display: grid;
+  min-width: 0;
+}
+
+.page {
+  gap: 1.35rem;
+}
+
+.content {
+  gap: 1.15rem;
+}
+
+.results {
+  gap: 0.85rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+}
+
+.filters a {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.emptyState {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.75rem;
+  min-height: 150px;
+  padding: 1.5rem;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.emptyState p {
+  margin: 0;
+}
+
+.results form {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.results button {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.createPanel {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.form > div {
+  min-width: 0;
+}
+
+.fullRow,
+.formActions {
+  grid-column: 1 / -1;
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.formActions > button {
+  min-width: 180px;
+}
+
+.duplicateOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+}
+
+@container (max-width: 1000px) {
+  .form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 600px) {
+  .form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .formActions > button {
+    width: 100%;
+  }
+}

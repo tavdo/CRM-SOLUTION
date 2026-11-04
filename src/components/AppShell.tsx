@@ -10,6 +10,8 @@ import { LayoutDashboard, Inbox, Users, Kanban, FileSpreadsheet, Package, CheckS
 import { signOutAction, switchWorkspaceAction } from "@/app/actions/auth";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import { BrandLogo } from "./BrandLogo";
+import brandStyles from "./BrandLogo.module.css";
 
 type Workspace = { id: string; name: string };
 type NavLabels = Record<"projects" | "tools" | "dashboard" | "leads" | "customers" |
@@ -55,11 +57,6 @@ export function AppShell({ locale, brand, labels, userName, workspaces, activeCo
     { path: "contact-center", label: labels.contactCenter, icon: Headset },
     ...(canManageAutomations ? [{ path: "automations", label: labels.automations, icon: Bot }] : []),
   ];
-  const tabs = workItems.some((item) => active(item.path)) ? workItems
-    : toolItems.some((item) => active(item.path)) ? toolItems : active("settings")
-      ? [{ path: "settings", label: labels.settings, icon: Settings }]
-      : [{ path: "dashboard", label: labels.dashboard, icon: LayoutDashboard }, ...crmItems];
-
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
@@ -107,7 +104,7 @@ export function AppShell({ locale, brand, labels, userName, workspaces, activeCo
           aria-expanded={mobile ? open : !collapsed} onClick={() => mobile ? setOpen(false) : setCollapsed(!collapsed)}>
           {mobile ? <X size={22} /> : <Menu size={22} />}
         </button>
-        <Link href={href("dashboard")} className="workspace-brand-name" title={brand}>{brand}<span>°</span></Link>
+        <Link href={href("dashboard")} className="workspace-brand-name" title={brand}><BrandLogo name={brand} /></Link>
       </div>
       <div className="workspace-selector">
         {workspaces.length > 1 ? <>
@@ -158,10 +155,7 @@ export function AppShell({ locale, brand, labels, userName, workspaces, activeCo
       <header className="app-topbar">
         <button ref={menuButton} type="button" className="chrome-icon workspace-mobile-menu" onClick={() => setOpen(true)}
           aria-label={labels.menu} aria-expanded={open} aria-controls="mobile-nav"><Menu size={23} /></button>
-        <nav className="workspace-tabs" aria-label={t("moduleNavigation")}>
-          {tabs.map((item) => <Link key={item.path} href={href(item.path)} className={active(item.path) ? "selected" : ""}
-            aria-current={active(item.path) ? "page" : undefined}>{item.label}</Link>)}
-        </nav>
+        <Link className={brandStyles.mobileLink} href={href("dashboard")} aria-label={brand}><BrandLogo name={brand} compact /></Link>
         <div className="workspace-header-actions">
           <button type="button" className="chrome-icon" aria-label={t("searchDeals")} aria-expanded={searchOpen}
             aria-controls="workspace-search" onClick={() => setSearchOpen(!searchOpen)}><Search size={21} /></button>

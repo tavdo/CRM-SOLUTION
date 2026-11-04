@@ -157,43 +157,72 @@ export async function updateMemberRole(
   membershipId: string,
   role: Role,
 ) {
+  const [updated] = await updateMemberRoles(ctx, [{ membershipId, role }]);
+  return updated;
+}
+
+export async function updateMemberRoles(
+  ctx: WorkspaceContext,
+  changes: { membershipId: string; role: Role }[],
+) {
   if (!can(ctx.role, "company.members")) {
     throw new AppError("Forbidden", "FORBIDDEN", 403);
   }
 
-  const membership = await prisma.membership.findFirst({
-    where: { id: membershipId, companyId: ctx.company.id },
-  });
-  if (!membership) throw new AppError("Not found", "NOT_FOUND", 404);
+  const roles = new Map(changes.map((change) => [change.membershipId, change.role]));
+  if (
+    !changes.length ||
+    roles.size !== changes.length ||
+    changes.some((change) =>
+      !change.membershipId.trim() || !["ADMIN", "MANAGER", "EMPLOYEE"].includes(change.role),
+    )
+  ) {
+    throw new AppError("Invalid member roles", "INVALID_ROLES", 400);
+  }
 
-  if (membership.role === "ADMIN" && role !== "ADMIN") {
-    const adminCount = await prisma.membership.count({
-      where: { companyId: ctx.company.id, role: "ADMIN" },
+  return prisma.$transaction(async (tx) => {
+    const memberships = await tx.membership.findMany({
+      where: { companyId: ctx.company.id },
     });
-    if (adminCount <= 1) {
+    const byId = new Map(memberships.map((membership) => [membership.id, membership]));
+    if (changes.some((change) => !byId.has(change.membershipId))) {
+      throw new AppError("Not found", "NOT_FOUND", 404);
+    }
+
+    // Validate the final roles together so administrator handovers work in one save.
+    if (!memberships.some((membership) => (roles.get(membership.id) ?? membership.role) === "ADMIN")) {
       throw new AppError(
         "Cannot remove the last company administrator",
         "LAST_ADMIN",
         400,
       );
     }
-  }
 
-  const updated = await prisma.membership.update({
-    where: { id: membership.id },
-    data: { role },
+    const updated = [];
+    for (const change of changes) {
+      const membership = byId.get(change.membershipId)!;
+      if (membership.role === change.role) {
+        updated.push(membership);
+        continue;
+      }
+      updated.push(await tx.membership.update({
+        where: { id: membership.id, companyId: ctx.company.id },
+        data: { role: change.role },
+      }));
+      await tx.auditEvent.create({
+        data: {
+          companyId: ctx.company.id,
+          actorId: ctx.user.id,
+          action: "member.role_changed",
+          entityType: "membership",
+          entityId: membership.id,
+          detail: JSON.stringify({ from: membership.role, to: change.role }),
+        },
+      });
+    }
+
+    return updated;
   });
-
-  await writeAudit({
-    companyId: ctx.company.id,
-    actorId: ctx.user.id,
-    action: "member.role_changed",
-    entityType: "membership",
-    entityId: membership.id,
-    detail: { from: membership.role, to: role },
-  });
-
-  return updated;
 }
 
 export async function removeMember(ctx: WorkspaceContext, membershipId: string) {

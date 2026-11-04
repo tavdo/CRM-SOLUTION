@@ -1,24 +1,25 @@
 /* Dashboard surfaces and controls, with a separate mountain landscape photo. */
 .landing-workspace {
-  --landing-heading: #f4f2ff; --landing-caption: #d0d4eb;
-  --landing-header: #211c40ed; --landing-chrome-ink: #e6e1ff;
+  --landing-heading: #f1f5ff; --landing-caption: #d0ddff;
+  --landing-header: #00025ff2; --landing-chrome-ink: #edf2ff;
   --landing-control: #ffffff0d; --landing-control-line: #ffffff29;
-  --landing-selected: #a698e64d;
+  --landing-selected: #0000e2;
 }
 :root[data-theme="light"] .landing-workspace {
-  --landing-heading: #28264c; --landing-caption: #414965;
-  --landing-header: #f7f8fff0; --landing-chrome-ink: #49416e;
-  --landing-control: #e9e8f5; --landing-control-line: #d7d4e9;
-  --landing-selected: #fff;
+  --landing-heading: #00025f; --landing-caption: #34496f;
+  --landing-header: #000175f0; --landing-chrome-ink: #edf2ff;
+  --landing-control: #ffffff0d; --landing-control-line: #ffffff29;
+  --landing-selected: #0000e2;
 }
 .landing-workspace.crm-workspace::before,
 :root[data-theme="dark"] .landing-workspace.crm-workspace::before {
-  background: linear-gradient(100deg, #0c102aeb, #211d439c), url('/images/landing-mountains.jpg') center / cover no-repeat;
+  background: linear-gradient(100deg, #00025feb, #0001759c), url('/images/landing-mountains.jpg') center / cover no-repeat;
 }
 :root[data-theme="light"] .landing-workspace.crm-workspace::before {
-  background-image: linear-gradient(100deg, #eef2fff0, #e9efffb8), url('/images/landing-mountains.jpg');
+  background-image: linear-gradient(100deg, #eef2fff0, #e6edffb8), url('/images/landing-mountains.jpg');
 }
 :root[data-theme] .landing-workspace .landing-nav { background: var(--landing-header); border: 0; border-bottom: 1px solid var(--landing-control-line); backdrop-filter: blur(20px); }
+.landing-workspace .landing-nav :is(a, button):focus-visible { outline-color: #b6c6ff; }
 .landing-workspace .landing-nav .workspace-brand-name { color: var(--landing-chrome-ink); }
 .landing-workspace .landing-nav-inner { min-height: 74px; padding-block: 12px; }
 .landing-workspace .landing-nav-actions { flex-wrap: wrap; justify-content: flex-end; }
@@ -41,7 +42,7 @@
 .landing-workflow-icon { display: flex; align-items: center; height: 67px; padding: 16px; border-radius: 6px; background: var(--stage-color); color: #fff; }
 .landing-workflow-item strong { display: block; margin-top: 8px; font-size: 11px; font-weight: 550; color: var(--ink-secondary); }
 .landing-workflow-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--info-ink); font-size: 12px; }
-.landing-workflow-link:hover { color: var(--ok-ink); }
+.landing-workflow-link:hover { color: var(--chart-2); }
 .landing-workspace .quick-demo-workspace { margin-top: 24px; }
 .quick-demo-workspace .quick-demo-persona { background: var(--bg-subtle); border: 1px solid var(--line); box-shadow: none; }
 .quick-demo-workspace .quick-demo-persona:hover { background: var(--bg-hover); border-color: var(--line-strong); transform: none; box-shadow: none; }

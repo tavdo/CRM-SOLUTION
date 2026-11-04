@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { HardHat, ClipboardCheck, ShieldCheck, Languages, ArrowRight, Ruler, Package, Wallet } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { BrandLogo } from "@/components/BrandLogo";
 import { QuickDemoLogin } from "@/components/QuickDemoLogin";
 import { isLocale } from "@/i18n/config";
 import { getSessionUser } from "@/lib/auth/session";
@@ -18,10 +19,10 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   const nav = await getTranslations("nav");
   const user = await getSessionUser();
   const workflow = [
-    { key: "estimates", Icon: Ruler, color: "#09b4ed" },
-    { key: "work", Icon: HardHat, color: "#1ac4db" },
-    { key: "materials", Icon: Package, color: "#7495ec" },
-    { key: "finance", Icon: Wallet, color: "#9d82df" },
+    { key: "estimates", Icon: Ruler, color: "#0000e2" },
+    { key: "work", Icon: HardHat, color: "#0003d4" },
+    { key: "materials", Icon: Package, color: "#00008b" },
+    { key: "finance", Icon: Wallet, color: "#000175" },
   ];
 
   return (
@@ -29,7 +30,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       <a className="workspace-skip-link" href="#landing-content">{locale === "ka" ? "შინაარსზე გადასვლა" : "Skip to content"}</a>
       <header className="landing-nav">
         <div className="landing-nav-inner">
-          <Link className="workspace-brand-name" href={`/${locale}`}>{b("name")}<span>°</span></Link>
+          <Link className="workspace-brand-name" href={`/${locale}`}><BrandLogo name={b("name")} /></Link>
           <div className="landing-nav-actions">
             <ThemeSwitcher />
             <LanguageSwitcher locale={locale} />
@@ -69,9 +70,9 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
         </section>
         <section className="landing-bento">
           {[
-            { title: "workflowTitle", body: "workflowBody", Icon: ClipboardCheck, color: "#14b5e7" },
-            { title: "bilingualTitle", body: "bilingualBody", Icon: Languages, color: "#a28be8" },
-            { title: "rolesTitle", body: "rolesBody", Icon: ShieldCheck, color: "#34c1af" },
+            { title: "workflowTitle", body: "workflowBody", Icon: ClipboardCheck, color: "var(--chart-1)" },
+            { title: "bilingualTitle", body: "bilingualBody", Icon: Languages, color: "var(--chart-2)" },
+            { title: "rolesTitle", body: "rolesBody", Icon: ShieldCheck, color: "var(--chart-3)" },
           ].map(({ title, body, Icon, color }) => (
             <div className="landing-card surface" key={title} style={{ "--metric-color": color } as CSSProperties}>
               <Icon size={23} aria-hidden="true" /><h2>{t(title)}</h2><p className="muted">{t(body)}</p>

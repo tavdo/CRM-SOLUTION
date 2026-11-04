@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { can } from "@/lib/permissions";
 import { isLocale } from "@/i18n/config";
 import { redirect } from "next/navigation";
+import styles from "./customer-form.module.css";
 
 export default async function NewCustomerPage({
   params,
@@ -26,38 +27,34 @@ export default async function NewCustomerPage({
     : [];
 
   return (
-    <div style={{ maxWidth: 620, display: "grid", gap: "1rem" }}>
+    <div className={styles.page}>
       <h1 className="page-title">{t("new")}</h1>
-      <Surface style={{ padding: "1.35rem" }}>
-        <form action={createCustomerAction} style={{ display: "grid", gap: "0.9rem" }}>
+      <Surface className={styles.panel} style={{ padding: "1.35rem" }}>
+        <form action={createCustomerAction} className={styles.form}>
           <input type="hidden" name="locale" value={locale} />
-          <div style={{ display: "grid", gridTemplateColumns: "130px 1fr 150px", gap: "0.65rem" }}>
-            <Field label={isKa ? "ფორმა" : "Legal Form"} htmlFor="legalForm">
-              <select id="legalForm" name="legalForm" className="select" defaultValue="შპს">
-                <option value="შპს">შპს (LLC)</option>
-                <option value="სს">სს (JSC)</option>
-                <option value="ი/მ">ი/მ (Sole Prop.)</option>
-                <option value="ფიზ. პირი">ფიზიკური პირი</option>
-              </select>
-            </Field>
-            <Field label={t("name")} htmlFor="name">
-              <Input id="name" name="name" required />
-            </Field>
-            <Field label={isKa ? "ს/კ (9 ციფრი)" : "Tax ID (ს/კ)"} htmlFor="taxId">
-              <Input id="taxId" name="taxId" placeholder="405123456" maxLength={11} />
-            </Field>
-          </div>
+          <Field label={isKa ? "ფორმა" : "Legal Form"} htmlFor="legalForm">
+            <select id="legalForm" name="legalForm" className="select" defaultValue="შპს">
+              <option value="შპს">შპს (LLC)</option>
+              <option value="სს">სს (JSC)</option>
+              <option value="ი/მ">ი/მ (Sole Prop.)</option>
+              <option value="ფიზ. პირი">ფიზიკური პირი</option>
+            </select>
+          </Field>
+          <Field label={t("name")} htmlFor="name">
+            <Input id="name" name="name" required />
+          </Field>
+          <Field label={isKa ? "ს/კ (9 ციფრი)" : "Tax ID (ს/კ)"} htmlFor="taxId">
+            <Input id="taxId" name="taxId" placeholder="405123456" maxLength={11} />
+          </Field>
           <Field label={isKa ? "საბანკო ანგარიში (BOG / TBC IBAN)" : "Bank IBAN (GE..BG.. / GE..TB..)"} htmlFor="bankIban">
             <Input id="bankIban" name="bankIban" placeholder="GE29BG0000000101904917" />
           </Field>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.65rem" }}>
-            <Field label={t("email")} htmlFor="email">
-              <Input id="email" name="email" type="email" />
-            </Field>
-            <Field label={t("phone")} htmlFor="phone">
-              <Input id="phone" name="phone" placeholder="+995 5..." />
-            </Field>
-          </div>
+          <Field label={t("email")} htmlFor="email">
+            <Input id="email" name="email" type="email" />
+          </Field>
+          <Field label={t("phone")} htmlFor="phone">
+            <Input id="phone" name="phone" placeholder="+995 5..." />
+          </Field>
           <Field label={t("website")} htmlFor="website">
             <Input id="website" name="website" />
           </Field>
@@ -75,7 +72,9 @@ export default async function NewCustomerPage({
               </select>
             </Field>
           ) : null}
-          <Button type="submit">{t("create")}</Button>
+          <div className={styles.actions}>
+            <Button type="submit">{t("create")}</Button>
+          </div>
         </form>
       </Surface>
     </div>

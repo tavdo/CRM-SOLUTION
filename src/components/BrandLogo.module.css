@@ -1,0 +1,50 @@
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.image {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.name {
+  max-width: 90px;
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1.1;
+  letter-spacing: -0.3px;
+  white-space: normal;
+}
+
+.mobileLink {
+  display: none;
+}
+
+.compact .image {
+  width: 36px;
+  height: 36px;
+}
+
+@media (max-width: 1220px) {
+  .image {
+    width: 44px;
+    height: 44px;
+  }
+
+  .name {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 920px) {
+  .mobileLink {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+}
