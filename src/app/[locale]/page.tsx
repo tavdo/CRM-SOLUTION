@@ -2,8 +2,7 @@ import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { HardHat, ClipboardCheck, ShieldCheck, Languages, ArrowRight, Ruler, Package, Wallet } from "lucide-react";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { WorkspaceQuickControls } from "@/components/WorkspaceQuickControls";
 import { BrandLogo } from "@/components/BrandLogo";
 import { QuickDemoLogin } from "@/components/QuickDemoLogin";
 import { isLocale } from "@/i18n/config";
@@ -32,9 +31,8 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
         <div className="landing-nav-inner">
           <Link className="workspace-brand-name" href={`/${locale}`}><BrandLogo name={b("name")} /></Link>
           <div className="landing-nav-actions">
-            <ThemeSwitcher />
-            <LanguageSwitcher locale={locale} />
-            <Link href={`/${locale}/${user ? "dashboard" : "sign-in"}`} className="btn btn-secondary">{user ? nav("dashboard") : t("signin")}</Link>
+            {!user && <Link href={`/${locale}/sign-in`} className="btn btn-secondary">{t("signin")}</Link>}
+            <WorkspaceQuickControls locale={locale} dashboardLabel={nav("dashboard")} />
           </div>
         </div>
       </header>

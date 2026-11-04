@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { Surface } from "./ui";
-import { LanguageSwitcher } from "./LanguageSwitcher";
-import { ThemeSwitcher } from "./ThemeSwitcher";
 import { BrandLogo } from "./BrandLogo";
+import { WorkspaceQuickControls } from "./WorkspaceQuickControls";
 import styles from "./AuthShell.module.css";
 
 export function AuthShell({
@@ -23,8 +22,7 @@ export function AuthShell({
           <BrandLogo name={brand} />
         </Link>
         <div className={styles.controls}>
-          <ThemeSwitcher />
-          <LanguageSwitcher locale={locale} />
+          <WorkspaceQuickControls locale={locale} dashboardLabel={locale === "ka" ? "დაფა" : "Dashboard"} />
         </div>
       </header>
 

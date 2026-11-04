@@ -42,7 +42,7 @@
 
 .row {
   position: absolute;
-  top: -2px;
+  top: calc(var(--distance) - 2px);
   right: 0;
   display: flex;
   flex-direction: row-reverse;
@@ -149,8 +149,8 @@
 }
 
 @keyframes expand {
-  from { opacity: 0; transform: translateY(0); }
-  to { opacity: 1; transform: translateY(var(--distance)); }
+  from { opacity: 0; transform: translateY(calc(-1 * var(--distance))); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-height: 450px) {
@@ -162,7 +162,7 @@
 @media (prefers-reduced-motion: reduce) {
   .trigger,
   .circle { transition: none; }
-  .row { animation: none; transform: translateY(var(--distance)); }
+  .row { animation: none; transform: none; }
 }
 
 @media print {

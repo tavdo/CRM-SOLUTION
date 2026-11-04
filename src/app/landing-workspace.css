@@ -2,14 +2,12 @@
 .landing-workspace {
   --landing-heading: #f1f5ff; --landing-caption: #d0ddff;
   --landing-header: #00025ff2; --landing-chrome-ink: #edf2ff;
-  --landing-control: #ffffff0d; --landing-control-line: #ffffff29;
-  --landing-selected: #0000e2;
+  --landing-control-line: #ffffff29;
 }
 :root[data-theme="light"] .landing-workspace {
   --landing-heading: #00025f; --landing-caption: #34496f;
   --landing-header: #000175f0; --landing-chrome-ink: #edf2ff;
-  --landing-control: #ffffff0d; --landing-control-line: #ffffff29;
-  --landing-selected: #0000e2;
+  --landing-control-line: #ffffff29;
 }
 .landing-workspace.crm-workspace::before,
 :root[data-theme="dark"] .landing-workspace.crm-workspace::before {
@@ -22,10 +20,7 @@
 .landing-workspace .landing-nav :is(a, button):focus-visible { outline-color: #b6c6ff; }
 .landing-workspace .landing-nav .workspace-brand-name { color: var(--landing-chrome-ink); }
 .landing-workspace .landing-nav-inner { min-height: 74px; padding-block: 12px; }
-.landing-workspace .landing-nav-actions { flex-wrap: wrap; justify-content: flex-end; }
-:root[data-theme] .landing-workspace .landing-nav :is(.theme-switcher, .lang-pill) { background: var(--landing-control); border-color: var(--landing-control-line); box-shadow: none; }
-:root[data-theme] .landing-workspace .landing-nav :is(.theme-option, .lang-pill-btn, .lang-pill-icon) { color: var(--landing-chrome-ink); }
-:root[data-theme] .landing-workspace .landing-nav :is(.theme-option[aria-pressed="true"], .lang-pill-btn.active) { background: var(--landing-selected); color: var(--landing-chrome-ink); box-shadow: 0 1px 3px #080a2312; }
+.landing-workspace .landing-nav-actions { flex-wrap: nowrap; justify-content: flex-end; }
 .landing-workspace .contractor-hero { grid-template-columns: 1.1fr 1fr; gap: clamp(24px, 4vw, 64px); padding-block: 64px 36px; }
 .landing-workspace .landing-intro { min-width: 0; }
 :root[data-theme] .landing-workspace .landing-title { color: var(--landing-heading); background: none; -webkit-text-fill-color: currentColor; font-size: clamp(30px, 3.6vw, 48px); font-weight: 650; line-height: 1.2; letter-spacing: -.8px; margin-top: 14px; }
@@ -64,11 +59,7 @@
   .landing-workspace .landing-card { padding: 20px 16px; }
 }
 @media (max-width: 600px) {
-  .landing-workspace .landing-nav-inner { display: grid; grid-template-columns: 1fr auto; gap: 12px 8px; padding: 16px; }
-  .landing-workspace .landing-nav-actions { display: contents; }
-  .landing-workspace .landing-nav-actions > .btn { grid-column: 2; grid-row: 1; }
-  .landing-workspace .landing-nav-actions > .theme-switcher { grid-column: 1; grid-row: 2; justify-self: start; }
-  .landing-workspace .landing-nav-actions > .lang-pill { grid-column: 2; grid-row: 2; }
+  .landing-workspace .landing-nav-inner { gap: 12px; padding: 16px; }
   .landing-workspace :is(.contractor-hero, .landing-bento, .landing-footer) { padding-inline: 16px; }
   .landing-workspace .landing-bento { grid-template-columns: 1fr; }
   .landing-workspace .contractor-cta { margin-inline: 16px; padding: 22px; }

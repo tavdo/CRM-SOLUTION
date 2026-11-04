@@ -17,6 +17,7 @@
 }
 
 .shell :is(a, button, input, select, textarea, svg),
+.shell .controls *,
 .shell :global(.surface) {
   transform: none !important;
 }
@@ -31,7 +32,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 1rem;
   min-height: 80px;
   padding: 0.75rem clamp(1rem, 3vw, 2.5rem);
@@ -49,30 +50,7 @@
 .controls {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.shell .header .controls :global(.theme-switcher),
-.shell .header .controls :global(.lang-pill) {
-  color: #e6edff;
-  background: #ffffff0d;
-  border-color: #ffffff29;
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-.shell .header .controls :global(.theme-option),
-.shell .header .controls :global(.lang-pill-btn),
-.shell .header .controls :global(.lang-pill-icon) {
-  color: #e6edff;
-}
-
-.shell .header .controls :global(.theme-option[aria-pressed="true"]),
-.shell .header .controls :global(.lang-pill-btn.active) {
-  background: #0000e2;
-  color: #fff;
-  box-shadow: none;
+  flex: 0 0 auto;
 }
 
 .shell .header :focus-visible {
@@ -116,12 +94,6 @@
   .header {
     gap: 0.9rem;
     padding: 1rem;
-  }
-
-  .controls {
-    width: 100%;
-    justify-content: space-between;
-    gap: 0.5rem;
   }
 
   .main {
