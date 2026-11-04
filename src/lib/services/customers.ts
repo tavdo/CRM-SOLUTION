@@ -113,6 +113,7 @@ export async function createCustomer(
     data: {
       companyId: ctx.company.id,
       name: normalizeText(input.name),
+      isVatPayer: false,
       taxId: input.taxId?.trim() || null,
       legalForm: input.legalForm?.trim() || "შპს",
       bankIban: input.bankIban?.trim() || null,

@@ -22,6 +22,7 @@ export default async function TasksPage({
   setRequestLocale(locale);
   const ctx = await requireWorkspace();
   const t = await getTranslations("tasks");
+  const c = await getTranslations("construction");
   const isKa = locale === "ka";
   const view = sp.view === "list" ? "list" : "board";
 
@@ -162,7 +163,7 @@ export default async function TasksPage({
                         {formatDateTime(task.dueAt, locale, ctx.company.timezone)}
                       </div>
 
-                      <form
+                      {task.projectId ? <Link className="btn btn-secondary" href={`/${locale}/projects/${task.projectId}?tab=work`}>{c("reports")}</Link> : <form
                         action={moveTaskStageAction}
                         style={{ display: "flex", gap: 6, marginTop: 8 }}
                       >
@@ -187,7 +188,7 @@ export default async function TasksPage({
                         >
                           →
                         </Button>
-                      </form>
+                      </form>}
                     </div>
                   );
                 })}

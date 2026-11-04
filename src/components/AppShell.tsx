@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
+  HardHat,
   LayoutDashboard,
   Inbox,
   Users,
@@ -12,8 +13,6 @@ import {
   Package,
   CheckSquare,
   CalendarDays,
-  MessageSquare,
-  UserCheck,
   Headset,
   Bot,
   Settings,
@@ -21,16 +20,15 @@ import {
   Menu,
   X,
   Building2,
-  Play,
-  Square,
 } from "lucide-react";
 import { signOutAction, switchWorkspaceAction } from "@/app/actions/auth";
-import { toggleWorkClockAction } from "@/app/actions/crm";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
 type Workspace = { id: string; name: string };
 type NavLabels = {
+  projects: string;
+  tools: string;
   dashboard: string;
   leads: string;
   customers: string;
@@ -39,8 +37,6 @@ type NavLabels = {
   products: string;
   tasks: string;
   calendar: string;
-  feed: string;
-  hr: string;
   contactCenter: string;
   automations: string;
   settings: string;
@@ -48,8 +44,6 @@ type NavLabels = {
   workspace: string;
   switchWorkspace: string;
   menu: string;
-  clockIn: string;
-  clockOut: string;
 };
 
 export function AppShell({
@@ -60,8 +54,8 @@ export function AppShell({
   workspaces,
   activeCompanyId,
   newLeadsCount = 0,
-  isClockedIn = false,
   canManageAutomations = false,
+  canManageConstruction = false,
   children,
 }: {
   locale: string;
@@ -71,8 +65,8 @@ export function AppShell({
   workspaces: Workspace[];
   activeCompanyId: string;
   newLeadsCount?: number;
-  isClockedIn?: boolean;
   canManageAutomations?: boolean;
+  canManageConstruction?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -80,21 +74,23 @@ export function AppShell({
   const [pending, startTransition] = useTransition();
 
   const items = [
+    { href: `/${locale}/projects`, label: labels.projects, icon: HardHat },
     { href: `/${locale}/dashboard`, label: labels.dashboard, icon: LayoutDashboard },
     { href: `/${locale}/leads`, label: labels.leads, icon: Inbox, badge: newLeadsCount },
     { href: `/${locale}/deals`, label: labels.deals, icon: Kanban },
     { href: `/${locale}/customers`, label: labels.customers, icon: Users },
-    { href: `/${locale}/invoices`, label: labels.invoices, icon: FileSpreadsheet },
-    { href: `/${locale}/products`, label: labels.products, icon: Package },
     { href: `/${locale}/tasks`, label: labels.tasks, icon: CheckSquare },
     { href: `/${locale}/calendar`, label: labels.calendar, icon: CalendarDays },
-    { href: `/${locale}/feed`, label: labels.feed, icon: MessageSquare },
-    { href: `/${locale}/hr`, label: labels.hr, icon: UserCheck },
+    { href: `/${locale}/settings`, label: labels.settings, icon: Settings },
+  ];
+
+  const tools = [
+    { href: `/${locale}/invoices`, label: labels.invoices, icon: FileSpreadsheet },
+    { href: `/${locale}/products`, label: labels.products, icon: Package },
     { href: `/${locale}/contact-center`, label: labels.contactCenter, icon: Headset },
     ...(canManageAutomations
       ? [{ href: `/${locale}/automations`, label: labels.automations, icon: Bot }]
       : []),
-    { href: `/${locale}/settings`, label: labels.settings, icon: Settings },
   ];
 
   const activeWorkspace = workspaces.find((w) => w.id === activeCompanyId) ?? workspaces[0];
@@ -168,6 +164,7 @@ export function AppShell({
               </Link>
             );
           })}
+          <details className="app-tools"><summary className="app-nav-link">{labels.tools}</summary>{tools.map((item) => <Link key={item.href} href={item.href} className="app-nav-link"><item.icon size={16} /><span>{item.label}</span></Link>)}</details>
         </nav>
 
         <div
@@ -246,32 +243,6 @@ export function AppShell({
 
           <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", flexWrap: "wrap" }}>
             <ThemeSwitcher />
-            {/* Workday clock */}
-            <form action={toggleWorkClockAction}>
-              <input type="hidden" name="locale" value={locale} />
-              <button
-                type="submit"
-                className={`btn ${isClockedIn ? "btn-secondary" : "btn-primary"}`}
-                style={{
-                  padding: "0.4rem 0.78rem",
-                  fontSize: "0.78rem",
-                  borderColor: isClockedIn ? "rgba(16, 185, 129, 0.55)" : undefined,
-                }}
-              >
-                {isClockedIn ? (
-                  <>
-                    <Square size={12} color="#10b981" fill="#10b981" />
-                    <span style={{ color: "var(--ok-ink)" }}>{labels.clockOut}</span>
-                  </>
-                ) : (
-                  <>
-                    <Play size={12} />
-                    <span>{labels.clockIn}</span>
-                  </>
-                )}
-              </button>
-            </form>
-
             <div className="mobile-only">
               <LanguageSwitcher locale={locale} />
             </div>
@@ -289,13 +260,13 @@ export function AppShell({
             >
               + {labels.invoices}
             </Link>
-            <Link
-              href={`/${locale}/deals/new`}
+            {canManageConstruction ? <Link
+              href={`/${locale}/projects/new`}
               className="btn btn-primary"
               style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}
             >
-              + {labels.deals}
-            </Link>
+              + {labels.projects}
+            </Link> : null}
           </div>
         </header>
 
@@ -325,6 +296,7 @@ export function AppShell({
                 </Link>
               );
             })}
+            <details className="app-tools"><summary className="app-nav-link">{labels.tools}</summary>{tools.map((item) => <Link key={item.href} href={item.href} className="app-nav-link"><item.icon size={16} /><span>{item.label}</span></Link>)}</details>
             <form action={signOutAction} style={{ marginTop: "0.4rem" }}>
               <button type="submit" className="btn btn-secondary" style={{ width: "100%" }}>
                 <LogOut size={15} />

@@ -134,6 +134,7 @@ model Company {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  constructionProjects ConstructionProject[]
   memberships      Membership[]
   invitations      Invitation[]
   customers        Customer[]
@@ -218,6 +219,7 @@ model Customer {
   invoices     Invoice[]
   notes        Note[]
   customValues CustomFieldValue[]
+  constructionProjects ConstructionProject[]
 
   @@index([companyId, name])
   @@index([companyId, archivedAt])
@@ -350,6 +352,7 @@ model Deal {
   invoices   Invoice[]
   notes      Note[]
   activities DealActivity[]
+  constructionProject ConstructionProject?
 
   @@index([companyId, stageId])
   @@index([companyId, status])
@@ -373,6 +376,13 @@ model DealActivity {
 }
 
 model Task {
+  phase String?
+  constructionKey String? @unique
+  projectId String?
+  plannedQuantity String?
+  workUnit String?
+  project ConstructionProject? @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  siteReports SiteReport[]
   id            String     @id @default(cuid())
   companyId     String
   title         String
@@ -431,6 +441,9 @@ model Lead {
 
 // —— Products & Services Catalog (პროდუქტები) ——
 model Product {
+  materialRequests MaterialRequest[]
+  purchaseOrders PurchaseOrder[]
+  stockMovements StockMovement[]
   id          String   @id @default(cuid())
   companyId   String
   sku         String?
@@ -452,6 +465,11 @@ model Product {
 
 // —— Georgian Invoices (ინვოისები — ს/კ, დღგ 18%, BOG/TBC IBAN, RS.ge) ——
 model Invoice {
+  vatRateBps Int?
+  projectId String?
+  acceptanceId String? @unique
+  project ConstructionProject? @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  acceptance WorkAcceptance? @relation(fields: [acceptanceId], references: [id], onDelete: Restrict)
   id              String    @id @default(cuid())
   companyId       String
   invoiceNumber   String
@@ -661,4 +679,315 @@ model BillingEvent {
 
   @@unique([provider, externalEventId])
   @@index([subscriptionId])
+}
+
+// Contractor records are additive. Legacy HR/feed data is retained, without active UI/actions.
+model ConstructionProject {
+  stage String @default("ESTIMATE")
+  id String @id @default(cuid())
+  companyId String
+  number String
+  name String
+  customerId String
+  dealId String? @unique
+  address String
+  workType String
+  description String?
+  managerId String
+  siteLeadId String?
+  startDate DateTime?
+  endDate DateTime?
+  status String @default("PLANNING")
+  currency String @default("GEL")
+  contractNumber String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  deal Deal? @relation(fields: [dealId], references: [id], onDelete: Restrict)
+  estimates ConstructionEstimate[]
+  costs ProjectCost[]
+  changes ProjectChange[]
+  tasks Task[]
+  reports SiteReport[]
+  documents ProjectDocument[]
+  requests MaterialRequest[]
+  quotes SupplyQuote[]
+  orders PurchaseOrder[]
+  stock StockMovement[]
+  subcontracts Subcontract[]
+  subcontractProgress SubcontractProgress[]
+  acceptances WorkAcceptance[]
+  acceptanceLines AcceptanceLine[]
+  payments ProjectPayment[]
+  invoices Invoice[]
+  @@unique([id, companyId])
+  @@unique([companyId, number])
+  @@index([companyId, status])
+}
+model ConstructionEstimate {
+  operationKey String
+  @@unique([companyId, operationKey])
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  version Int
+  status String @default("DRAFT")
+  markupBps Int @default(0)
+  vatBps Int @default(0)
+  extraMinor Int @default(0)
+  createdById String
+  approvedAt DateTime?
+  createdAt DateTime @default(now())
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  lines EstimateLine[]
+  @@unique([projectId, version])
+  @@index([companyId, projectId])
+}
+model EstimateLine {
+  subcontractUnitMinor Int @default(0)
+  equipmentUnitMinor Int @default(0)
+  id String @id @default(cuid())
+  companyId String
+  estimateId String
+  description String
+  unit String
+  quantity String
+  materialUnitMinor Int
+  laborUnitMinor Int
+  otherUnitMinor Int @default(0)
+  sortOrder Int @default(0)
+  estimate ConstructionEstimate @relation(fields: [estimateId], references: [id], onDelete: Restrict)
+  @@index([companyId, estimateId])
+}
+model ProjectCost {
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  category String
+  description String
+  amountMinor Int
+  date DateTime
+  operationKey String
+  createdById String
+  createdAt DateTime @default(now())
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  @@unique([companyId, operationKey])
+  @@index([companyId, projectId])
+}
+model ProjectChange {
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  title String
+  plannedCostMinor Int
+  netRevenueMinor Int
+  vatBps Int @default(0)
+  status String @default("PENDING")
+  approvedAt DateTime?
+  createdAt DateTime @default(now())
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  @@index([companyId, projectId])
+}
+model SiteReport {
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  taskId String?
+  authorId String
+  date DateTime
+  kind String @default("PROGRESS")
+  body String
+  completedQuantity String @default("0")
+  status String @default("OPEN")
+  operationKey String
+  createdAt DateTime @default(now())
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: Restrict)
+  documents ProjectDocument[]
+  @@unique([companyId, operationKey])
+  @@index([companyId, projectId])
+}
+model ProjectDocument {
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  reportId String?
+  name String
+  category String
+  storageKey String @unique
+  mimeType String
+  size Int
+  createdById String
+  createdAt DateTime @default(now())
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  report SiteReport? @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  @@index([companyId, projectId])
+}
+model TradePartner {
+  id String @id @default(cuid())
+  companyId String
+  name String
+  kind String
+  specialty String?
+  phone String?
+  email String?
+  quotes SupplyQuote[]
+  orders PurchaseOrder[]
+  subcontracts Subcontract[]
+  @@index([companyId, kind])
+}
+model MaterialRequest {
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  productId String
+  quantity String
+  status String @default("REQUESTED")
+  requestedById String
+  operationKey String
+  createdAt DateTime @default(now())
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quotes SupplyQuote[]
+  order PurchaseOrder?
+  @@unique([companyId, operationKey])
+  @@index([companyId, projectId])
+}
+model SupplyQuote {
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  requestId String
+  partnerId String
+  unitMinor Int
+  notes String?
+  createdAt DateTime @default(now())
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  request MaterialRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  partner TradePartner @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  @@index([companyId, projectId])
+}
+model PurchaseOrder {
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  requestId String @unique
+  partnerId String
+  productId String
+  quantity String
+  unitMinor Int
+  totalMinor Int
+  status String @default("ORDERED")
+  createdAt DateTime @default(now())
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  request MaterialRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  partner TradePartner @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  movements StockMovement[]
+  @@index([companyId, projectId])
+}
+model StockMovement {
+  valueMinor Int @default(0)
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  productId String
+  purchaseOrderId String?
+  kind String
+  quantity String
+  otherProjectId String?
+  operationKey String
+  createdById String
+  createdAt DateTime @default(now())
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  @@unique([companyId, operationKey])
+  @@index([companyId, projectId, productId])
+}
+model Subcontract {
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  partnerId String
+  title String
+  unit String
+  quantity String
+  unitMinor Int
+  totalMinor Int
+  status String @default("ACTIVE")
+  createdAt DateTime @default(now())
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  partner TradePartner @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  progress SubcontractProgress[]
+  payments ProjectPayment[]
+  @@index([companyId, projectId])
+}
+model SubcontractProgress {
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  subcontractId String
+  quantity String
+  operationKey String
+  confirmedById String
+  date DateTime
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  subcontract Subcontract @relation(fields: [subcontractId], references: [id], onDelete: Restrict)
+  @@unique([companyId, operationKey])
+  @@index([companyId, projectId])
+}
+model WorkAcceptance {
+  operationKey String
+  @@unique([companyId, operationKey])
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  number String
+  status String @default("DRAFT")
+  vatBps Int @default(0)
+  netMinor Int
+  vatMinor Int
+  totalMinor Int
+  confirmedAt DateTime?
+  confirmedById String?
+  createdAt DateTime @default(now())
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  lines AcceptanceLine[]
+  invoice Invoice?
+  @@unique([companyId, projectId, number])
+  @@index([companyId, projectId])
+}
+model AcceptanceLine {
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  acceptanceId String
+  description String
+  unit String
+  quantity String
+  unitMinor Int
+  totalMinor Int
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  acceptance WorkAcceptance @relation(fields: [acceptanceId], references: [id], onDelete: Restrict)
+  @@index([companyId, projectId])
+}
+model ProjectPayment {
+  subcontractId String?
+  subcontract Subcontract? @relation(fields: [subcontractId], references: [id], onDelete: Restrict)
+  id String @id @default(cuid())
+  companyId String
+  projectId String
+  direction String
+  kind String
+  amountMinor Int
+  description String
+  date DateTime
+  operationKey String
+  recordedById String
+  createdAt DateTime @default(now())
+  project ConstructionProject @relation(fields: [projectId, companyId], references: [id, companyId], onDelete: Restrict)
+  @@unique([companyId, operationKey])
+  @@index([companyId, projectId])
 }

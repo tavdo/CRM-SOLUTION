@@ -1,6 +1,8 @@
 # CRM Solution
 
-Multi-tenant subscription CRM (English + Georgian) for the first usable release: workspaces, roles, customers, deals pipeline, tasks, dashboard, and subscription foundations.
+Georgian/English workspace for construction contractors: inquiries, visits and offers, projects, versioned estimates, planned/actual budgets, site reports, materials, purchasing, subcontractors, acceptance acts and manual payments.
+
+See [the contractor implementation and migration guide](docs/CONTRACTOR_IMPLEMENTATION.md) for supported workflows, verification and hosting limitations.
 
 ## Stack
 
@@ -13,7 +15,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data model, permission 
 ```bash
 cp .env.example .env
 npm install
-npx prisma migrate dev --name init
+npm run db:deploy
 npm run db:seed
 npm run dev
 ```
@@ -31,7 +33,9 @@ Open [http://localhost:3000/en](http://localhost:3000/en).
 | დემო ბეტა | Manager | `manager@demo-beta.local` | `Password123!` |
 | დემო ბეტა | Employee | `employee@demo-beta.local` | `Password123!` |
 
-Seed records are labeled **DEMO** / **DEMO-ALPHA** / **DEMO-BETA**.
+Seed records are labeled **DEMO** / **DEMO-ALPHA** / **DEMO-BETA**. Seeding is additive: existing records are preserved. Four contractor projects are added only to the two known demo tenants.
+
+For an existing database, back it up and run `npm run db:deploy` before starting this version. Never use a reset to install this change.
 
 ## Environment
 
@@ -61,13 +65,16 @@ Seed records are labeled **DEMO** / **DEMO-ALPHA** / **DEMO-BETA**.
 
 ## Core workflow (admin walkthrough)
 
-1. Sign in as `admin@demo-alpha.local` (or register a new workspace at `/en/sign-up`).
-2. Open **Customers** → create or open a customer → add a contact and note.
-3. Open **Sales** → create a deal linked to the customer → move stages on the board.
-4. From the deal, create a follow-up **Task** with a due date.
-5. Complete the task; mark the deal **Won** or **Lost** (loss requires a reason).
-6. Check **Dashboard** summaries (active deals, pipeline by currency, overdue tasks).
-7. In **Settings**, invite an employee (link appears in the server console), adjust stages/fields, review subscription (dev adapter).
+1. Add a **Client** and capture an incoming request; arrange a site visit and offer.
+2. Mark the agreed order **Won** and choose **Create from agreed order**, or add a **Project** directly.
+3. In the project, prepare an **Estimate**, add decimal quantities and cost categories, then approve a version.
+4. Assign **Site work** and record daily completed quantities, issues and private photos.
+5. Request **Materials**, compare supplier quotes, approve an order, receive quantities, use/return/transfer stock.
+6. Agree **Subcontractor** work, confirm completed volume and allocate manual payments.
+7. Create an **Acceptance act**, record client confirmation, generate its linked draft invoice and record receipts/outflows.
+8. Review **Budget** and the construction **Dashboard**, resolve issues, then mark the project handed over.
+
+Financial access is separate from project access. Employees see assigned projects and operational quantities; administrators/managers handle project finance. Payments and client confirmations are manual records, without bank verification or electronic signatures.
 
 ## Billing (dev adapter)
 

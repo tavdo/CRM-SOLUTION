@@ -38,12 +38,12 @@ export default async function ProductsPage({
         <div>
           <span className="kicker">{ctx.company.name}</span>
           <h1 className="page-title" style={{ marginTop: 2 }}>
-            {isKa ? "პროდუქტები და მომსახურება" : "Products & Services"}
+            {isKa ? "მასალები და სამშენებლო მომსახურებები" : "Materials & Construction Services"}
           </h1>
           <p className="muted" style={{ margin: "0.35rem 0 0", fontSize: "0.88rem" }}>
             {isKa
-              ? "კატალოგი შეთავაზებებისა და ინვოისებისთვის (დღგ 18%)."
-              : "Catalog for quotes and invoices (18% VAT ready)."}
+              ? "მასალების მოთხოვნებისთვის, შესყიდვებისთვის და შეთავაზებებისთვის."
+              : "Catalog for material requests, purchases and offers."}
           </p>
         </div>
         <Link href={`/${locale}/invoices`} className="btn btn-secondary">
@@ -147,7 +147,7 @@ export default async function ProductsPage({
               <Input id="name" name="name" required />
             </Field>
             <Field label="SKU" htmlFor="sku">
-              <Input id="sku" name="sku" placeholder="CRM-PRO" />
+              <Input id="sku" name="sku" placeholder="MAT-001" />
             </Field>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.55rem" }}>
               <Field label={isKa ? "ფასი (GEL)" : "Price (GEL)"} htmlFor="price">

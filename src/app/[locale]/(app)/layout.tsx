@@ -30,23 +30,14 @@ export default async function AppLayout({
     redirect(`/${locale}/sign-up`);
   }
 
-  const [memberships, newLeadsCount, activeWorkLog] = await Promise.all([
+  const [memberships, newLeadsCount] = await Promise.all([
     listUserWorkspaces(user.id),
     prisma.lead
       .count({
         where: { companyId: ctx.company.id, status: "NEW", ...ownerScope(ctx) },
       })
       .catch(() => 0),
-    prisma.workLog
-      .findFirst({
-        where: {
-          companyId: ctx.company.id,
-          userId: user.id,
-          status: "WORKING",
-          clockOutAt: null,
-        },
-      })
-      .catch(() => null),
+
   ]);
 
   const t = await getTranslations("nav");
@@ -59,10 +50,12 @@ export default async function AppLayout({
       userName={user.name}
       activeCompanyId={ctx.company.id}
       newLeadsCount={newLeadsCount}
-      isClockedIn={Boolean(activeWorkLog)}
       canManageAutomations={can(ctx.role, "company.automations")}
+      canManageConstruction={can(ctx.role, "construction.manage")}
       workspaces={memberships.map((m) => ({ id: m.companyId, name: m.company.name }))}
       labels={{
+        projects: t("projects"),
+        tools: t("tools"),
         dashboard: t("dashboard"),
         leads: t("leads"),
         customers: t("customers"),
@@ -71,8 +64,6 @@ export default async function AppLayout({
         products: t("products"),
         tasks: t("tasks"),
         calendar: t("calendar"),
-        feed: t("feed"),
-        hr: t("hr"),
         contactCenter: t("contactCenter"),
         automations: t("automations"),
         settings: t("settings"),
@@ -80,8 +71,6 @@ export default async function AppLayout({
         workspace: t("workspace"),
         switchWorkspace: t("switchWorkspace"),
         menu: t("menu"),
-        clockIn: t("clockIn"),
-        clockOut: t("clockOut"),
       }}
     >
       {children}

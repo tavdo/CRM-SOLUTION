@@ -66,6 +66,7 @@ export async function registerCompany(input: {
     const company = await tx.company.create({
       data: {
         name: input.companyName.trim(),
+        isVatPayer: false,
         slug,
         defaultLocale: input.locale,
         timezone: input.timezone ?? "Asia/Tbilisi",
@@ -79,7 +80,7 @@ export async function registerCompany(input: {
     await tx.pipelineStage.createMany({
       data: DEFAULT_PIPELINE_STAGES.map((s) => ({
         companyId: company.id,
-        name: s.name,
+        name: input.locale === "ka" ? ["შემოსული მოთხოვნა", "ობიექტის დათვალიერება", "ხარჯთაღრიცხვა და შეთავაზება", "ხელშეკრულების განხილვა", "შეთანხმებული ხელშეკრულება", "უარყოფილი"][s.sortOrder] : s.name,
         sortOrder: s.sortOrder,
         isWon: s.isWon,
         isLost: s.isLost,

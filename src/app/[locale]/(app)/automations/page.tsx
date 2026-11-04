@@ -50,8 +50,8 @@ export default async function AutomationsPage({
         </h1>
         <p className="muted" style={{ margin: "0.35rem 0 0" }}>
           {isKa
-            ? "როდესაც გარიგება გადადის არჩეულ ეტაპზე, სისტემა ავტომატურად ქმნის დავალებას ან აქვეყნებს შეტყობინებას კომპანიის სიახლეებში."
-            : "When a deal moves into a trigger stage on the Kanban board, these robots automatically create follow-up tasks or post announcements."}
+            ? "შეკვეთის არჩეულ ეტაპზე გადასვლისას სისტემა ქმნის პასუხისმგებელი პირის დავალებას."
+            : "When an order moves to the selected stage, create a task for its responsible person."}
         </p>
       </div>
 
@@ -156,14 +156,6 @@ export default async function AutomationsPage({
               <select id="actionType" name="actionType" className="select" defaultValue="CREATE_TASK">
                 <option value="CREATE_TASK">
                   {isKa ? "ავტომატური დავალების შექმნა" : "Auto-Create Task for Deal Owner"}
-                </option>
-                <option value="POST_FEED">
-                  {isKa ? "სიახლეების ლენტაში გამოქვეყნება" : "Post Announcement to Company Feed"}
-                </option>
-                <option value="SEND_SMS" disabled>
-                  {isKa
-                    ? "SMS მიუწვდომელია — შეტყობინებები არ იგზავნება"
-                    : "SMS unavailable — messages are not delivered"}
                 </option>
               </select>
             </Field>

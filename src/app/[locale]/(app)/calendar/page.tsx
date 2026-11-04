@@ -6,6 +6,7 @@ import { MonthCalendar, type CalendarEvent } from "@/components/MonthCalendar";
 import { Surface } from "@/components/ui";
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { prisma } from "@/lib/db";
+import { projectScope } from "@/lib/construction/access";
 import { can } from "@/lib/permissions";
 import { dateInTimezone } from "@/lib/dates";
 import { isLocale } from "@/i18n/config";
@@ -20,9 +21,10 @@ export default async function CalendarPage({
   setRequestLocale(locale);
   const ctx = await requireWorkspace();
   const isKa = locale === "ka";
+
   const ownerScope = can(ctx.role, "crm.all") ? {} : { ownerId: ctx.user.id };
 
-  const [tasks, deals, leaves] = await Promise.all([
+  const [tasks, deals, projects] = await Promise.all([
     prisma.task.findMany({
       where: { companyId: ctx.company.id, dueAt: { not: null }, ...ownerScope },
       select: { id: true, title: true, dueAt: true },
@@ -36,14 +38,7 @@ export default async function CalendarPage({
       },
       select: { id: true, title: true, expectedCloseAt: true },
     }),
-    prisma.leaveRequest.findMany({
-      where: {
-        companyId: ctx.company.id,
-        status: { in: ["APPROVED", "PENDING"] },
-        ...(can(ctx.role, "crm.all") ? {} : { userId: ctx.user.id }),
-      },
-      include: { user: { select: { name: true } } },
-    }),
+    prisma.constructionProject.findMany({ where: { AND: [projectScope(ctx), { endDate: { not: null }, status: { not: "ARCHIVED" } }] }, select: { id: true, name: true, endDate: true } }),
   ]);
 
   const events: CalendarEvent[] = [];
@@ -70,18 +65,8 @@ export default async function CalendarPage({
     });
   }
 
-  for (const leave of leaves) {
-    const start = new Date(leave.startDate);
-    const end = new Date(leave.endDate);
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      events.push({
-        id: `leave-${leave.id}-${d.toISOString().slice(0, 10)}`,
-        date: d.toISOString(),
-        title: `${leave.user.name} · ${leave.leaveType}`,
-        href: `/${locale}/hr`,
-        kind: "leave",
-      });
-    }
+  for (const project of projects) {
+    if (project.endDate) events.push({ id: `project-${project.id}`, date: project.endDate.toISOString(), title: project.name, href: `/${locale}/projects/${project.id}`, kind: "project" });
   }
 
   return (
@@ -102,8 +87,8 @@ export default async function CalendarPage({
           </h1>
           <p className="muted" style={{ margin: "0.35rem 0 0", fontSize: "0.88rem" }}>
             {isKa
-              ? "დავალებების ვადები, გარიგების დახურვის თარიღები და შვებულებები."
-              : "Task due dates, expected deal close dates, and leave."}
+              ? "სამუშაოების ვადები, შეთავაზებების თარიღები და ობიექტების ჩაბარება."
+              : "Work deadlines, offer dates and project handovers."}
           </p>
         </div>
         <Link href={`/${locale}/tasks/new`} className="btn btn-primary">

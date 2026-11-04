@@ -4,7 +4,7 @@ import { writeAudit } from "../audit";
 import { csvCell } from "../csv";
 import type { WorkspaceContext } from "../auth/workspace";
 
-export const EXPORT_VERSION = 1;
+export const EXPORT_VERSION = 2;
 const PAGE_SIZE = 200;
 type Row = { id: string } & Record<string, unknown>;
 type Page = (after?: string) => Promise<Row[]>;
@@ -16,6 +16,23 @@ function exportPages(companyId: string): Record<string, Page> {
     where: { companyId, ...(after ? { id: { gt: after } } : {}) },
   });
   return {
+    constructionProjects: (after) => prisma.constructionProject.findMany({ ...page(after), select: { stage: true, id: true, companyId: true, number: true, name: true, customerId: true, dealId: true, address: true, workType: true, description: true, managerId: true, siteLeadId: true, startDate: true, endDate: true, status: true, currency: true, contractNumber: true, createdAt: true, updatedAt: true } }),
+    constructionEstimates: (after) => prisma.constructionEstimate.findMany({ ...page(after), select: { id: true, companyId: true, projectId: true, version: true, status: true, markupBps: true, vatBps: true, extraMinor: true, createdById: true, approvedAt: true, createdAt: true } }),
+    estimateLines: (after) => prisma.estimateLine.findMany({ ...page(after), select: { subcontractUnitMinor: true, equipmentUnitMinor: true, id: true, companyId: true, estimateId: true, description: true, unit: true, quantity: true, materialUnitMinor: true, laborUnitMinor: true, otherUnitMinor: true, sortOrder: true } }),
+    projectCosts: (after) => prisma.projectCost.findMany({ ...page(after), select: { id: true, companyId: true, projectId: true, category: true, description: true, amountMinor: true, date: true, createdById: true, createdAt: true } }),
+    projectChanges: (after) => prisma.projectChange.findMany({ ...page(after), select: { id: true, companyId: true, projectId: true, title: true, plannedCostMinor: true, netRevenueMinor: true, vatBps: true, status: true, approvedAt: true, createdAt: true } }),
+    siteReports: (after) => prisma.siteReport.findMany({ ...page(after), select: { id: true, companyId: true, projectId: true, taskId: true, authorId: true, date: true, kind: true, body: true, completedQuantity: true, status: true, createdAt: true } }),
+    projectDocuments: (after) => prisma.projectDocument.findMany({ ...page(after), select: { id: true, companyId: true, projectId: true, reportId: true, name: true, category: true, mimeType: true, size: true, createdById: true, createdAt: true } }),
+    tradePartners: (after) => prisma.tradePartner.findMany({ ...page(after), select: { id: true, companyId: true, name: true, kind: true, specialty: true, phone: true, email: true } }),
+    materialRequests: (after) => prisma.materialRequest.findMany({ ...page(after), select: { id: true, companyId: true, projectId: true, productId: true, quantity: true, status: true, requestedById: true, createdAt: true } }),
+    supplyQuotes: (after) => prisma.supplyQuote.findMany({ ...page(after), select: { id: true, companyId: true, projectId: true, requestId: true, partnerId: true, unitMinor: true, notes: true, createdAt: true } }),
+    purchaseOrders: (after) => prisma.purchaseOrder.findMany({ ...page(after), select: { id: true, companyId: true, projectId: true, requestId: true, partnerId: true, productId: true, quantity: true, unitMinor: true, totalMinor: true, status: true, createdAt: true } }),
+    stockMovements: (after) => prisma.stockMovement.findMany({ ...page(after), select: { valueMinor: true, id: true, companyId: true, projectId: true, productId: true, purchaseOrderId: true, kind: true, quantity: true, otherProjectId: true, createdById: true, createdAt: true } }),
+    subcontracts: (after) => prisma.subcontract.findMany({ ...page(after), select: { id: true, companyId: true, projectId: true, partnerId: true, title: true, unit: true, quantity: true, unitMinor: true, totalMinor: true, status: true, createdAt: true } }),
+    subcontractProgress: (after) => prisma.subcontractProgress.findMany({ ...page(after), select: { id: true, companyId: true, projectId: true, subcontractId: true, quantity: true, confirmedById: true, date: true } }),
+    workAcceptances: (after) => prisma.workAcceptance.findMany({ ...page(after), select: { id: true, companyId: true, projectId: true, number: true, status: true, vatBps: true, netMinor: true, vatMinor: true, totalMinor: true, confirmedAt: true, confirmedById: true, createdAt: true } }),
+    acceptanceLines: (after) => prisma.acceptanceLine.findMany({ ...page(after), select: { id: true, companyId: true, projectId: true, acceptanceId: true, description: true, unit: true, quantity: true, unitMinor: true, totalMinor: true } }),
+    projectPayments: (after) => prisma.projectPayment.findMany({ ...page(after), select: { subcontractId: true, id: true, companyId: true, projectId: true, direction: true, kind: true, amountMinor: true, description: true, date: true, recordedById: true, createdAt: true } }),
     customers: (after) => prisma.customer.findMany({ ...page(after), select: {
       id: true, companyId: true, name: true, taxId: true, legalForm: true, isVatPayer: true,
       bankIban: true, email: true, phone: true, website: true, address: true, ownerId: true,
@@ -42,7 +59,7 @@ function exportPages(companyId: string): Record<string, Page> {
     tasks: (after) => prisma.task.findMany({ ...page(after), select: {
       id: true, companyId: true, title: true, description: true, status: true, priority: true,
       boardStage: true, checklistJson: true, dueAt: true, completedAt: true, ownerId: true,
-      creatorId: true, customerId: true, dealId: true, createdAt: true, updatedAt: true,
+      creatorId: true, customerId: true, dealId: true, projectId: true, plannedQuantity: true, workUnit: true, phase: true, createdAt: true, updatedAt: true,
     } }),
     products: (after) => prisma.product.findMany({ ...page(after), select: {
       id: true, companyId: true, sku: true, name: true, description: true, unit: true,
@@ -51,7 +68,7 @@ function exportPages(companyId: string): Record<string, Page> {
     invoices: (after) => prisma.invoice.findMany({ ...page(after), select: {
       id: true, companyId: true, invoiceNumber: true, customerId: true, dealId: true, status: true,
       issueDate: true, dueDate: true, subtotalMinor: true, vatRate: true, vatMinor: true, totalMinor: true,
-      currency: true, includeVat: true, bankPreference: true, rsGeWaybillRef: true, notes: true, createdAt: true, updatedAt: true,
+      projectId: true, acceptanceId: true, vatRateBps: true, currency: true, includeVat: true, bankPreference: true, rsGeWaybillRef: true, notes: true, createdAt: true, updatedAt: true,
     } }),
     invoiceItems: (after) => prisma.invoiceItem.findMany({
       where: { invoice: { companyId }, ...(after ? { id: { gt: after } } : {}) },

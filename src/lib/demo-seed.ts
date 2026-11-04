@@ -1,3 +1,5 @@
+import { ensureConstructionDemo } from "./construction/demo";
+import { DEFAULT_PIPELINE_STAGES } from "./defaults";
 import type { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { createHash } from "crypto";
@@ -6,20 +8,13 @@ function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-const STAGES = [
-  { name: "New", sortOrder: 0, isWon: false, isLost: false },
-  { name: "Qualified", sortOrder: 1, isWon: false, isLost: false },
-  { name: "Proposal", sortOrder: 2, isWon: false, isLost: false },
-  { name: "Negotiation", sortOrder: 3, isWon: false, isLost: false },
-  { name: "Won", sortOrder: 4, isWon: true, isLost: false },
-  { name: "Lost", sortOrder: 5, isWon: false, isLost: true },
-];
+const STAGES = DEFAULT_PIPELINE_STAGES;
 
 export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
   const existingLeads = await prisma.lead
     .count({ where: { companyId: "company_alpha" } })
     .catch(() => 0);
-  if (existingLeads > 0) return;
+  if (existingLeads > 0) { await ensureConstructionDemo(prisma); return; }
 
   const plans = [
     {
@@ -54,7 +49,7 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
     await prisma.plan.upsert({
       where: { code: p.code },
       create: p,
-      update: p,
+      update: {},
     });
   }
 
@@ -87,7 +82,7 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
         address: "14 Rustaveli Ave, Tbilisi",
       },
       {
-        name: "Caucasus Cloud Systems",
+        name: "Office Renovation Client",
         taxId: "405221890",
         legalForm: "შპს",
         bankIban: "GE19TB7700000881234109",
@@ -97,7 +92,7 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
         address: "8 Chavchavadze Ave, Tbilisi",
       },
       {
-        name: "Batumi Port Freight",
+        name: "Facade Works Client",
         taxId: "205144890",
         legalForm: "სს",
         bankIban: "GE91BG0000000908112233",
@@ -108,15 +103,15 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
       },
     ],
     deals: [
-      { title: "DEMO-ALPHA website redesign", stageIdx: 0, amountMinor: 1250000, custIdx: 0 },
-      { title: "Cloud ERP & Warehouse Integration", stageIdx: 1, amountMinor: 2800000, custIdx: 1 },
-      { title: "Annual Fleet Telemetry Contract", stageIdx: 2, amountMinor: 1950000, custIdx: 2 },
-      { title: "Security Audit & SSO Rollout", stageIdx: 3, amountMinor: 980000, custIdx: 1 },
-      { title: "Core CRM Onboarding Package", stageIdx: 4, amountMinor: 1500000, custIdx: 0, won: true },
+      { title: "Private house construction", stageIdx: 0, amountMinor: 1250000, custIdx: 0 },
+      { title: "Office renovation", stageIdx: 1, amountMinor: 2800000, custIdx: 1 },
+      { title: "Facade restoration", stageIdx: 2, amountMinor: 1950000, custIdx: 2 },
+      { title: "Electrical installation", stageIdx: 3, amountMinor: 980000, custIdx: 1 },
+      { title: "Private house structure", stageIdx: 4, amountMinor: 1500000, custIdx: 0, won: true },
     ],
     leads: [
       {
-        title: "Facebook Inquiry — Vake Retail Chain POS",
+        title: "Office renovation inquiry",
         contactName: "Giorgi Maisuradze",
         companyName: "შპს ვაკე რითეილი",
         taxId: "405882109",
@@ -125,10 +120,10 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
         source: "FACEBOOK",
         status: "NEW",
         amountMinor: 850000,
-        notes: "Messaged via Facebook Page — needs 6 POS terminals + RS.ge integration.",
+        notes: "Demo request: inspect the office, measure partitions and prepare an estimate.",
       },
       {
-        title: "WhatsApp Lead — Kutaisi Agro Distribution",
+        title: "House construction inquiry",
         contactName: "Tamuna Kalandadze",
         companyName: "შპს აგრო დისტრიბუცია",
         taxId: "412009481",
@@ -140,7 +135,7 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
         notes: "Requested commercial offer in GEL with 18% VAT breakdown.",
       },
       {
-        title: "MyPhone SIP Call — Saburtalo Medical Clinic",
+        title: "Electrical installation inquiry",
         contactName: "Davitabradze Levan",
         companyName: "სს მედიკლინიკა",
         taxId: "204998112",
@@ -149,10 +144,10 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
         source: "MYPHONE",
         status: "QUALIFIED",
         amountMinor: 2200000,
-        notes: "Inbound call recorded on MyPhone trunk — ready to convert to Deal.",
+        notes: "Demo manual call record — arrange a site inspection.",
       },
       {
-        title: "Instagram DM — Boutique Hotel Kazbegi",
+        title: "Facade restoration inquiry",
         contactName: "Salome Kipiani",
         companyName: "შპს ყაზბეგი ჰოტელს",
         taxId: "405771230",
@@ -161,7 +156,7 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
         source: "INSTAGRAM",
         status: "NEW",
         amountMinor: 640000,
-        notes: "Asked for booking + CRM integration demo.",
+        notes: "Request dimensions, facade photographs and access conditions.",
       },
     ],
   });
@@ -193,7 +188,7 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
         address: "თბილისი, პეკინის 24",
       },
       {
-        name: "შპს კავკასიის ლოგისტიკა",
+        name: "დემო სამშენებლო დამკვეთი",
         taxId: "404339102",
         legalForm: "შპს",
         bankIban: "GE88TB7000000441122990",
@@ -204,13 +199,13 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
       },
     ],
     deals: [
-      { title: "DEMO-BETA website redesign", stageIdx: 0, amountMinor: 250000, custIdx: 0 },
-      { title: "საწყობის ავტომატიზაცია", stageIdx: 2, amountMinor: 1850000, custIdx: 1 },
-      { title: "ტექნიკური მხარდაჭერის პაკეტი", stageIdx: 4, amountMinor: 640000, custIdx: 0, won: true },
+      { title: "სახლის მშენებლობა", stageIdx: 0, amountMinor: 250000, custIdx: 0 },
+      { title: "ოფისის რემონტი", stageIdx: 2, amountMinor: 1850000, custIdx: 1 },
+      { title: "ფასადის სამუშაოები", stageIdx: 4, amountMinor: 640000, custIdx: 0, won: true },
     ],
     leads: [
       {
-        title: "Facebook მესენჯერი — ბათუმის სასტუმროს აღჭურვა",
+        title: "ბათუმის ოფისის რემონტის მოთხოვნა",
         contactName: "ნიკა შარაშიძე",
         companyName: "შპს ბათუმი პალასი",
         taxId: "445001928",
@@ -222,7 +217,7 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
         notes: "ითხოვს ინვოისს დღგ-ს ჩათვლით საქართველოს ბანკის ანგარიშზე.",
       },
       {
-        title: "MyPhone ზარი — ქუთაისის სადისტრიბუციო ქსელი",
+        title: "ქუთაისის სახლის მშენებლობის მოთხოვნა",
         contactName: "ეკა ლომიძე",
         companyName: "შპს იმერეთი თრეიდი",
         taxId: "412883901",
@@ -235,6 +230,7 @@ export async function ensureDemoData(prisma: PrismaClient): Promise<void> {
       },
     ],
   });
+  await ensureConstructionDemo(prisma);
 }
 
 async function seedCompany(
@@ -293,7 +289,7 @@ async function seedCompany(
       preferredLocale: opts.locale,
       emailVerifiedAt: new Date(),
     },
-    update: { passwordHash, name: opts.admin.name },
+    update: {},
   });
 
   const manager = await prisma.user.upsert({
@@ -306,7 +302,7 @@ async function seedCompany(
       preferredLocale: opts.locale,
       emailVerifiedAt: new Date(),
     },
-    update: { passwordHash, name: opts.manager.name },
+    update: {},
   });
 
   const employee = await prisma.user.upsert({
@@ -319,7 +315,7 @@ async function seedCompany(
       preferredLocale: opts.locale,
       emailVerifiedAt: new Date(),
     },
-    update: { passwordHash, name: opts.employee.name },
+    update: {},
   });
 
   const company = await prisma.company.upsert({
@@ -339,21 +335,13 @@ async function seedCompany(
       defaultLocale: opts.locale,
       currency: "GEL",
     },
-    update: {
-      name: opts.companyName,
-      taxId: opts.taxId,
-      legalForm: opts.legalForm,
-      bogIban: opts.bogIban,
-      tbcIban: opts.tbcIban,
-      address: opts.address,
-      phone: opts.phone,
-    },
+    update: {},
   });
 
   for (const [u, role, dept, title] of [
     [admin, "ADMIN", "Management / დირექცია", "CEO & Founder"],
-    [manager, "MANAGER", "Sales / გაყიდვების დეპარტამენტი", "Head of Sales"],
-    [employee, "EMPLOYEE", "Sales / გაყიდვების დეპარტამენტი", "Account Executive"],
+    [manager, "MANAGER", "Construction / მშენებლობა", "Project Manager"],
+    [employee, "EMPLOYEE", "Construction / მშენებლობა", "Site Supervisor"],
   ] as const) {
     await prisma.membership.upsert({
       where: { companyId_userId: { companyId: company.id, userId: u.id } },
@@ -365,7 +353,7 @@ async function seedCompany(
         departmentName: dept,
         jobTitle: title,
       },
-      update: { role, departmentName: dept, jobTitle: title },
+      update: {},
     });
   }
 
@@ -514,25 +502,25 @@ async function seedCompany(
   const productsData = [
     {
       id: `prod_${p}_0`,
-      sku: "CRM-ENT-GE",
-      name: opts.locale === "ka" ? "CRM სისტემის დანერგვა და კონფიგურაცია" : "CRM Implementation & Configuration",
-      description: "Full workspace setup, RS.ge & BOG/TBC invoice templates, team training",
+      sku: "RENOVATION-01",
+      name: opts.locale === "ka" ? "ოფისის სარემონტო სამუშაო" : "Office renovation work",
+      description: "DEMO: surface preparation, plastering and painting",
       unit: "პაკეტი",
       priceMinor: 1250000,
     },
     {
       id: `prod_${p}_1`,
-      sku: "CLOUD-ERP-01",
-      name: opts.locale === "ka" ? "საწყობის და ERP ინტეგრაცია" : "Warehouse & Cloud ERP Integration",
-      description: "Two-way inventory sync, barcode support, RS.ge waybill readiness",
+      sku: "CONCRETE-01",
+      name: opts.locale === "ka" ? "ბეტონის მიწოდება" : "Concrete supply",
+      description: "DEMO: ready-mix concrete, delivered to site",
       unit: "პაკეტი",
       priceMinor: 2800000,
     },
     {
       id: `prod_${p}_2`,
-      sku: "SLA-MONTH",
-      name: opts.locale === "ka" ? "ყოველთვიური ტექნიკური მხარდაჭერა (SLA)" : "Monthly Priority Support (SLA)",
-      description: "24/7 dedicated Georgian & English account support",
+      sku: "ELECTRICAL-01",
+      name: opts.locale === "ka" ? "ელექტრომონტაჟი" : "Electrical installation",
+      description: "DEMO: wiring and electrical fixture installation",
       unit: "თვე",
       priceMinor: 640000,
     },
@@ -612,7 +600,7 @@ async function seedCompany(
         includeVat: true,
         bankPreference: "BOG_TBC",
         rsGeWaybillRef: "RS-0749182099",
-        notes: "ანგარიშ-ფაქტურა ატვირთულია RS.ge პორტალზე (დღგ 18%).",
+        notes: "DEMO: შიდა მითითება; RS.ge-ზე დოკუმენტი გაგზავნილი არ არის.",
         items: {
           create: [
             {
@@ -637,8 +625,8 @@ async function seedCompany(
     create: {
       id: `task_${p}_0`,
       companyId: company.id,
-      title: "Follow up call with decision maker",
-      description: "DEMO seed task — review proposal scope and timeline",
+      title: "Arrange site inspection with client",
+      description: "DEMO site task — confirm measured quantities and completion date",
       priority: "HIGH",
       boardStage: "IN_PROGRESS",
       dueAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
@@ -655,7 +643,7 @@ async function seedCompany(
     create: {
       id: `task_${p}_1`,
       companyId: company.id,
-      title: "Send commercial proposal & Georgian VAT invoice",
+      title: "Review measured quantities and prepare estimate",
       priority: "URGENT",
       boardStage: "TODO",
       dueAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
@@ -668,149 +656,31 @@ async function seedCompany(
   });
 
   // Seed Company Feed & Team Chat
-  await prisma.feedPost.upsert({
-    where: { id: `feed_${p}_0` },
-    create: {
-      id: `feed_${p}_0`,
-      companyId: company.id,
-      authorId: admin.id,
-      title: "Q4 Sales Target & Georgian Invoice Automation Launched",
-      body: "ჩვენი ახალი CRM სივრცე გაშვებულია! ყველა შემომავალი ლიდი Facebook-იდან, WhatsApp-იდან და MyPhone-იდან ავტომატურად ხვდება ლიდების მოდულში. ინვოისები გენერირდება ს/კ-ით, 18% დღგ-ით და BOG/TBC IBAN ანგარიშებით.",
-      category: "ANNOUNCEMENT",
-      pinned: true,
-    },
-    update: {},
-  });
-
-  await prisma.feedPost.upsert({
-    where: { id: `feed_${p}_1` },
-    create: {
-      id: `feed_${p}_1`,
-      companyId: company.id,
-      authorId: manager.id,
-      title: "Deal Won: Core CRM Onboarding Package (15,000 GEL)",
-      body: "Closed the onboarding package with DEMO-ALPHA Customer LLC. Invoice INV-2026-001 has been marked PAID via Bank of Georgia corporate transfer.",
-      category: "WIN",
-      pinned: false,
-    },
-    update: {},
-  });
-
-  const chatSeed = [
-    {
-      id: `chat_${p}_0`,
-      authorId: admin.id,
-      channel: "general",
-      body: "დილა მშვიდობისა გუნდო! დღეს 15:00-ზე გვაქვს კვირის მილის განხილვა.",
-    },
-    {
-      id: `chat_${p}_1`,
-      authorId: manager.id,
-      channel: "sales",
-      body: "Batumi Port Freight-ის ინვოისი (ს/კ 205144890) გავამზადე, დღეს გადავუგზავნი თიბისის რეკვიზიტებით.",
-    },
-    {
-      id: `chat_${p}_2`,
-      authorId: employee.id,
-      channel: "sales",
-      body: "Facebook-იდან ახალი ლიდი შემოვიდა (შპს ვაკე რითეილი) — უკვე დავუკავშირდი და გადამყავს გარიგებაში!",
-    },
-  ];
-  for (const msg of chatSeed) {
-    await prisma.chatMessage.upsert({
-      where: { id: msg.id },
-      create: {
-        ...msg,
-        companyId: company.id,
-      },
-      update: {},
-    });
-  }
-
-  // Seed HR Departments, Worktime Clock-In, and Leave Requests
-  const depts = [
-    { id: `dept_${p}_0`, name: "Management / დირექცია", headName: opts.admin.name, memberCount: 2 },
-    { id: `dept_${p}_1`, name: "Sales & B2B / გაყიდვების დეპარტამენტი", headName: opts.manager.name, memberCount: 6 },
-    { id: `dept_${p}_2`, name: "Client Success & Support / მხარდაჭერა", headName: opts.employee.name, memberCount: 4 },
-    { id: `dept_${p}_3`, name: "Finance & RS.ge Accounting / ფინანსები", headName: "Nino K.", memberCount: 2 },
-  ];
-  for (const d of depts) {
-    await prisma.department.upsert({
-      where: { id: d.id },
-      create: { ...d, companyId: company.id },
-      update: {},
-    });
-  }
-
-  await prisma.workLog.upsert({
-    where: { id: `work_${p}_0` },
-    create: {
-      id: `work_${p}_0`,
-      companyId: company.id,
-      userId: admin.id,
-      status: "WORKING",
-      clockInAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      note: "Tbilisi HQ Office",
-    },
-    update: {},
-  });
-
-  await prisma.leaveRequest.upsert({
-    where: { id: `leave_${p}_0` },
-    create: {
-      id: `leave_${p}_0`,
-      companyId: company.id,
-      userId: employee.id,
-      leaveType: "VACATION",
-      startDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-      endDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-      status: "APPROVED",
-      reason: "კუთვნილი ანაზღაურებადი შვებულება (5 სამუშაო დღე)",
-    },
-    update: {},
-  });
-
-  // Seed Pipeline Automation Rules (Bitrix24-style Robots)
+  // Seed contractor follow-up tasks
   if (stages[2]) {
     await prisma.automationRule.upsert({
       where: { id: `auto_${p}_0` },
       create: {
         id: `auto_${p}_0`,
         companyId: company.id,
-        name: "Proposal Stage → Auto-create Invoice & SLA Follow-up Task",
+        name: "Estimate stage → Review site scope",
         triggerStageId: stages[2].id,
         actionType: "CREATE_TASK",
-        actionDetail: "მოამზადეთ და გაუგზავნეთ ქართული ინვოისი (დღგ 18%) და ხელშეკრულება",
+        actionDetail: "შეამოწმეთ ობიექტის მოცულობები და მოამზადეთ შეთავაზება.",
         isActive: true,
       },
       update: {},
     });
   }
-  if (stages[4]) {
-    await prisma.automationRule.upsert({
-      where: { id: `auto_${p}_1` },
-      create: {
-        id: `auto_${p}_1`,
-        companyId: company.id,
-        name: "Won Stage → Announce Deal Win in Company Feed",
-        triggerStageId: stages[4].id,
-        actionType: "POST_FEED",
-        actionDetail: "გილოცავთ! გარიგება წარმატებით დაიხურა (WON).",
-        isActive: true,
-      },
-      update: {},
-    });
-  }
-
   await prisma.customFieldDefinition.upsert({
     where: { id: `cf_${p}_industry` },
     create: {
       id: `cf_${p}_industry`,
       companyId: company.id,
-      name: "Industry",
+      name: "Work type",
       key: "industry",
       fieldType: "SELECT",
-      options: JSON.stringify(["Technology", "Logistics", "Retail", "Hospitality", "Services"]),
+      options: JSON.stringify(["House construction", "Office renovation", "Facade work", "Electrical installation"]),
     },
     update: {},
   });
@@ -822,7 +692,7 @@ async function seedCompany(
       companyId: company.id,
       customerId: createdCustomers[0].id,
       authorId: admin.id,
-      body: "DEMO: Initial discovery notes — client wants bilingual workspace for 15 sales reps + RS.ge invoice export.",
+      body: "DEMO: Site inspection notes — confirm quantities, access conditions and the project completion date.",
     },
     update: {},
   });

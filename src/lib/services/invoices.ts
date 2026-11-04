@@ -11,6 +11,7 @@ export async function listInvoices(ctx: WorkspaceContext) {
     where: {
       companyId: ctx.company.id,
       ...customerOwnerScope(ctx),
+      ...(can(ctx.role, "construction.finance") ? {} : { projectId: null }),
     },
     include: { customer: true, deal: true, items: true },
     orderBy: { createdAt: "desc" },
@@ -24,6 +25,7 @@ export async function getInvoice(ctx: WorkspaceContext, id: string) {
       id,
       companyId: ctx.company.id,
       ...customerOwnerScope(ctx),
+      ...(can(ctx.role, "construction.finance") ? {} : { projectId: null }),
     },
     include: { customer: true, deal: true, items: true },
   });
@@ -81,7 +83,7 @@ export async function createInvoice(
 
   let unitPriceMinor = toMinor(input.unitPrice || "0");
   let unit = input.unit || "პაკეტი";
-  let lineDescription = input.description || "CRM Services / მომსახურება";
+  let lineDescription = input.description || "სამშენებლო სამუშაოები / Construction work";
   let productId: string | null = null;
 
   if (input.productId) {
@@ -103,7 +105,7 @@ export async function createInvoice(
   if (!Number.isSafeInteger(quantity) || quantity < 1 || unitPriceMinor < 0) {
     throw new AppError("Invalid quantity or price", "VALIDATION", 400);
   }
-  const includeVat = input.includeVat !== false;
+  const includeVat = input.includeVat ?? ctx.company.isVatPayer;
   const subtotalMinor = quantity * unitPriceMinor;
   const vatRate = 18;
   const vatMinor = includeVat ? Math.round(subtotalMinor * 0.18) : 0;
@@ -172,7 +174,7 @@ export async function convertQuoteToInvoice(ctx: WorkspaceContext, id: string) {
   }
 
   const count = await prisma.invoice.count({
-    where: { companyId: ctx.company.id, status: { not: "QUOTE" } },
+    where: { companyId: ctx.company.id },
   });
   const invoiceNumber = `INV-${new Date().getFullYear()}-${String(count + 1).padStart(3, "0")}`;
 

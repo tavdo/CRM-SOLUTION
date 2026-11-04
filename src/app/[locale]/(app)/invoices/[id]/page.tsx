@@ -249,7 +249,7 @@ export default async function InvoiceDetailPage({
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span className="muted">
-                {isKa ? `დღგ (${invoice.vatRate}%):` : `Georgian VAT (${invoice.vatRate}%):`}
+                {isKa ? `დღგ (${(invoice.vatRateBps ?? invoice.vatRate * 100) / 100}%):` : `Georgian VAT (${(invoice.vatRateBps ?? invoice.vatRate * 100) / 100}%):`}
               </span>
               <strong>{formatMoney(invoice.vatMinor, invoice.currency, locale)}</strong>
             </div>

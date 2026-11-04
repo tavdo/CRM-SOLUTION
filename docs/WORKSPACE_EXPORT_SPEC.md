@@ -1,6 +1,6 @@
-# Workspace export v1
+# Workspace export v2
 
-The user explicitly approved this payload and the administrator browser-download destination on 2026-10-28. Implemented locally in `src/lib/services/export.ts` and `src/app/api/workspace/export/route.ts`, with downloads in Settings. No deployment or live data download was performed.
+The original CRM payload and administrator browser-download destination were explicitly approved on 2026-10-28. The contractor refactor adds construction records to JSON v2 while retaining the same administrator capability, destination, streaming and secret exclusions. Implemented locally in `src/lib/services/export.ts` and `src/app/api/workspace/export/route.ts`, with downloads in Settings. No deployment or live data download was performed.
 
 ## Access and destination
 
@@ -8,7 +8,7 @@ Add an explicit `company.export` capability granted only to ADMIN. Check it both
 
 ## JSON payload
 
-Use a versioned JSON envelope with `schemaVersion: 1`, `exportedAt`, workspace ID, and arrays with original stable IDs. Preserve foreign keys for reconstructing relationships, integer minor-unit amounts, currency, and ISO timestamps. Include archived records.
+Use a versioned JSON envelope with `schemaVersion: 2`, `exportedAt`, workspace ID, and arrays with original stable IDs. Preserve foreign keys for reconstructing relationships, integer minor-unit amounts, currency, and ISO timestamps. Include archived records.
 
 | Array | Proposed fields/categories |
 | --- | --- |
@@ -26,10 +26,19 @@ Use a versioned JSON envelope with `schemaVersion: 1`, `exportedAt`, workspace I
 | customFields / customValues | IDs, definitions/options and customer-linked values |
 | memberships | IDs, user ID, role, department/job title, timestamps |
 | users | Only ID, name, email for current workspace members |
+| constructionProjects | IDs, client/deal links, site address, responsible members, dates, status, currency and contract reference |
+| constructionEstimates / estimateLines | Version/status/rates, decimal quantities and separate integer material/labor/subcontract/equipment/other prices |
+| projectCosts / projectChanges | Categories, integer amounts, dates and approval states |
+| siteReports / projectDocuments | Site reports and private document metadata; no file bytes or storage paths |
+| tradePartners | Supplier/subcontractor names, specialization, business contact details |
+| materialRequests / supplyQuotes / purchaseOrders / stockMovements | Project/product/partner links, exact quantities, integer prices, receipt and movement values |
+| subcontracts / subcontractProgress | Agreements and confirmed quantities |
+| workAcceptances / acceptanceLines | Manual confirmation status, quantities, prices, integer net/tax/totals |
+| projectPayments | Manual receipt/outflow entries, stages, amounts, dates and optional subcontract allocation |
 
 These files contain personal and financial data. They become locally accessible to whoever can access the downloaded file. Exact database selectors must use explicit field allowlists so future schema additions cannot silently expand the payload.
 
-Excluded: password hashes, credentials, sessions, invitation/reset/verification tokens, provider secrets, billing callback payloads and identifiers, audit details, feed/chat, HR/work logs/leave requests, automation rules/execution history, and all other workspaces. References to removed users may remain unresolved and must be reported by future import preview.
+Excluded: private document storage keys and bytes, internal idempotency keys, password hashes, credentials, sessions, invitation/reset/verification tokens, provider secrets, billing callback payloads and identifiers, audit details, feed/chat, HR/work logs/leave requests, automation rules/execution history, and all other workspaces. References to removed users may remain unresolved and must be reported by future import preview.
 
 ## CSV
 

@@ -79,7 +79,7 @@ export default async function InvoicesPage({
               : "QUOTES · INVOICES · PAYMENT DETAILS"}
           </span>
           <h1 className="page-title" style={{ marginTop: 4 }}>
-            {isKa ? "ინვოისები და პროდუქტების კატალოგი" : "Georgian Invoices & Product Catalog"}
+            {isKa ? "ინვოისები და შეთავაზებები" : "Invoices & Quotes"}
           </h1>
         </div>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -127,8 +127,8 @@ export default async function InvoicesPage({
                 <th>{isKa ? "კლიენტი (ს/კ)" : "Customer (Tax ID)"}</th>
                 <th>{isKa ? "გამოწერის თარიღი" : "Issue Date"}</th>
                 <th>{isKa ? "დღგ-ს გარეშე" : "Net"}</th>
-                <th>{isKa ? "დღგ (18%)" : "VAT (18%)"}</th>
-                <th>{isKa ? "სულ (GEL)" : "Total"}</th>
+                <th>{isKa ? "დღგ" : "VAT"}</th>
+                <th>{isKa ? "სულ" : "Total"}</th>
                 <th>RS.ge</th>
                 <th>{isKa ? "სტატუსი" : "Status"}</th>
                 <th />
@@ -266,7 +266,7 @@ export default async function InvoicesPage({
               <Input
                 id="description"
                 name="description"
-                defaultValue={products[0]?.name ?? "CRM სისტემის დანერგვა"}
+                defaultValue={products[0]?.name ?? "სამშენებლო სამუშაოები"}
                 required
               />
             </Field>
@@ -278,12 +278,12 @@ export default async function InvoicesPage({
                 <Input id="unit" name="unit" defaultValue="პაკეტი" />
               </Field>
               <Field label={isKa ? "ერთეულის ფასი (GEL, დღგ-ს გარეშე)" : "Unit Price (GEL Net)"} htmlFor="unitPrice">
-                <Input id="unitPrice" name="unitPrice" type="number" step="0.01" defaultValue="12500" required />
+                <Input id="unitPrice" name="unitPrice" type="number" step="0.01" defaultValue="0" required />
               </Field>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
               <Field label={isKa ? "დღგ-ს დარიცხვა (18%)" : "Apply 18% Georgian VAT"} htmlFor="includeVat">
-                <select id="includeVat" name="includeVat" className="select" defaultValue="true">
+                <select id="includeVat" name="includeVat" className="select" defaultValue={ctx.company.isVatPayer ? "true" : "false"}>
                   <option value="true">{isKa ? "დიახ (+18% დღგ)" : "Yes (+18% VAT / დღგ)"}</option>
                   <option value="false">{isKa ? "არა (დღგ-ს გარეშე)" : "No (0% VAT)"}</option>
                 </select>

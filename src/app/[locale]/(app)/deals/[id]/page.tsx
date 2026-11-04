@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ActionForm } from "@/components/construction/ActionForm";
+import { can } from "@/lib/permissions";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { closeDealAction, createTaskAction, updateDealAction } from "@/app/actions/crm";
@@ -23,6 +25,7 @@ export default async function DealDetailPage({
   const ctx = await requireWorkspace();
   const t = await getTranslations("deals");
   const tasksT = await getTranslations("tasks");
+  const construction = await getTranslations("construction");
 
   let deal;
   try {
@@ -45,6 +48,7 @@ export default async function DealDetailPage({
         </Badge>
       </div>
 
+      {deal.status === "WON" && deal.customer && can(ctx.role, "construction.manage") ? <ActionForm operation="project.fromDeal" locale={locale} label={construction("fromDeal")}><input name="dealId" type="hidden" value={deal.id} /></ActionForm> : null}
       <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
         <Surface style={{ padding: "1.2rem" }}>
           <form action={updateDealAction} style={{ display: "grid", gap: "0.85rem" }}>

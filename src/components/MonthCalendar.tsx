@@ -21,7 +21,7 @@ export type CalendarEvent = {
   date: string; // ISO date
   title: string;
   href: string;
-  kind: "task" | "deal" | "leave";
+  kind: "task" | "deal" | "project";
 };
 
 export function MonthCalendar({
@@ -131,7 +131,7 @@ export function MonthCalendar({
           <i className="month-cal-dot deal" /> {locale === "ka" ? "გარიგება" : "Deal close"}
         </span>
         <span>
-          <i className="month-cal-dot leave" /> {locale === "ka" ? "შვებულება" : "Leave"}
+          <i className="month-cal-dot project" /> {locale === "ka" ? "ჩაბარება" : "Handover"}
         </span>
       </div>
     </div>

@@ -19,6 +19,7 @@ export default async function TaskDetailPage({
   setRequestLocale(locale);
   const ctx = await requireWorkspace();
   const t = await getTranslations("tasks");
+  const c = await getTranslations("construction");
 
   let task;
   try {
@@ -63,7 +64,7 @@ export default async function TaskDetailPage({
           ) : null}
         </p>
 
-        {task.status === "OPEN" ? (
+        {task.projectId ? <Link className="btn btn-primary" href={`/${locale}/projects/${task.projectId}?tab=work`}>{c("reports")}</Link> : task.status === "OPEN" ? (
           <form action={completeTaskAction}>
             <input type="hidden" name="locale" value={locale} />
             <input type="hidden" name="id" value={task.id} />

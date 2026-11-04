@@ -5,7 +5,7 @@ export type ProviderInfo = {
   state: ProviderState;
   detail: "smsUnavailable" | "rsReference" | "rsUnconfigured" | "bankSaved" | "bankMissing" | "billingDemo" | "billingUnconfigured" | "billingUnavailable" | "emailSmtp" | "emailDemo" | "webform";
 };
-export const SUPPORTED_AUTOMATION_ACTIONS = ["CREATE_TASK", "POST_FEED"] as const;
+export const SUPPORTED_AUTOMATION_ACTIONS = ["CREATE_TASK"] as const;
 export type SupportedAutomationAction = (typeof SUPPORTED_AUTOMATION_ACTIONS)[number];
 export function isSupportedAutomationAction(actionType: string): actionType is SupportedAutomationAction {
   return (SUPPORTED_AUTOMATION_ACTIONS as readonly string[]).includes(actionType);

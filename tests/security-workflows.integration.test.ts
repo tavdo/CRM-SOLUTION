@@ -193,7 +193,7 @@ describe("authorized CRM workflows with an isolated migrated database", () => {
     expect(response.headers.get("Cache-Control")).toBe("private, no-store");
     const raw = await response.text();
     const data = JSON.parse(raw);
-    expect(data.schemaVersion).toBe(1);
+    expect(data.schemaVersion).toBe(2);
     expect(data.customers).toHaveLength(207);
     expect(raw).toContain("ქართული");
     expect(raw).not.toMatch(/EXCLUDED_|excluded-hash|passwordHash|tokenHash|beta-private/);
@@ -212,7 +212,7 @@ describe("authorized CRM workflows with an isolated migrated database", () => {
     }
     const audit = await prisma.auditEvent.findMany({ where: { entityType: "workspace_export" } });
     expect(audit.some((event) => event.action === "export.completed")).toBe(true);
-    expect(audit.every((event) => event.detail === '{"schemaVersion":1,"format":"json"}')).toBe(true);
+    expect(audit.every((event) => event.detail === '{"schemaVersion":2,"format":"json"}')).toBe(true);
   });
 
   it("escapes formula content in the customers-only UTF-8 CSV", async () => {
@@ -247,7 +247,10 @@ describe("authorized CRM workflows with an isolated migrated database", () => {
     expect(task.dueAt!.toISOString()).toBe("2026-10-27T20:30:00.000Z");
     const quote = await createInvoice(ctx, { customerId: customer.id, dealId: deal.id, asQuote: true, description: "მომსახურება", unitPrice: "19.99", quantity: 3 });
     expect(quote.status).toBe("QUOTE");
-    expect(quote.totalMinor).toBe(7076);
+    expect(ctx.company.isVatPayer).toBe(false);
+    expect(quote.totalMinor).toBe(5997);
+    const taxable = await createInvoice(ctx, { customerId: customer.id, quantity: 3, unitPrice: "19.99", includeVat: true });
+    expect(taxable.totalMinor).toBe(7076);
     expect((await convertQuoteToInvoice(ctx, quote.id)).status).toBe("DRAFT");
     expect((await getCustomer(ctx, customer.id)).name).toBe("ქართული კომპანია");
     for (const quantity of [1.5, -1, NaN, Infinity]) {

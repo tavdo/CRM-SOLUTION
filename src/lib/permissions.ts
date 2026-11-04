@@ -29,6 +29,8 @@ export type Capability =
   | "company.customFields"
   | "company.billing"
   | "company.export"
+  | "construction.manage"
+  | "construction.finance"
   | "crm.all"
   | "crm.assign"
   | "crm.create"
@@ -43,12 +45,14 @@ const ROLE_CAPS: Record<Role, Capability[]> = {
     "company.customFields",
     "company.billing",
     "company.export",
+    "construction.manage",
+    "construction.finance",
     "crm.all",
     "crm.assign",
     "crm.create",
     "audit.view",
   ],
-  MANAGER: ["crm.all", "crm.assign", "crm.create"],
+  MANAGER: ["crm.all", "crm.assign", "crm.create", "construction.manage", "construction.finance"],
   EMPLOYEE: ["crm.create"],
 };
 
@@ -72,9 +76,4 @@ export function assertCan(role: Role, capability: Capability): void {
     (err as Error & { code: string; status: number }).status = 403;
     throw err;
   }
-}
-
-export function assertChatChannel(role: Role, channel: string): void {
-  if (!["general", "sales", "support", "management"].includes(channel)) throw new Error("Invalid channel");
-  if (channel === "management") assertCan(role, "crm.all");
 }

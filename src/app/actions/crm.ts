@@ -15,7 +15,7 @@ import * as invoicesSvc from "@/lib/services/invoices";
 import { isSupportedAutomationAction } from "@/lib/providers";
 import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/audit";
-import { can, assertChatChannel } from "@/lib/permissions";
+import { can } from "@/lib/permissions";
 import { slugify } from "@/lib/slug";
 
 function s(formData: FormData, key: string) {
@@ -176,7 +176,8 @@ export async function moveTaskStageAction(formData: FormData) {
   const id = s(formData, "id");
   const boardStage = s(formData, "boardStage") || "TODO";
   const ctx = await requireWorkspace();
-  await tasks.getTask(ctx, id);
+  const task = await tasks.getTask(ctx, id);
+  if (task.projectId) throw new AppError("Use the project quantity report", "C_QUANTITY", 400);
   if (!["TODO", "IN_PROGRESS", "REVIEW", "DONE"].includes(boardStage)) {
     throw new AppError("Invalid task stage", "VALIDATION", 400);
   }
@@ -212,7 +213,7 @@ export async function reopenTaskAction(formData: FormData) {
   revalidatePath(localePath(locale, `/tasks/${id}`));
 }
 
-// —— Bitrix24 Leads Inbox & 1-Click Conversion ——
+// —— Incoming contractor requests & conversion ——
 export async function createLeadAction(formData: FormData) {
   const locale = s(formData, "locale") || "en";
   const ctx = await requireWorkspace();
@@ -330,131 +331,6 @@ export async function updateInvoiceStatusAction(formData: FormData) {
   await invoicesSvc.updateInvoiceStatus(ctx, id, status);
   revalidatePath(localePath(locale, "/invoices"));
   revalidatePath(localePath(locale, `/invoices/${id}`));
-}
-
-// —— Company Feed & Team Chat ——
-export async function createFeedPostAction(formData: FormData) {
-  const locale = s(formData, "locale") || "en";
-  const ctx = await requireWorkspace();
-  const title = s(formData, "title");
-  const body = s(formData, "body");
-  if (!title || !body) return;
-  await prisma.feedPost.create({
-    data: {
-      companyId: ctx.company.id,
-      authorId: ctx.user.id,
-      title,
-      body,
-      category: s(formData, "category") || "ANNOUNCEMENT",
-      pinned: s(formData, "pinned") === "on",
-    },
-  });
-  revalidatePath(localePath(locale, "/feed"));
-}
-
-export async function sendChatMessageAction(formData: FormData) {
-  const locale = s(formData, "locale") || "en";
-  const ctx = await requireWorkspace();
-  const body = s(formData, "body");
-  const channel = s(formData, "channel") || "general";
-  assertChatChannel(ctx.role, channel);
-  if (!body) return;
-  await prisma.chatMessage.create({
-    data: {
-      companyId: ctx.company.id,
-      authorId: ctx.user.id,
-      channel,
-      body,
-    },
-  });
-  revalidatePath(localePath(locale, "/feed"));
-}
-
-// —— HR, Worktime Clock-In/Out & Leave Requests ——
-export async function toggleWorkClockAction(formData: FormData) {
-  const locale = s(formData, "locale") || "en";
-  const ctx = await requireWorkspace();
-  const activeLog = await prisma.workLog.findFirst({
-    where: {
-      companyId: ctx.company.id,
-      userId: ctx.user.id,
-      status: "WORKING",
-      clockOutAt: null,
-    },
-    orderBy: { clockInAt: "desc" },
-  });
-
-  if (activeLog) {
-    await prisma.workLog.update({
-      where: { id: activeLog.id },
-      data: { status: "COMPLETED", clockOutAt: new Date() },
-    });
-  } else {
-    await prisma.workLog.create({
-      data: {
-        companyId: ctx.company.id,
-        userId: ctx.user.id,
-        status: "WORKING",
-        clockInAt: new Date(),
-        note: s(formData, "note") || "Tbilisi Office / Remote",
-      },
-    });
-  }
-  revalidatePath(localePath(locale, "/hr"));
-  revalidatePath(localePath(locale, "/dashboard"));
-}
-
-export async function createDepartmentAction(formData: FormData) {
-  const locale = s(formData, "locale") || "en";
-  const ctx = await requireCapability("crm.all");
-  await prisma.department.create({
-    data: {
-      companyId: ctx.company.id,
-      name: s(formData, "name"),
-      headName: s(formData, "headName") || null,
-      memberCount: Math.max(1, Number(s(formData, "memberCount") || "1")),
-    },
-  });
-  revalidatePath(localePath(locale, "/hr"));
-}
-
-export async function createLeaveRequestAction(formData: FormData) {
-  const locale = s(formData, "locale") || "en";
-  const ctx = await requireWorkspace();
-  const startDate = s(formData, "startDate")
-    ? new Date(s(formData, "startDate"))
-    : new Date();
-  const endDate = s(formData, "endDate")
-    ? new Date(s(formData, "endDate"))
-    : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-  await prisma.leaveRequest.create({
-    data: {
-      companyId: ctx.company.id,
-      userId: ctx.user.id,
-      leaveType: s(formData, "leaveType") || "VACATION",
-      startDate,
-      endDate,
-      reason: s(formData, "reason") || null,
-      status: "PENDING",
-    },
-  });
-  revalidatePath(localePath(locale, "/hr"));
-}
-
-export async function updateLeaveStatusAction(formData: FormData) {
-  const locale = s(formData, "locale") || "en";
-  const id = s(formData, "id");
-  const status = s(formData, "status") || "APPROVED";
-  const ctx = await requireCapability("crm.all");
-  const leave = await prisma.leaveRequest.findFirst({
-    where: { id, companyId: ctx.company.id },
-  });
-  if (!leave) throw new AppError("Not found", "NOT_FOUND", 404);
-  await prisma.leaveRequest.update({
-    where: { id },
-    data: { status },
-  });
-  revalidatePath(localePath(locale, "/hr"));
 }
 
 export async function createAutomationRuleAction(formData: FormData) {

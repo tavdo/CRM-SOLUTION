@@ -162,7 +162,8 @@ export async function updateTask(
 }
 
 export async function completeTask(ctx: WorkspaceContext, id: string) {
-  await getTask(ctx, id);
+  const task = await getTask(ctx, id);
+  if (task.projectId) throw new AppError("Use the project quantity report", "C_QUANTITY", 400);
   return prisma.task.update({
     where: { id },
     data: { status: "DONE", completedAt: new Date() },
@@ -170,7 +171,8 @@ export async function completeTask(ctx: WorkspaceContext, id: string) {
 }
 
 export async function reopenTask(ctx: WorkspaceContext, id: string) {
-  await getTask(ctx, id);
+  const task = await getTask(ctx, id);
+  if (task.projectId) throw new AppError("Use the project quantity report", "C_QUANTITY", 400);
   return prisma.task.update({
     where: { id },
     data: { status: "OPEN", completedAt: null },

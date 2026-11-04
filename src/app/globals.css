@@ -840,7 +840,7 @@ a {
   color: var(--ok-ink);
 }
 
-.month-cal-ev-leave {
+.month-cal-ev-project {
   background: rgba(56, 189, 248, 0.16);
   color: var(--info-ink);
 }
@@ -868,7 +868,7 @@ a {
   background: #10b981;
 }
 
-.month-cal-dot.leave {
+.month-cal-dot.project {
   background: #38bdf8;
 }
 
@@ -1399,3 +1399,71 @@ a {
 
 :root[data-theme="light"] .landing-card { background: var(--surface); }
 :root[data-theme="light"] :is(.landing-card:hover, .landing-preview:hover, .pipeline-card:hover) { box-shadow: 0 12px 30px rgba(23, 43, 58, 0.1); }
+
+/* Contractor project workspace */
+.construction-stack { display: grid; gap: 1.15rem; min-width: 0; }
+.construction-heading, .construction-row { display: flex; justify-content: space-between; align-items: center; gap: .8rem; flex-wrap: wrap; }
+.construction-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 1rem; min-width: 0; }
+.construction-projects { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 1rem; }
+.construction-panel { padding: clamp(1rem, 2vw, 1.6rem); min-width: 0; }
+.construction-panel > .section-title { margin: 0 0 1rem; }
+.construction-panel .construction-grid { margin: .85rem 0; }
+.construction-panel .field { min-width: 0; }
+.construction-panel form { display: grid; gap: .8rem; margin: .75rem 0; }
+.construction-panel form > button { justify-self: start; }
+.construction-project-link { text-decoration: none; color: inherit; }
+.construction-project-link > .surface { height: 100%; transition: border-color .2s; }
+.construction-project-link:hover > .surface { border-color: var(--accent); }
+.construction-metric { display: grid; gap: .65rem; padding: 1rem; }
+.construction-metric strong { font-size: clamp(1.2rem, 2.4vw, 1.65rem); overflow-wrap: anywhere; }
+.construction-tabs { display: flex; overflow-x: auto; gap: .35rem; padding-bottom: .6rem; border-bottom: 1px solid var(--line); }
+.construction-tabs a { padding: .7rem 1rem; border-radius: 9px; white-space: nowrap; color: var(--ink-muted); text-decoration: none; }
+.construction-tabs a.active { background: var(--surface-hover); color: var(--ink); box-shadow: inset 0 -2px var(--accent); }
+.construction-item { padding: 1rem 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.construction-item:last-child { border-bottom: 0; }
+.construction-item p { margin: .5rem 0; }
+.construction-item progress { width: 100%; accent-color: var(--accent); height: 7px; }
+.construction-table { max-width: 100%; overflow-x: auto; margin: 1rem 0; }
+.construction-table table { width: 100%; border-collapse: collapse; text-align: left; font-size: .87rem; }
+.construction-table th, .construction-table td { padding: .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.construction-table th { color: var(--ink-muted); font-weight: 500; }
+.construction-disclosure { margin: 1rem 0; border: 1px solid var(--line); border-radius: 10px; padding: .85rem; }
+.construction-disclosure summary { cursor: pointer; font-weight: 600; }
+.construction-disclosure[open] summary { margin-bottom: .9rem; }
+.construction-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 1rem; }
+.construction-facts dt { color: var(--ink-muted); font-size: .8rem; }
+.construction-facts dd { margin: .3rem 0; }
+.app-tools { padding: .6rem 0; border-top: 1px solid var(--line); margin-top: .5rem; }
+.app-tools summary { padding: .5rem .8rem; color: var(--ink-muted); cursor: pointer; font-size: .82rem; }
+.contractor-hero { max-width: 1220px; margin: auto; padding: 5rem 1.5rem 3rem; display: grid; grid-template-columns: 1.2fr 1fr; gap: 3rem; align-items: center; }
+.contractor-flow { background: var(--surface); }
+.contractor-flow > p { line-height: 2; color: var(--ink-muted); }
+.contractor-flow .construction-item { display: flex; flex-direction: column; gap: .75rem; padding: 1rem; border: 1px solid var(--line); border-radius: 10px; }
+.contractor-cta { max-width: 1172px; margin: 1rem auto 4rem; padding: 2rem; }
+.document-totals { max-width: 480px; margin: 2rem 0 2rem auto; }
+.document-totals > div { display: flex; justify-content: space-between; gap: 1rem; padding: .6rem; border-bottom: 1px solid var(--line); }
+.document-totals dd { margin: 0; white-space: nowrap; }
+.document-signatures { display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 3rem; }
+.month-cal-dot.project { background: var(--accent); }
+@media (max-width: 700px) {
+  .contractor-hero { grid-template-columns: 1fr; padding-top: 2.5rem; gap: 2rem; }
+  .contractor-cta { margin-inline: 1rem; }
+  .construction-heading { align-items: flex-start; }
+  .construction-tabs { margin-inline: -.25rem; }
+  .construction-table th, .construction-table td { padding: .55rem; }
+}
+@media print {
+  .sidebar, .app-sidebar, .app-topbar, .app-mobile-nav, .mobile-nav, .print-hide, .app-shell > aside, .app-shell > header { display: none !important; }
+  .app-shell, .app-main, .app-content { display: block !important; padding: 0 !important; margin: 0 !important; }
+  .financial-document, .financial-document * { color: #111 !important; background: white !important; box-shadow: none !important; }
+  .financial-document .construction-panel { border: 0; }
+  .financial-document table { font-size: 9pt; }
+  .financial-document tr { break-inside: avoid; }
+  .financial-document thead { display: table-header-group; }
+  @page { margin: 14mm; size: A4; }
+}
+
+/* Keep sidebar controls inside their column and printed documents on the page. */
+.app-sidebar { overflow-x: hidden; }
+.app-sidebar > div:last-child > div:first-child { flex-wrap: wrap; }
+@media print { .app-frame { display: block !important; } .construction-table { overflow: visible !important; } }

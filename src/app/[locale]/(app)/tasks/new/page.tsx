@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { createTaskAction } from "@/app/actions/crm";
 import { Button, Field, Input, Surface, Textarea } from "@/components/ui";
@@ -19,6 +20,7 @@ export default async function NewTaskPage({
   setRequestLocale(locale);
   const ctx = await requireWorkspace();
   const t = await getTranslations("tasks");
+  const c = await getTranslations("construction");
   const [customers, deals, members] = await Promise.all([
     listCustomers(ctx, { pageSize: 100 }),
     listDeals(ctx),
@@ -32,7 +34,7 @@ export default async function NewTaskPage({
 
   return (
     <div style={{ maxWidth: 560, display: "grid", gap: "1rem" }}>
-      <h1 className="page-title">{t("new")}</h1>
+      <h1 className="page-title">{t("new")}</h1><Link href={`/${locale}/projects`} className="btn btn-secondary">{c("projects")} → {c("newWork")}</Link>
       <Surface style={{ padding: "1.25rem" }}>
         <form action={createTaskAction} style={{ display: "grid", gap: "0.9rem" }}>
           <input type="hidden" name="locale" value={locale} />

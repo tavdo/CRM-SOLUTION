@@ -13,7 +13,7 @@ export function LanguageSwitcher({ locale }: { locale: string }) {
     const segments = pathname.split("/");
     segments[1] = next;
     await setLocalePreferenceAction(next);
-    router.push(segments.join("/") || `/${next}`);
+    router.push(`${segments.join("/") || `/${next}`}${window.location.search}${window.location.hash}`);
     router.refresh();
   }
 

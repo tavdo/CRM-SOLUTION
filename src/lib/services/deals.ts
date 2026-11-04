@@ -255,16 +255,6 @@ export async function moveDealStage(
           dealId: deal.id,
         },
       });
-    } else if (rule.actionType === "POST_FEED") {
-      await prisma.feedPost.create({
-        data: {
-          companyId: ctx.company.id,
-          authorId: ctx.user.id,
-          title: rule.name,
-          body: rule.actionDetail,
-          category: stage.isWon ? "WIN" : "UPDATE",
-        },
-      });
     }
   }
 
