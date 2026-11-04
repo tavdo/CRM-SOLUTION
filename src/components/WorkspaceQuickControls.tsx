@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
-import { Globe, LayoutDashboard, Minus, Plus, SunMoon } from "lucide-react";
+import { Globe, LayoutDashboard, SlidersHorizontal, SunMoon } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import styles from "./WorkspaceQuickControls.module.css";
@@ -71,7 +71,7 @@ export function WorkspaceQuickControls({ locale, dashboardLabel, controlsLabel, 
           setActiveControl(null);
         }}
       >
-        {open ? <Minus size={24} aria-hidden="true" /> : <Plus size={24} aria-hidden="true" />}
+        <SlidersHorizontal size={22} strokeWidth={1.8} aria-hidden="true" />
       </button>
       <div id={optionsId} className={styles.options} role="group" aria-label={label} hidden={!open}>
         {open ? (
