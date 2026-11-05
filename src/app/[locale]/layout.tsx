@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { isLocale, locales } from "@/i18n/config";
+import { ScrollHint } from "@/components/ScrollHint";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -21,7 +22,7 @@ export default async function LocaleLayout({
 
   return (
     <NextIntlClientProvider messages={messages}>
-      <div lang={locale}>{children}</div>
+      <div lang={locale}>{children}<ScrollHint locale={locale} /></div>
     </NextIntlClientProvider>
   );
 }

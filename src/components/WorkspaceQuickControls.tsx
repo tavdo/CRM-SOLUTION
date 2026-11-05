@@ -77,26 +77,26 @@ export function WorkspaceQuickControls({ locale, dashboardLabel, controlsLabel, 
         {open ? (
           <>
             <div className={`${styles.row} ${styles.language}`}>
-              <button type="button" className={styles.circle} aria-label={languageLabel}
+              <button type="button" className={styles.optionTrigger} aria-label={languageLabel}
                 aria-expanded={activeControl === "language"} aria-controls={languageId}
                 onClick={() => setActiveControl(activeControl === "language" ? null : "language")}>
-                <Globe size={21} aria-hidden="true" />
+                <span className={styles.circle} aria-hidden="true"><Globe size={21} /></span>
+                {activeControl !== "language" ? <span className={styles.optionLabel}>{languageLabel}</span> : null}
               </button>
               <div id={languageId} className={styles.controls} hidden={activeControl !== "language"}>
                 {activeControl === "language" ? <LanguageSwitcher locale={locale} /> : null}
               </div>
-              {activeControl !== "language" ? <span className={styles.optionLabel}>{languageLabel}</span> : null}
             </div>
             <div className={`${styles.row} ${styles.theme}`}>
-              <button type="button" className={styles.circle} aria-label={themeLabel}
+              <button type="button" className={styles.optionTrigger} aria-label={themeLabel}
                 aria-expanded={activeControl === "theme"} aria-controls={themeId}
                 onClick={() => setActiveControl(activeControl === "theme" ? null : "theme")}>
-                <SunMoon size={22} aria-hidden="true" />
+                <span className={styles.circle} aria-hidden="true"><SunMoon size={22} /></span>
+                {activeControl !== "theme" ? <span className={styles.optionLabel}>{themeLabel}</span> : null}
               </button>
               <div id={themeId} className={styles.controls} hidden={activeControl !== "theme"}>
                 {activeControl === "theme" ? <ThemeSwitcher /> : null}
               </div>
-              {activeControl !== "theme" ? <span className={styles.optionLabel}>{themeLabel}</span> : null}
             </div>
             <Link href={`/${locale}/dashboard`} className={`${styles.row} ${styles.dashboard}`} onClick={() => { setOpen(false); setActiveControl(null); }}>
               <span className={styles.circle} aria-hidden="true"><LayoutDashboard size={21} /></span>

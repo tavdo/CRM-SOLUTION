@@ -62,6 +62,22 @@
 .theme { --distance: 128px; --delay: 0.2s; }
 .dashboard { --distance: 192px; --delay: 0.3s; text-decoration: none; }
 
+.optionTrigger {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
 .circle {
   display: grid;
   place-items: center;
@@ -83,7 +99,7 @@
   background: #00008b;
 }
 
-.circle[aria-expanded="true"] { background: #0000e2; }
+.optionTrigger[aria-expanded="true"] .circle { background: #0000e2; }
 
 .controls,
 .optionLabel {
