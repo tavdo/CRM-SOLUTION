@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { can } from "@/lib/permissions";
 import { isLocale } from "@/i18n/config";
 import { redirect } from "next/navigation";
+import styles from "@/components/WorkspaceForm.module.css";
 
 export default async function NewTaskPage({
   params,
@@ -33,17 +34,19 @@ export default async function NewTaskPage({
   ]);
 
   return (
-    <div style={{ maxWidth: 560, display: "grid", gap: "1rem" }}>
-      <h1 className="page-title">{t("new")}</h1><Link href={`/${locale}/projects`} className="btn btn-secondary">{c("projects")} → {c("newWork")}</Link>
-      <Surface style={{ padding: "1.25rem" }}>
-        <form action={createTaskAction} style={{ display: "grid", gap: "0.9rem" }}>
+    <div className={styles.page}>
+      <div className="construction-heading">
+        <h1 className="page-title">{t("new")}</h1>
+        <Link href={`/${locale}/projects`} className="btn btn-secondary">{c("projects")} → {c("newWork")}</Link>
+      </div>
+      <Surface className={styles.panel}>
+        <form action={createTaskAction} className={styles.form}>
           <input type="hidden" name="locale" value={locale} />
-          <Field label={t("taskTitle")} htmlFor="title">
-            <Input id="title" name="title" required />
-          </Field>
-          <Field label={t("description")} htmlFor="description">
-            <Textarea id="description" name="description" />
-          </Field>
+          <div className={styles.wide}>
+            <Field label={t("taskTitle")} htmlFor="title">
+              <Input id="title" name="title" required />
+            </Field>
+          </div>
           <Field label={t("due")} htmlFor="dueAt">
             <Input id="dueAt" name="dueAt" type="datetime-local" />
           </Field>
@@ -78,7 +81,14 @@ export default async function NewTaskPage({
               ))}
             </select>
           </Field>
-          <Button type="submit">{t("create")}</Button>
+          <div className={styles.full}>
+            <Field label={t("description")} htmlFor="description">
+              <Textarea id="description" name="description" />
+            </Field>
+          </div>
+          <div className={styles.actions}>
+            <Button type="submit">{t("create")}</Button>
+          </div>
         </form>
       </Surface>
     </div>

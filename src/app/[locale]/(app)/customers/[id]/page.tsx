@@ -79,7 +79,7 @@ export default async function CustomerDetailPage({
         <form action={updateCustomerAction} style={{ display: "grid", gap: "0.85rem" }}>
           <input type="hidden" name="locale" value={locale} />
           <input type="hidden" name="id" value={customer.id} />
-          <div style={{ display: "grid", gridTemplateColumns: "130px 1fr 160px", gap: "0.75rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: "0.75rem" }}>
             <Field label="Legal Form / ფორმა" htmlFor="legalForm">
               <select id="legalForm" name="legalForm" className="select" defaultValue={customer.legalForm ?? "შპს"}>
                 <option value="შპს">შპს (LLC)</option>
@@ -98,7 +98,7 @@ export default async function CustomerDetailPage({
           <Field label="Bank IBAN (GE..BG.. / GE..TB..)" htmlFor="bankIban">
             <Input id="bankIban" name="bankIban" defaultValue={customer.bankIban ?? ""} placeholder="GE29BG0000000101904917" />
           </Field>
-          <div style={{ display: "grid", gap: "0.85rem", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
+          <div style={{ display: "grid", gap: "0.85rem", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))" }}>
             <Field label={t("email")} htmlFor="email">
               <Input id="email" name="email" defaultValue={customer.email ?? ""} />
             </Field>
@@ -153,7 +153,7 @@ export default async function CustomerDetailPage({
         </Surface>
       ) : null}
 
-      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))" }}>
         <Surface style={{ padding: "1.2rem" }}>
           <h2 style={{ marginTop: 0 }}>{t("contacts")}</h2>
           <ul style={{ listStyle: "none", padding: 0 }}>

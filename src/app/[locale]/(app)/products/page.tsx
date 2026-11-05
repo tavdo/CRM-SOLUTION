@@ -11,6 +11,7 @@ import { requireWorkspace } from "@/lib/auth/workspace";
 import { listProducts } from "@/lib/services/products";
 import { formatMoney } from "@/lib/money";
 import { isLocale } from "@/i18n/config";
+import styles from "./products.module.css";
 
 export default async function ProductsPage({
   params,
@@ -25,7 +26,7 @@ export default async function ProductsPage({
   const products = await listProducts(ctx);
 
   return (
-    <div style={{ display: "grid", gap: "1.25rem" }}>
+    <div className={styles.page}>
       <div
         style={{
           display: "flex",
@@ -51,15 +52,8 @@ export default async function ProductsPage({
         </Link>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gap: "1.15rem",
-          gridTemplateColumns: "minmax(0, 1.7fr) minmax(280px, 1fr)",
-          alignItems: "start",
-        }}
-      >
-        <Surface style={{ overflowX: "auto" }}>
+      <div className={styles.content}>
+        <Surface className={styles.catalog}>
           {products.length === 0 ? (
             <EmptyState>
               {isKa ? "კატალოგი ცარიელია." : "No products yet. Add your first SKU."}
@@ -134,14 +128,14 @@ export default async function ProductsPage({
           )}
         </Surface>
 
-        <Surface style={{ padding: "1.2rem" }}>
+        <Surface className={styles.formPanel} style={{ padding: "1.2rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.85rem" }}>
             <Package size={16} color="#10b981" />
             <h2 className="section-title">
               {isKa ? "ახალი პროდუქტი" : "Add product"}
             </h2>
           </div>
-          <form action={createProductAction} style={{ display: "grid", gap: "0.7rem" }}>
+          <form action={createProductAction} className={styles.form}>
             <input type="hidden" name="locale" value={locale} />
             <Field label={isKa ? "დასახელება" : "Name"} htmlFor="name">
               <Input id="name" name="name" required />
@@ -149,26 +143,28 @@ export default async function ProductsPage({
             <Field label="SKU" htmlFor="sku">
               <Input id="sku" name="sku" placeholder="MAT-001" />
             </Field>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.55rem" }}>
-              <Field label={isKa ? "ფასი (GEL)" : "Price (GEL)"} htmlFor="price">
-                <Input id="price" name="price" type="number" step="0.01" defaultValue="100" />
-              </Field>
-              <Field label={isKa ? "ერთეული" : "Unit"} htmlFor="unit">
-                <select id="unit" name="unit" className="select" defaultValue="ცალი">
-                  <option value="ცალი">ცალი</option>
-                  <option value="თვე">თვე</option>
-                  <option value="საათი">საათი</option>
-                  <option value="პაკეტი">პაკეტი</option>
-                </select>
+            <Field label={isKa ? "ფასი (GEL)" : "Price (GEL)"} htmlFor="price">
+              <Input id="price" name="price" type="number" step="0.01" defaultValue="100" />
+            </Field>
+            <Field label={isKa ? "ერთეული" : "Unit"} htmlFor="unit">
+              <select id="unit" name="unit" className="select" defaultValue="ცალი">
+                <option value="ცალი">ცალი</option>
+                <option value="თვე">თვე</option>
+                <option value="საათი">საათი</option>
+                <option value="პაკეტი">პაკეტი</option>
+              </select>
+            </Field>
+            <div className={styles.description}>
+              <Field label={isKa ? "აღწერა" : "Description"} htmlFor="description">
+                <Textarea id="description" name="description" style={{ minHeight: 64 }} />
               </Field>
             </div>
-            <Field label={isKa ? "აღწერა" : "Description"} htmlFor="description">
-              <Textarea id="description" name="description" style={{ minHeight: 64 }} />
-            </Field>
-            <Button type="submit">
-              <Plus size={14} />
-              <span>{isKa ? "შენახვა" : "Save product"}</span>
-            </Button>
+            <div className={styles.actions}>
+              <Button type="submit">
+                <Plus size={14} />
+                <span>{isKa ? "შენახვა" : "Save product"}</span>
+              </Button>
+            </div>
           </form>
         </Surface>
       </div>

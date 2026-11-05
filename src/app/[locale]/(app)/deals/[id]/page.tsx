@@ -13,6 +13,7 @@ import { formatDate, formatDateTime } from "@/lib/dates";
 import { isAppError } from "@/lib/errors";
 import { isLocale } from "@/i18n/config";
 import { isTaskOverdue } from "@/lib/dates";
+import styles from "@/components/WorkspaceForm.module.css";
 
 export default async function DealDetailPage({
   params,
@@ -49,15 +50,15 @@ export default async function DealDetailPage({
       </div>
 
       {deal.status === "WON" && deal.customer && can(ctx.role, "construction.manage") ? <ActionForm operation="project.fromDeal" locale={locale} label={construction("fromDeal")}><input name="dealId" type="hidden" value={deal.id} /></ActionForm> : null}
-      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
-        <Surface style={{ padding: "1.2rem" }}>
+      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))" }}>
+        <Surface className={styles.panel}>
           <form action={updateDealAction} style={{ display: "grid", gap: "0.85rem" }}>
             <input type="hidden" name="locale" value={locale} />
             <input type="hidden" name="dealId" value={deal.id} />
             <Field label={t("dealTitle")} htmlFor="title">
               <Input id="title" name="title" defaultValue={deal.title} required />
             </Field>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 120px", gap: "0.75rem" }}>
+            <div className={styles.pair}>
               <Field label={t("amount")} htmlFor="amount">
                 <Input
                   id="amount"

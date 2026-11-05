@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { can } from "@/lib/permissions";
 import { isLocale } from "@/i18n/config";
 import { redirect } from "next/navigation";
+import styles from "@/components/WorkspaceForm.module.css";
 
 export default async function NewDealPage({
   params,
@@ -34,14 +35,16 @@ export default async function NewDealPage({
   ]);
 
   return (
-    <div style={{ maxWidth: 560, display: "grid", gap: "1rem" }}>
+    <div className={styles.page}>
       <h1 className="page-title">{t("new")}</h1>
-      <Surface style={{ padding: "1.25rem" }}>
-        <form action={createDealAction} style={{ display: "grid", gap: "0.9rem" }}>
+      <Surface className={styles.panel}>
+        <form action={createDealAction} className={`${styles.form} ${styles.fourColumns}`}>
           <input type="hidden" name="locale" value={locale} />
-          <Field label={t("dealTitle")} htmlFor="title">
-            <Input id="title" name="title" required />
-          </Field>
+          <div className={styles.wide}>
+            <Field label={t("dealTitle")} htmlFor="title">
+              <Input id="title" name="title" required />
+            </Field>
+          </div>
           <Field label={t("customer")} htmlFor="customerId">
             <select
               id="customerId"
@@ -68,17 +71,17 @@ export default async function NewDealPage({
                 ))}
             </select>
           </Field>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 120px", gap: "0.75rem" }}>
-            <Field label={t("amount")} htmlFor="amount">
-              <Input id="amount" name="amount" type="number" step="0.01" defaultValue="0" />
-            </Field>
-            <Field label={t("currency")} htmlFor="currency">
-              <Input id="currency" name="currency" defaultValue={ctx.company.currency} />
+          <Field label={t("amount")} htmlFor="amount">
+            <Input id="amount" name="amount" type="number" step="0.01" defaultValue="0" />
+          </Field>
+          <Field label={t("currency")} htmlFor="currency">
+            <Input id="currency" name="currency" defaultValue={ctx.company.currency} />
+          </Field>
+          <div className={members.length ? undefined : styles.wide}>
+            <Field label={t("expectedClose")} htmlFor="expectedCloseAt">
+              <Input id="expectedCloseAt" name="expectedCloseAt" type="date" />
             </Field>
           </div>
-          <Field label={t("expectedClose")} htmlFor="expectedCloseAt">
-            <Input id="expectedCloseAt" name="expectedCloseAt" type="date" />
-          </Field>
           {members.length > 0 ? (
             <Field label={t("owner")} htmlFor="ownerId">
               <select id="ownerId" name="ownerId" className="select" defaultValue={ctx.user.id}>
@@ -90,7 +93,9 @@ export default async function NewDealPage({
               </select>
             </Field>
           ) : null}
-          <Button type="submit">{t("create")}</Button>
+          <div className={styles.actions}>
+            <Button type="submit">{t("create")}</Button>
+          </div>
         </form>
       </Surface>
     </div>

@@ -8,6 +8,7 @@ import { getTask } from "@/lib/services/tasks";
 import { formatDateTime, isTaskOverdue } from "@/lib/dates";
 import { isAppError } from "@/lib/errors";
 import { isLocale } from "@/i18n/config";
+import styles from "@/components/WorkspaceForm.module.css";
 
 export default async function TaskDetailPage({
   params,
@@ -32,7 +33,7 @@ export default async function TaskDetailPage({
   const overdue = isTaskOverdue(task.status, task.dueAt);
 
   return (
-    <div style={{ display: "grid", gap: "1rem", maxWidth: 720 }}>
+    <div className={styles.page}>
       <div>
         <p className="muted" style={{ margin: 0 }}>
           <Link href={`/${locale}/tasks`}>{t("title")}</Link>
@@ -43,35 +44,39 @@ export default async function TaskDetailPage({
         </Badge>
       </div>
 
-      <Surface style={{ padding: "1.2rem" }}>
-        <p>{task.description || "—"}</p>
-        <p className="muted">
-          {t("owner")}: {task.owner.name}
-          <br />
-          {t("due")}: {formatDateTime(task.dueAt, locale, ctx.company.timezone)}
-          <br />
+      <Surface className={styles.panel}>
+        <p style={{ marginTop: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{task.description || "—"}</p>
+        <dl className="construction-facts" style={{ overflowWrap: "anywhere" }}>
+          <div>
+            <dt>{t("owner")}</dt>
+            <dd>{task.owner.name}</dd>
+          </div>
+          <div>
+            <dt>{t("due")}</dt>
+            <dd>{formatDateTime(task.dueAt, locale, ctx.company.timezone)}</dd>
+          </div>
           {task.customer ? (
-            <>
-              {t("linkedCustomer")}:{" "}
-              <Link href={`/${locale}/customers/${task.customer.id}`}>{task.customer.name}</Link>
-              <br />
-            </>
+            <div>
+              <dt>{t("linkedCustomer")}</dt>
+              <dd><Link href={`/${locale}/customers/${task.customer.id}`}>{task.customer.name}</Link></dd>
+            </div>
           ) : null}
           {task.deal ? (
-            <>
-              {t("linkedDeal")}: <Link href={`/${locale}/deals/${task.deal.id}`}>{task.deal.title}</Link>
-            </>
+            <div>
+              <dt>{t("linkedDeal")}</dt>
+              <dd><Link href={`/${locale}/deals/${task.deal.id}`}>{task.deal.title}</Link></dd>
+            </div>
           ) : null}
-        </p>
+        </dl>
 
-        {task.projectId ? <Link className="btn btn-primary" href={`/${locale}/projects/${task.projectId}?tab=work`}>{c("reports")}</Link> : task.status === "OPEN" ? (
-          <form action={completeTaskAction}>
+        {task.projectId ? <div className={styles.actions}><Link className="btn btn-primary" href={`/${locale}/projects/${task.projectId}?tab=work`}>{c("reports")}</Link></div> : task.status === "OPEN" ? (
+          <form action={completeTaskAction} className={styles.actions}>
             <input type="hidden" name="locale" value={locale} />
             <input type="hidden" name="id" value={task.id} />
             <Button type="submit">{t("complete")}</Button>
           </form>
         ) : (
-          <form action={reopenTaskAction}>
+          <form action={reopenTaskAction} className={styles.actions}>
             <input type="hidden" name="locale" value={locale} />
             <input type="hidden" name="id" value={task.id} />
             <Button type="submit" variant="secondary">

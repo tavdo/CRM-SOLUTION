@@ -42,7 +42,7 @@ export default async function OnboardingPage({
   ];
 
   return (
-    <div className="rise" style={{ display: "grid", gap: "1.5rem", maxWidth: 860 }}>
+    <div className="rise" style={{ display: "grid", gap: "1.5rem", minWidth: 0 }}>
       <div>
         <span className="kicker">{ctx.company.name}</span>
         <h1 className="page-title" style={{ marginTop: 4 }}>
@@ -57,7 +57,7 @@ export default async function OnboardingPage({
         style={{
           display: "grid",
           gap: "1rem",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
         }}
       >
         {steps.map((s) => {

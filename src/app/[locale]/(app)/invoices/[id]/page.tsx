@@ -16,6 +16,7 @@ import { formatDate } from "@/lib/dates";
 import { ProviderStatus } from "@/components/ProviderStatus";
 import { bankAccountProvider, rsGeProvider } from "@/lib/providers";
 import { isLocale } from "@/i18n/config";
+import styles from "./invoice-detail.module.css";
 
 export default async function InvoiceDetailPage({
   params,
@@ -35,22 +36,14 @@ export default async function InvoiceDetailPage({
   });
 
   return (
-    <div style={{ display: "grid", gap: "1.2rem", maxWidth: 880 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "1rem",
-          flexWrap: "wrap",
-        }}
-      >
+    <div className={styles.page}>
+      <div className={styles.toolbar}>
         <Link href={`/${locale}/invoices`} className="btn btn-secondary">
           <ArrowLeft size={15} />
           <span>{isKa ? "ინვოისების სია" : "Back to Invoices"}</span>
         </Link>
 
-        <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
+        <div className={styles.actions}>
           <PrintInvoiceButton label={isKa ? "ბეჭდვა / PDF შენახვა" : "Print / Save PDF"} />
           {invoice.status === "QUOTE" ? (
             <form action={convertQuoteToInvoiceAction}>
@@ -76,22 +69,12 @@ export default async function InvoiceDetailPage({
         </div>
       </div>
 
-      <Surface style={{ padding: "1rem", display: "grid", gap: "0.8rem" }}>
+      <Surface className={styles.providers}>
         <ProviderStatus provider={bankAccountProvider(ctx.company.bogIban || ctx.company.tbcIban)} locale={locale} />
         <ProviderStatus provider={rsGeProvider(Boolean(invoice.rsGeWaybillRef))} locale={locale} />
       </Surface>
-      <Surface style={{ padding: "2.2rem" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: "1.5rem",
-            flexWrap: "wrap",
-            paddingBottom: "1.35rem",
-            borderBottom: "1px solid var(--line)",
-          }}
-        >
+      <Surface className={`financial-document ${styles.document}`}>
+        <div className={styles.documentHeader}>
           <div>
             <span className="kicker">
               {invoice.status === "QUOTE"
@@ -100,7 +83,7 @@ export default async function InvoiceDetailPage({
                   : "QUOTE / შეთავაზება"
                 : "ინვოისი / INVOICE"}
             </span>
-            <h1 className="page-title" style={{ marginTop: 4 }}>
+            <h1 className={`page-title ${styles.invoiceNumber}`}>
               {invoice.invoiceNumber}
             </h1>
             <div className="muted" style={{ fontSize: "0.84rem", marginTop: 4 }}>
@@ -111,7 +94,7 @@ export default async function InvoiceDetailPage({
             </div>
           </div>
 
-          <div style={{ textAlign: "right", display: "grid", gap: 6, justifyItems: "end" }}>
+          <div className={styles.statuses}>
             <Badge tone={invoice.status === "PAID" ? "ok" : "warn"}>
               {statusT.has(invoice.status) ? statusT(invoice.status) : invoice.status}
             </Badge>
@@ -122,16 +105,7 @@ export default async function InvoiceDetailPage({
         </div>
 
         {/* Seller & Buyer Details (Georgian ს/კ & Bank IBANs) */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "1.5rem",
-            marginTop: "1.35rem",
-            paddingBottom: "1.35rem",
-            borderBottom: "1px solid var(--line)",
-          }}
-        >
+        <div className={styles.parties}>
           <div>
             <div className="kicker" style={{ marginBottom: 6 }}>
               {isKa ? "მიმწოდებელი (SELLER)" : "SELLER (მიმწოდებელი)"}
@@ -186,84 +160,59 @@ export default async function InvoiceDetailPage({
         </div>
 
         {/* Line Items */}
-        <table className="table" style={{ marginTop: "1rem" }}>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>{isKa ? "დასახელება / აღწერა" : "Description"}</th>
-              <th>{isKa ? "რაოდ." : "Qty"}</th>
-              <th>{isKa ? "ერთეული" : "Unit"}</th>
-              <th>{isKa ? "ფასი" : "Unit Price"}</th>
-              <th>{isKa ? "ჯამი" : "Amount"}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoice.items.map((item, idx) => (
-              <tr key={item.id}>
-                <td>{idx + 1}</td>
-                <td>
-                  <strong style={{ color: "var(--ink)" }}>{item.description}</strong>
-                </td>
-                <td>{item.quantity}</td>
-                <td className="muted">{item.unit}</td>
-                <td>{formatMoney(item.unitMinor, invoice.currency, locale)}</td>
-                <td style={{ fontWeight: 700 }}>
-                  {formatMoney(item.totalMinor, invoice.currency, locale)}
-                </td>
+        <div className={styles.tableScroll} role="region" aria-label={isKa ? "ინვოისის პოზიციები" : "Invoice line items"} tabIndex={0}>
+          <table className={`table ${styles.items}`}>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>{isKa ? "დასახელება / აღწერა" : "Description"}</th>
+                <th>{isKa ? "რაოდ." : "Qty"}</th>
+                <th>{isKa ? "ერთეული" : "Unit"}</th>
+                <th>{isKa ? "ფასი" : "Unit Price"}</th>
+                <th>{isKa ? "ჯამი" : "Amount"}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {invoice.items.map((item, idx) => (
+                <tr key={item.id}>
+                  <td>{idx + 1}</td>
+                  <td>
+                    <strong style={{ color: "var(--ink)" }}>{item.description}</strong>
+                  </td>
+                  <td>{item.quantity}</td>
+                  <td className="muted">{item.unit}</td>
+                  <td>{formatMoney(item.unitMinor, invoice.currency, locale)}</td>
+                  <td style={{ fontWeight: 700 }}>
+                    {formatMoney(item.totalMinor, invoice.currency, locale)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {/* Totals & 18% Georgian VAT */}
-        <div
-          style={{
-            marginTop: "1.35rem",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: "1.5rem",
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ maxWidth: 420 }}>
+        <div className={styles.summary}>
+          <div className={styles.notes}>
             <div className="muted" style={{ fontSize: "0.82rem" }}>
               {invoice.notes}
             </div>
           </div>
 
-          <div
-            style={{
-              minWidth: 260,
-              padding: "1rem 1.2rem",
-              borderRadius: 12,
-              background: "var(--bg-subtle)",
-              border: "1px solid var(--line)",
-              display: "grid",
-              gap: "0.45rem",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div className={styles.totals}>
+            <div className={styles.totalRow}>
               <span className="muted">{isKa ? "ჯამი დღგ-ს გარეშე:" : "Subtotal (Net):"}</span>
               <strong>{formatMoney(invoice.subtotalMinor, invoice.currency, locale)}</strong>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div className={styles.totalRow}>
               <span className="muted">
                 {isKa ? `დღგ (${(invoice.vatRateBps ?? invoice.vatRate * 100) / 100}%):` : `Georgian VAT (${(invoice.vatRateBps ?? invoice.vatRate * 100) / 100}%):`}
               </span>
               <strong>{formatMoney(invoice.vatMinor, invoice.currency, locale)}</strong>
             </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                paddingTop: "0.45rem",
-                borderTop: "1px solid var(--line)",
-                fontSize: "1.08rem",
-              }}
-            >
+            <div className={`${styles.totalRow} ${styles.totalDue}`}>
               <strong>{isKa ? "სულ გადასახდელი:" : "Total Due:"}</strong>
-              <strong style={{ color: "var(--brand)" }}>
+              <strong style={{ color: "var(--info-ink)" }}>
                 {formatMoney(invoice.totalMinor, invoice.currency, locale)}
               </strong>
             </div>
