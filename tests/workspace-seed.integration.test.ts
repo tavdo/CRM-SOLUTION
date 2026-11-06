@@ -1,8 +1,9 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { mkdtemp, rm } from "node:fs/promises";
+import { copyFile, mkdtemp, rm } from "node:fs/promises";
 import { readFileSync, readdirSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import os from "node:os";
 import path from "node:path";
 import { ensureWorkspaceAccounts, PRIMARY_WORKSPACE_ID, WORKSPACE_ACCOUNTS } from "../src/lib/workspace-seed";
@@ -10,13 +11,27 @@ import { removeLegacyDemoWorkspaces } from "../src/lib/legacy-demo-cleanup";
 
 const roots: string[] = [];
 let db: PrismaClient;
+let baseline: string;
+beforeAll(async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "crm-workspace-test-"));
+  roots.push(root);
+  baseline = path.join(root, "baseline.db");
+  // Migration PRAGMAs must stay on one connection. Separate raw Prisma queries
+  // can switch pooled connections, leaving foreign keys enabled during rebuilds.
+  const database = new DatabaseSync(baseline);
+  try {
+    for (const migration of readdirSync("prisma/migrations").filter(name => /^\d/.test(name)).sort()) {
+      database.exec(readFileSync(`prisma/migrations/${migration}/migration.sql`, "utf8"));
+    }
+    expect(database.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+  } finally { database.close(); }
+}, 30000);
 beforeEach(async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "crm-workspace-test-"));
   roots.push(root);
-  db = new PrismaClient({ datasourceUrl: `file:${path.join(root, "test.db").replaceAll("\\", "/")}` });
-  for (const migration of readdirSync("prisma/migrations").filter((entry) => /^\d/.test(entry)).sort()) {
-    for (const statement of readFileSync(`prisma/migrations/${migration}/migration.sql`, "utf8").split(";").map((part) => part.trim()).filter(Boolean)) await db.$executeRawUnsafe(statement);
-  }
+  const database = path.join(root, "test.db");
+  await copyFile(baseline, database);
+  db = new PrismaClient({ datasourceUrl: `file:${database.replaceAll("\\", "/")}` });
 }, 30000);
 afterEach(async () => { await db.$disconnect(); });
 afterAll(async () => {
