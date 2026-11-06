@@ -12,13 +12,16 @@ transactional email after sender-domain verification. Use free plans without a
 payment card or paid add-ons. Limits can interrupt service: they are not promises
 of unlimited capacity or uninterrupted availability.
 
-Netlify Free hosts the owner-only preview at
-`https://crmsolution2026-preview.netlify.app`. The team uses the credit-free plan,
-with no payment card or automatic overages configured. The site has been deployed;
-check `LAUNCH_READINESS.md` for its current external access and smoke-test status.
-`netlify.toml` supplies the build settings.
-Vercel Hobby is restricted to personal non-commercial use. Do not treat it as the
-commercial launch plan.
+The selected host is Vercel's existing `crm-solution` project, automatically
+deployed from GitHub `main` to `https://crm-solution-two.vercel.app`. Follow
+`VERCEL_GITHUB.md` for releases and exact host settings. Vercel Hobby is restricted
+to personal/noncommercial use; the current single-owner preview stays within
+that scope. Choose an eligible plan before commercial customer launch.
+
+The previous Netlify preview remains available as a fallback at
+`https://crmsolution2026-preview.netlify.app`; the Netlify CLI commands below are
+legacy fallback operations, not the selected release path. No paid upgrade or
+automatic charges were enabled by the migration.
 
 - https://supabase.com/pricing
 - https://resend.com/pricing
@@ -188,7 +191,7 @@ customer database without a reviewed recovery procedure.
 
 A separate `crm_backup` role has SELECT/USAGE privileges and defaults to read-only
 transactions. Its `BACKUP_DATABASE_URL` and encryption key stay in the ignored
-local live settings; neither is sent to Netlify. Provision/verify it with
+local live settings; neither is sent to the web host. Provision/verify it with
 `npm run db:backup-role:live` while the PostgreSQL Prisma client is generated.
 
 Windows task `CRMsolution2026-DailyBackup` is registered for 04:00 Tbilisi time,
@@ -203,7 +206,7 @@ Keep the encryption key separately recoverable. This operator-owned copy is
 outside Supabase, but is not an always-on cloud backup or a second independent
 offsite copy of the PC. Review backup age and periodically test full recovery.
 
-## Owner-only Netlify preview
+## Previous owner-only Netlify preview (fallback)
 
 The ignored `.env.preview.local` contains an explicit runtime allowlist copied to
 Netlify: restricted `crm_app` connections, private storage, SMTP and a separate

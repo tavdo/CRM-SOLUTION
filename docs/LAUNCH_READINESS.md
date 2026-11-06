@@ -1,10 +1,12 @@
 # Launch readiness — 2026-11-06
 
-Free Supabase, Resend, Netlify and UptimeRobot accounts are configured. The hosted
-owner-only preview is at `https://crmsolution2026-preview.netlify.app`; this is not
-an open customer release. Final customer launch still depends on the purchased
-domain and verified sender/support email. No paid plan or payment-card setup was
-activated.
+The selected host is now the existing Vercel `crm-solution` project, connected to
+`tavdo/CRM-SOLUTION`. Merges/pushes to `main` deploy automatically to
+`https://crm-solution-two.vercel.app`. A real Git-triggered production-target
+deployment reached READY, matched the main commit and passed hosted checks.
+The app remains a single-owner evaluation preview on Hobby, not an open commercial
+customer release. Commercial launch requires an eligible Vercel plan, the final
+domain and verified sender/support address. No paid upgrade was activated.
 
 ## Completed
 
@@ -37,16 +39,24 @@ activated.
 - [x] CI verification, release smoke command and expired session/rate maintenance.
 - [x] Operator display name configured as requested: CRMsolution2026. Account
   email is not automatically published as a support address.
-- [x] Netlify Free project created and deployment uploaded, HTTPS preview origin
+- [x] Initial Netlify Free project created and deployment uploaded, HTTPS preview origin
   opened publicly with the user's explicit approval. CRM access remains limited
   to the single configured owner email; registration, sessions and outgoing mail
   enforce that restriction, with email verification required and indexing disabled.
 - [x] Netlify runtime settings read back and compared: no database administrator,
   backup connection or backup encryption key uploaded. Generated environment files
   stripped from the handler; function/browser artifacts checked before upload.
+- [x] Migrated the selected host to the existing GitHub-linked Vercel project.
+  Node 24, Next.js, `npm ci`, guarded build and `sin1` are configured. Production
+  runtime settings use the existing private Supabase database/storage and Resend;
+  the administrator and backup credentials remain local. Other branches do not
+  receive these runtime secrets; preview deployments are disabled in the project.
+- [x] GitHub PR verification and main verification passed: 151 ordinary tests,
+  isolated PostgreSQL checks/restore, lint, type checking, audit and build. The
+  merged main revision automatically triggered the verified Vercel deployment.
 - [x] UptimeRobot Free HTTP monitor created for the preview `/api/health`, every
-  five minutes, with email alerts enabled for the owner. External status `Up`
-  observed after the corrected hosted deployment became healthy.
+  five minutes, with email alerts enabled for the owner; its target is now
+  `https://crm-solution-two.vercel.app/api/health`.
 - [x] Read-only `crm_backup` database role provisioned and verified. Windows daily
   backup task registered for 04:00 Tbilisi; keeps seven encrypted archives in the
   operator's Documents folder outside the repository. First run and authenticated
@@ -76,20 +86,27 @@ activated.
   checks; desktop styling and the 390 px phone layout were verified online with
   no horizontal overflow. A real hosted form action rejected a non-owner
   registration without creating an account.
+- Vercel Git deployment: READY, source `git`, branch `main`, commit matched the
+  merged revision. HTTPS health, both languages, auth/legal pages, robots/sitemap,
+  17 browser assets and anonymous dashboard denial passed. `x-real-ip` spoof
+  resistance passed; the non-owner form action was rejected. The existing owner
+  account remains verified with ADMIN membership.
 - Browser QA: desktop and 390 px phone layout, Georgian errors, persisted login,
   logout and Georgian sign-out redirect passed; phone layouts had no horizontal overflow.
 
 ## Remaining before public launch
 
-- [ ] Buy the domain; Netlify Free hosting is already configured for the preview.
+- [ ] Buy the domain; Vercel is already configured for the personal preview.
+- [ ] Choose an eligible Vercel plan before opening a commercial customer service;
+  Hobby remains limited to personal/noncommercial evaluation.
 - [ ] Configure the final `APP_URL`, DNS, HTTPS and canonical-host redirects.
 - [ ] Add/verify the sender domain in Resend and set the actual `SMTP_FROM`.
 - [ ] Create a support address on the purchased domain, as requested, and set
   `SUPPORT_EMAIL`; review the public operator/contact and policy text.
-- [x] Preview uses Netlify's `x-nf-client-connection-ip`. Two requests with
+- [x] Vercel uses its overwritten `x-real-ip`. Two requests with
   different spoofed header values used the same real client bucket; neither a
   spoofed identity nor the shared fallback was accepted. Preserve this setting
-  when promoting to the final Netlify hostname.
+  when promoting to the final Vercel hostname.
 - [ ] Run final browser/email/file smoke tests on the deployed hostname, including
   verification, invitation, reset and replay rejection; run the live config check.
 - [ ] Check the daily PC backup remains recent; retain the encryption key
@@ -107,7 +124,7 @@ bank and RS.ge integrations are not activated. Do not advertise them as live.
 
 The first unused Resend key was left in place at the user's explicit request;
 the server uses the separately stored working sending-only key. Secret values
-were saved to ignored local settings and the explicitly approved Netlify runtime
+were saved to ignored local settings and the selected host's server runtime
 configuration, never repository source. Preview mail delivery to the owner has
 been tested; sending to other recipients still needs a verified custom domain.
 
@@ -116,5 +133,5 @@ applied. It was not imported into the fresh remote CRM database. Existing user
 edits in presentation documents and `scope.ts` were preserved.
 
 See `PRODUCTION.md` for commands, credentials handling, migration, recovery and
-free-plan limits. Free tiers are subject to provider limits and availability;
+free-plan limits; see `VERCEL_GITHUB.md` for automatic releases. Free tiers are subject to provider limits and availability;
 these are not promises of unlimited or uninterrupted hosting.
