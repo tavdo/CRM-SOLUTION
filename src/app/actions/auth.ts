@@ -1,6 +1,9 @@
 "use server";
 
-import { canUseDemoLogin } from "@/lib/auth/demo";
+import { canUseDemoLogin, isBlockedDemoAccount } from "@/lib/auth/demo";
+import { headers } from "next/headers";
+import { limitAuthRequest } from "@/lib/rate-limit";
+import { previewEmailAllowed, requiresVerifiedEmail } from "@/lib/release-access";
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -19,6 +22,7 @@ import {
   requestPasswordReset,
   resetPassword,
   verifyEmail,
+  resendVerificationEmail,
 } from "@/lib/services/onboarding";
 import { acceptInvitation } from "@/lib/services/members";
 import { isAppError } from "@/lib/errors";
@@ -30,11 +34,12 @@ function formString(formData: FormData, key: string) {
 export async function signUpAction(_prev: unknown, formData: FormData) {
   try {
     await ensureDbInitialized();
+    await limitAuthRequest("sign-up", await headers(), formString(formData, "email"));
     const schema = z.object({
-      companyName: z.string().min(1),
-      adminName: z.string().min(1),
-      email: z.string().email(),
-      password: z.string().min(8),
+      companyName: z.string().min(1).max(200),
+      adminName: z.string().min(1).max(160),
+      email: z.string().email().max(254),
+      password: z.string().min(8).max(72),
       locale: z.enum(["en", "ka"]),
     });
     const data = schema.parse({
@@ -45,6 +50,7 @@ export async function signUpAction(_prev: unknown, formData: FormData) {
       locale: formString(formData, "locale") || "en",
     });
     await registerCompany(data);
+    if (requiresVerifiedEmail()) redirect(`/${data.locale}/verify-email`);
     redirect(`/${data.locale}/onboarding`);
   } catch (err) {
     if (isRedirect(err)) throw err;
@@ -56,6 +62,8 @@ export async function signInAction(_prev: unknown, formData: FormData) {
   try {
     await ensureDbInitialized();
     const email = formString(formData, "email").toLowerCase();
+    await limitAuthRequest("sign-in", await headers(), email);
+    if (isBlockedDemoAccount(email) || !previewEmailAllowed(email)) return { error: "Invalid email or password" };
     const password = formString(formData, "password");
     const locale = formString(formData, "locale") || "en";
     const next = formString(formData, "next") || `/${locale}/dashboard`;
@@ -71,6 +79,7 @@ export async function signInAction(_prev: unknown, formData: FormData) {
       orderBy: { createdAt: "asc" },
     });
     if (membership) await setActiveWorkspace(membership.companyId);
+    if (requiresVerifiedEmail() && !user.emailVerifiedAt) redirect(`/${locale === "ka" ? "ka" : "en"}/verify-email`);
 
     const destLocale = user.preferredLocale === "ka" ? "ka" : locale;
     const fallback = `/${destLocale}/dashboard`;
@@ -87,27 +96,34 @@ export async function signInAction(_prev: unknown, formData: FormData) {
     );
   } catch (err) {
     if (isRedirect(err)) throw err;
-    return { error: "Unable to sign in" };
+    return { error: isAppError(err) ? err.message : "Unable to sign in" };
   }
 }
 
-export async function signOutAction() {
+export async function signOutAction(formData?: FormData) {
+  const locale = formData?.get("locale") === "ka" ? "ka" : "en";
   await destroySession();
   await clearActiveWorkspace();
-  redirect("/en/sign-in");
+  redirect(`/${locale}/sign-in`);
 }
 
 export async function forgotPasswordAction(_prev: unknown, formData: FormData) {
-  await ensureDbInitialized();
-  const email = formString(formData, "email");
-  const locale = formString(formData, "locale") || "en";
-  await requestPasswordReset(email, locale);
-  return { ok: true };
+  try {
+    await ensureDbInitialized();
+    const email = formString(formData, "email");
+    const locale = formString(formData, "locale") === "ka" ? "ka" : "en";
+    await limitAuthRequest("reset-request", await headers(), email);
+    await requestPasswordReset(email, locale);
+    return { ok: true };
+  } catch (err) {
+    return { error: isAppError(err) ? err.message : "Unable to send reset email" };
+  }
 }
 
 export async function resetPasswordAction(_prev: unknown, formData: FormData) {
   try {
     await ensureDbInitialized();
+    await limitAuthRequest("reset-password", await headers());
     const token = formString(formData, "token");
     const password = formString(formData, "password");
     const locale = formString(formData, "locale") || "en";
@@ -122,6 +138,8 @@ export async function resetPasswordAction(_prev: unknown, formData: FormData) {
 export async function verifyEmailAction(token: string) {
   try {
     await ensureDbInitialized();
+    await limitAuthRequest("verify-token", await headers());
+    if (!token || token.length > 256) return { error: "Invalid token" };
     await verifyEmail(token);
     return { ok: true };
   } catch (err) {
@@ -129,9 +147,23 @@ export async function verifyEmailAction(token: string) {
   }
 }
 
+export async function resendVerificationAction(_prev: unknown, formData: FormData) {
+  try {
+    await ensureDbInitialized();
+    const user = await getSessionUser();
+    if (!user) return { error: "Sign in before requesting a verification email" };
+    await limitAuthRequest("verify-email", await headers(), user.email);
+    await resendVerificationEmail(user.id, formString(formData, "locale") === "ka" ? "ka" : "en");
+    return { ok: true };
+  } catch (err) {
+    return { error: isAppError(err) ? err.message : "Unable to send verification email" };
+  }
+}
+
 export async function acceptInviteAction(_prev: unknown, formData: FormData) {
   try {
     await ensureDbInitialized();
+    await limitAuthRequest("accept-invite", await headers());
     const token = formString(formData, "token");
     const name = formString(formData, "name");
     const password = formString(formData, "password");

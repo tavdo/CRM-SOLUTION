@@ -449,6 +449,8 @@ const initialization = globalThis as unknown as {
 export async function ensureDbInitialized(): Promise<void> {
   // Production schema changes and seed data require explicit deployment tooling.
   if (process.env.NODE_ENV === "production") return;
+  // PostgreSQL schemas are always installed by explicit deployment migrations.
+  if (/^postgres(ql)?:/.test(process.env.DATABASE_URL || "")) return;
   if (initialization.crmDbInitialization?.client === prisma) return initialization.crmDbInitialization.promise;
 
   const promise = (async () => {

@@ -1,0 +1,8 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "24"
+# Set live environment values in Netlify, never in this tracked file.
+# Keep INBOX_ENABLED=false until a separate supervised worker is configured.

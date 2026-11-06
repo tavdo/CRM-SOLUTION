@@ -1,0 +1,14 @@
+.env
+.env.*
+.netlify
+.launch-verify
+output
+backups
+storage
+*.crmbak
+*.crmbak.partial
+prisma/dev.db*
+prisma/contractor-preview.db*
+docs/PRESENTATION_BRIEF.md
+docs/PRESENTATION_PROMPT.md
+docs/GEORGIAN_FIRST_IMPLEMENTATION_PROMPT.md

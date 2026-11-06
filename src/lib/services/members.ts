@@ -1,12 +1,13 @@
 import type { Role } from "@prisma/client";
 import { prisma } from "../db";
 import { generateToken, hashToken } from "../crypto";
-import { sendMail } from "../email";
+import { mailConfiguration, sendMail } from "../email";
 import { writeAudit } from "../audit";
 import { AppError } from "../errors";
 import { enforcePlanLimit } from "../billing/adapter";
 import { can } from "../permissions";
 import type { WorkspaceContext } from "../auth/workspace";
+import { requirePreviewEmail } from "../release-access";
 
 export async function inviteMember(
   ctx: WorkspaceContext,
@@ -15,6 +16,7 @@ export async function inviteMember(
   if (!can(ctx.role, "company.members")) {
     throw new AppError("Forbidden", "FORBIDDEN", 403);
   }
+  mailConfiguration();
   if (input.role === "ADMIN" && ctx.role !== "ADMIN") {
     throw new AppError("Cannot assign admin role", "FORBIDDEN", 403);
   }
@@ -22,6 +24,7 @@ export async function inviteMember(
   await enforcePlanLimit(ctx.company.id, "users");
 
   const email = input.email.trim().toLowerCase();
+  requirePreviewEmail(email);
   const existingMember = await prisma.membership.findFirst({
     where: { companyId: ctx.company.id, user: { email } },
   });
@@ -49,8 +52,8 @@ export async function inviteMember(
   const appUrl = process.env.APP_URL ?? "http://localhost:3000";
   await sendMail({
     to: email,
-    subject: `Invitation to ${ctx.company.name} on CRM Solution`,
-    text: `You were invited to join ${ctx.company.name} as ${input.role}.\n\nAccept: ${appUrl}/${ctx.user.preferredLocale}/invite/${token}\n\nThis invitation expires in 7 days and can only be used once by ${email}.`,
+    subject: ctx.user.preferredLocale === "ka" ? `მოწვევა — ${ctx.company.name}` : `Invitation to ${ctx.company.name} on CRM Solution`,
+    text: ctx.user.preferredLocale === "ka" ? `მიგიწვიეს ${ctx.company.name}-ის სამუშაო სივრცეში.\n\nმოწვევის მიღება: ${appUrl}/ka/invite/${token}\n\nბმული მოქმედებს 7 დღე და განკუთვნილია ${email}-სთვის.` : `You were invited to join ${ctx.company.name} as ${input.role}.\n\nAccept: ${appUrl}/${ctx.user.preferredLocale}/invite/${token}\n\nThis invitation expires in 7 days and can only be used once by ${email}.`,
   });
 
   await writeAudit({
@@ -94,6 +97,7 @@ export async function acceptInvitation(input: {
 
   const { hashPassword } = await import("../crypto");
   const email = invitation.email.toLowerCase();
+  requirePreviewEmail(email);
 
   let user = await prisma.user.findUnique({ where: { email } });
   if (!user) {

@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -44,6 +45,14 @@ enum InviteStatus {
   ACCEPTED
   EXPIRED
   REVOKED
+}
+
+model RateLimitBucket {
+  key       String   @id
+  attempts  Int      @default(1)
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }
 
 model User {

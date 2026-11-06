@@ -1,10 +1,12 @@
-import { sessionSecret } from "@/lib/auth/demo";
+import { sessionSecret, isBlockedDemoAccount } from "@/lib/auth/demo";
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "../db";
 import { ensureDbInitialized } from "../db-init";
 import { hashToken } from "../crypto";
 import { cache } from "react";
+import { randomUUID } from "node:crypto";
+import { previewEmailAllowed } from "../release-access";
 
 const COOKIE = "crm_session";
 const WORKSPACE_COOKIE = "crm_workspace";
@@ -26,6 +28,7 @@ export async function createSession(
 ): Promise<string> {
   await ensureDbInitialized();
   const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || isBlockedDemoAccount(user.email) || !previewEmailAllowed(user.email)) throw new Error("Session user is unavailable");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
 
   const token = await new SignJWT({
@@ -36,10 +39,11 @@ export async function createSession(
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
+    .setJti(randomUUID())
     .setExpirationTime(`${SESSION_DAYS}d`)
     .sign(sessionSecret());
 
-  // Also record in Session table best-effort
+  // A persisted session is authoritative: failure must never create a login.
   await prisma.session
     .create({
       data: {
@@ -49,8 +53,7 @@ export async function createSession(
         userAgent: meta?.userAgent?.slice(0, 255),
         ip: meta?.ip?.slice(0, 64),
       },
-    })
-    .catch(() => {});
+    });
 
   const jar = await cookies();
   jar.set(COOKIE, token, {
@@ -68,10 +71,9 @@ export async function destroySession(): Promise<void> {
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value;
   if (token) {
-    await ensureDbInitialized().catch(() => {});
+    await ensureDbInitialized();
     await prisma.session
-      .deleteMany({ where: { tokenHash: hashToken(token) } })
-      .catch(() => {});
+      .deleteMany({ where: { tokenHash: hashToken(token) } });
   }
   jar.delete(COOKIE);
 }
@@ -86,38 +88,14 @@ export const getSessionUser = cache(async function getSessionUser(): Promise<Ses
 
     await ensureDbInitialized();
 
-    // 1. Verify stateless signed JWT (works across all serverless containers)
-    try {
-      const { payload } = await jwtVerify(token, sessionSecret());
-      const userId = typeof payload.sub === "string" ? payload.sub : null;
-      const email = typeof payload.email === "string" ? payload.email : null;
-
-      let user = userId
-        ? await prisma.user.findUnique({ where: { id: userId } })
-        : null;
-      if (!user && email) {
-        user = await prisma.user.findUnique({ where: { email } });
-      }
-
-      if (user) {
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          preferredLocale: user.preferredLocale,
-          emailVerifiedAt: user.emailVerifiedAt,
-        };
-      }
-    } catch {
-      // Fallback to DB session token lookup
-    }
-
+    const { payload } = await jwtVerify(token, sessionSecret(), { algorithms: ["HS256"] });
+    if (typeof payload.sub !== "string") return null;
     const session = await prisma.session.findUnique({
       where: { tokenHash: hashToken(token) },
       include: { user: true },
     });
 
-    if (!session || session.expiresAt < new Date()) {
+    if (!session || session.userId !== payload.sub || session.expiresAt <= new Date() || isBlockedDemoAccount(session.user.email) || !previewEmailAllowed(session.user.email)) {
       return null;
     }
 
@@ -128,8 +106,7 @@ export const getSessionUser = cache(async function getSessionUser(): Promise<Ses
       preferredLocale: session.user.preferredLocale,
       emailVerifiedAt: session.user.emailVerifiedAt,
     };
-  } catch (err) {
-    console.error("[getSessionUser]", err instanceof Error ? err.message : err);
+  } catch {
     return null;
   }
 });

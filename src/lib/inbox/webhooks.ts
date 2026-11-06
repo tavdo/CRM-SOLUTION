@@ -5,6 +5,7 @@ import type { Credentials } from "./types";
 import { facebook } from "./adapters/facebook";
 
 export async function webhookIntegration(id: string, provider: string) {
+  if (process.env.INBOX_ENABLED === "false") throw new AppError("Messaging is not available", "INBOX_DISABLED", 503);
   const integration = await prisma.inboxIntegration.findFirst({ where: { id, provider, status: "ACTIVE" } });
   if (!integration) throw new AppError("Not found", "NOT_FOUND", 404);
   return integration;

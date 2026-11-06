@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import { getLocale } from "next-intl/server";
 import { Manrope, Fraunces, Noto_Sans_Georgian } from "next/font/google";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import "./globals.css";
@@ -25,12 +26,15 @@ const notoGeorgian = Noto_Sans_Georgian({
 export const metadata: Metadata = {
   title: "CRM Solution",
   description: "Multi-tenant subscription CRM for growing teams",
+  icons: { icon: "/images/crm-logo.png", apple: "/images/crm-logo.png" },
+  ...(process.env.DEPLOYMENT_MODE === "preview" ? { robots: { index: false, follow: false } } : {}),
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const theme = (await cookies()).get("crm-theme")?.value === "light" ? "light" : "dark";
+  const locale = await getLocale();
   return (
-    <html lang="en" data-theme={theme} suppressHydrationWarning>
+    <html lang={locale} data-theme={theme} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: `try{const saved=localStorage.getItem("crm-theme");if(saved==="light"||saved==="dark")document.documentElement.dataset.theme=saved}catch{}` }} />
       </head>

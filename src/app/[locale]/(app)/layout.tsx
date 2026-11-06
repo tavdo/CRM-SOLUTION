@@ -7,8 +7,10 @@ import { prisma } from "@/lib/db";
 import { can } from "@/lib/permissions";
 import { ownerScope } from "@/lib/scope";
 import { isLocale } from "@/i18n/config";
+import { requiresVerifiedEmail } from "@/lib/release-access";
 
 export const dynamic = "force-dynamic";
+export const metadata = { robots: { index: false, follow: false } };
 
 export default async function AppLayout({
   children,
@@ -22,6 +24,7 @@ export default async function AppLayout({
 
   const user = await getSessionUser();
   if (!user) redirect(`/${locale}/sign-in`);
+  if (requiresVerifiedEmail() && !user.emailVerifiedAt) redirect(`/${locale}/verify-email`);
 
   let ctx;
   try {
@@ -53,7 +56,7 @@ export default async function AppLayout({
       canManageAutomations={can(ctx.role, "company.automations")}
       canManageConstruction={can(ctx.role, "construction.manage")}
       canManageMembers={can(ctx.role, "company.members")}
-      canUseInbox={ctx.role !== "EMPLOYEE"}
+      canUseInbox={ctx.role !== "EMPLOYEE" && process.env.INBOX_ENABLED !== "false"}
       workspaces={memberships.map((m) => ({ id: m.companyId, name: m.company.name }))}
       labels={{
         inbox: t("inbox"),

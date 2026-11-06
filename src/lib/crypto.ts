@@ -1,7 +1,10 @@
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import bcrypt from "bcryptjs";
+import { AppError } from "./errors";
 
 export async function hashPassword(password: string): Promise<string> {
+  if (password.length < 8) throw new AppError("Password must be at least 8 characters", "WEAK_PASSWORD");
+  if (Buffer.byteLength(password, "utf8") > 72) throw new AppError("Password is too long", "WEAK_PASSWORD");
   return bcrypt.hash(password, 12);
 }
 

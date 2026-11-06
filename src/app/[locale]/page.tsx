@@ -8,6 +8,11 @@ import { QuickDemoLogin } from "@/components/QuickDemoLogin";
 import { isLocale } from "@/i18n/config";
 import { getSessionUser } from "@/lib/auth/session";
 import type { CSSProperties } from "react";
+import { LegalLinks } from "@/components/LegalLinks";
+import { publicMetadata } from "@/lib/metadata";
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  return publicMetadata((await params).locale === "ka" ? "ka" : "en");
+}
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) redirect("/ka");
@@ -26,6 +31,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
 
   return (
     <div className="landing crm-workspace landing-workspace">
+      {process.env.DEPLOYMENT_MODE === "preview" && <p role="status" className="muted" style={{ textAlign: "center", padding: "0.75rem 1rem" }}>{locale === "ka" ? "სატესტო ვერსია — რეგისტრაცია შეზღუდულია." : "Preview — registration is restricted."}</p>}
       <a className="workspace-skip-link" href="#landing-content">{locale === "ka" ? "შინაარსზე გადასვლა" : "Skip to content"}</a>
       <header className="landing-nav">
         <div className="landing-nav-inner">
@@ -82,7 +88,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
           <Link className="btn btn-primary" href={`/${locale}/sign-up`}>{t("cta")}<ArrowRight size={16} /></Link>
         </section>
       </main>
-      <footer className="landing-footer"><span>{t("footerNote")}</span><span>© {new Date().getFullYear()} {b("name")}</span></footer>
+      <footer className="landing-footer" style={{ flexWrap: "wrap", gap: "1rem" }}><span>{t("footerNote")}</span><LegalLinks locale={locale} /><span>© {new Date().getFullYear()} {b("name")}</span></footer>
     </div>
   );
 }

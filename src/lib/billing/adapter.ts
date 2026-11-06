@@ -35,6 +35,7 @@ export function verifyWebhookSignature(
 ): boolean {
   const provider = process.env.BILLING_PROVIDER ?? "dev";
   const secret = process.env.BILLING_WEBHOOK_SECRET ?? "";
+  if (provider === "disabled" || (process.env.NODE_ENV === "production" && process.env.DEPLOYMENT_MODE !== "demo" && provider === "dev")) return false;
   if (!signature || !secret) return false;
 
   if (provider === "dev") {

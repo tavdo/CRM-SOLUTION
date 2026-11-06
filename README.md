@@ -112,10 +112,26 @@ Tenant isolation is verified with temporary test workspaces: users cannot read a
 
 ## Deployment notes
 
+The selected host is Vercel, using the existing GitHub integration for automatic
+deployments from `main`. See [Vercel and GitHub operations](docs/VERCEL_GITHUB.md)
+for the project, restricted preview configuration and verification steps.
+
 - Bind HTTP to `0.0.0.0:$PORT` on platforms like Render (`next start` respects `PORT`).
-- Use PostgreSQL in production (`provider = "postgresql"` in Prisma + migrate).
+- For live hosting use the separate PostgreSQL schema/migrations and `.env.production.example`; follow [the production runbook](docs/PRODUCTION.md). Do not apply SQLite migrations to PostgreSQL.
 - Filesystem is ephemeral on many hosts — do not rely on SQLite file persistence there.
 - Do not deploy publicly or enable live billing without explicit authorization.
+
+Live releases use `DEPLOYMENT_MODE=live`, `SEED_DEMO_DATA=false`, private S3-compatible
+storage and real SMTP. The build selects the Prisma schema from `DATABASE_URL` and
+checks live configuration before compiling; migrations are a separate explicit
+deployment step. `vercel.json` contains no demo credentials. Starter accounts,
+console email and the development billing webhook are blocked for a real release.
+Set `INBOX_ENABLED=false` for a CRM pilot without social messaging infrastructure.
+
+Useful launch commands: `npm run test:postgres`, `npm run production:check:live`,
+`npm run services:check`, `npm run backup`, `npm run backup:restore` and
+`npm run release:smoke -- https://your-domain.ge`. See the runbook for secrets,
+domain verification, backup recovery, private storage and free-plan limitations.
 
 ## Incomplete / external
 

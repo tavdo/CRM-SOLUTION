@@ -3,6 +3,7 @@ import { Surface } from "./ui";
 import { BrandLogo } from "./BrandLogo";
 import { WorkspaceQuickControls } from "./WorkspaceQuickControls";
 import styles from "./AuthShell.module.css";
+import { LegalLinks } from "./LegalLinks";
 
 export function AuthShell({
   title,
@@ -33,6 +34,7 @@ export function AuthShell({
             {title}
           </h1>
           {children}
+          <div style={{ marginTop: "1.5rem" }}><LegalLinks locale={locale} /></div>
         </Surface>
       </main>
     </div>

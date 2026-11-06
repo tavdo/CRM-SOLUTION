@@ -23,7 +23,7 @@ vi.mock("../src/lib/auth/workspace", async () => {
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("../src/lib/auth/session", () => ({ createSession: vi.fn(), setActiveWorkspace: vi.fn() }));
-vi.mock("../src/lib/email", () => ({ sendMail: vi.fn() }));
+vi.mock("../src/lib/email", () => ({ sendMail: vi.fn(), mailConfiguration: vi.fn() }));
 
 import { prisma } from "../src/lib/db";
 import { getCustomer, addNote, createContact } from "../src/lib/services/customers";

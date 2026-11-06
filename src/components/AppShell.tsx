@@ -142,7 +142,7 @@ export function AppShell({ locale, brand, labels, userName, workspaces, activeCo
         </details>}
         <div className="workspace-user"><span className="workspace-avatar" aria-hidden="true">{userName.slice(0, 1).toUpperCase()}</span>
           <span className="workspace-user-name">{userName}<small>{activeWorkspace?.name}</small></span>
-          <form action={signOutAction}><PendingButton className="chrome-icon" type="submit" aria-label={labels.signOut} title={labels.signOut}><LogOut size={18} /></PendingButton></form>
+          <form action={signOutAction}><input type="hidden" name="locale" value={locale} /><PendingButton className="chrome-icon" type="submit" aria-label={labels.signOut} title={labels.signOut}><LogOut size={18} /></PendingButton></form>
         </div>
       </div>
     </>;
