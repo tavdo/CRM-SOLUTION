@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const db = vi.hoisted(() => ({ constructionProject: { count: vi.fn() }, inboxConversation: { count: vi.fn() }, task: { findFirst: vi.fn() }, invoice: { findFirst: vi.fn() } }));
+const db = vi.hoisted(() => ({ rateLimitBucket: { findFirst: vi.fn() }, constructionProject: { count: vi.fn() }, inboxConversation: { count: vi.fn() }, task: { findFirst: vi.fn() }, invoice: { findFirst: vi.fn() } }));
 vi.mock("../src/lib/db", () => ({ prisma: db }));
 vi.mock("../src/lib/db-init", () => ({ ensureDbInitialized: vi.fn() }));
 import { GET } from "../src/app/api/health/route";

@@ -4,6 +4,7 @@ import { ensureDbInitialized } from "../db-init";
 import { AppError } from "../errors";
 import { can, type Capability } from "../permissions";
 import { cache } from "react";
+import { requiresVerifiedEmail } from "../release-access";
 import {
   getActiveWorkspaceId,
   getSessionUser,
@@ -42,6 +43,9 @@ const userMemberships = cache(async (userId: string) =>
 
 export const requireWorkspace = cache(async function requireWorkspace(): Promise<WorkspaceContext> {
   const user = await requireUser();
+  if (requiresVerifiedEmail() && !user.emailVerifiedAt) {
+    throw new AppError("Verify your email before using the workspace", "EMAIL_UNVERIFIED", 403);
+  }
   const memberships = await userMemberships(user.id);
 
   if (memberships.length === 0) {

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { ChannelSettings } from "@/components/inbox/ChannelSettings";
 export default async function InboxSettingsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params; setRequestLocale(locale);
+  if (process.env.INBOX_ENABLED === "false") return <p>{locale === "ka" ? "სოციალური არხები ჯერ არ არის გააქტიურებული." : "Social messaging is not activated yet."}</p>;
   const ctx = await requireWorkspace(); if (ctx.role !== "ADMIN") notFound();
   const [bootstrap, integrations, failedEvents, pendingCount] = await Promise.all([inboxBootstrap(ctx),
     prisma.inboxIntegration.findMany({ where: { companyId: ctx.company.id }, select: { id: true, name: true, provider: true } }),

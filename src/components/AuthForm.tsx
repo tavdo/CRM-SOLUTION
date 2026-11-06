@@ -28,7 +28,7 @@ export function AuthForm({
       {next ? <input type="hidden" name="next" value={next} /> : null}
       {token ? <input type="hidden" name="token" value={token} /> : null}
 
-      {state?.error ? <Alert>{state.error}</Alert> : null}
+      {state?.error ? <Alert>{locale === "ka" ? georgianAuthError(state.error) : state.error}</Alert> : null}
       {state?.ok ? <Alert tone="ok">{labels.resetSent ?? "OK"}</Alert> : null}
 
       {mode === "sign-up" ? (
@@ -81,6 +81,25 @@ export function AuthForm({
       </Button>
     </form>
   );
+}
+
+function georgianAuthError(error: string) {
+  const messages: Record<string, string> = {
+    "Invalid email or password": "ელფოსტა ან პაროლი არასწორია.",
+    "Too many attempts. Please try again later.": "მცდელობების ლიმიტი ამოიწურა. სცადე მოგვიანებით.",
+    "Email already registered": "ეს ელფოსტა უკვე რეგისტრირებულია.",
+    "Registration is not open yet": "რეგისტრაცია ჯერ არ არის გახსნილი.",
+    "Password must be at least 8 characters": "პაროლი უნდა შეიცავდეს მინიმუმ 8 სიმბოლოს.",
+    "Password is too long": "პაროლი ზედმეტად გრძელია. გამოიყენე უფრო მოკლე პაროლი.",
+    "Invalid or expired reset link": "პაროლის აღდგენის ბმული არასწორია ან ვადა გაუვიდა.",
+    "Invalid or expired invitation": "მოწვევა არასწორია ან ვადა გაუვიდა.",
+    "Unable to sign in": "ანგარიშში შესვლა ვერ მოხერხდა. სცადე ხელახლა.",
+    "Unable to sign up": "რეგისტრაცია ვერ მოხერხდა. გადაამოწმე მონაცემები ან დაგვიკავშირდი.",
+    "Unable to send reset email": "აღდგენის წერილი ვერ გაიგზავნა. სცადე მოგვიანებით.",
+    "Unable to reset password": "პაროლის აღდგენა ვერ მოხერხდა. სცადე ახალი ბმულით.",
+    "Unable to accept invite": "მოწვევის მიღება ვერ მოხერხდა. დაუკავშირდი ადმინისტრატორს.",
+  };
+  return messages[error] || "მოქმედება ვერ დასრულდა. გადაამოწმე მონაცემები ან დაგვიკავშირდი.";
 }
 
 function submitLabel(mode: string, labels: Record<string, string>) {

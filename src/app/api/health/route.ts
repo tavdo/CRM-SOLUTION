@@ -8,6 +8,7 @@ export async function GET() {
     await Promise.all([
       prisma.constructionProject.count(),
       prisma.inboxConversation.count(),
+      prisma.rateLimitBucket.findFirst({ select: { key: true } }),
       prisma.task.findFirst({ select: { projectId: true, phase: true } }),
       prisma.invoice.findFirst({ select: { projectId: true, acceptanceId: true, vatRateBps: true } }),
     ]);

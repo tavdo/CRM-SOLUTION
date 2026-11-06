@@ -8,6 +8,7 @@ import { AppError } from "../errors";
 import type { WorkspaceContext } from "../auth/workspace";
 import { projectAccess } from "./access";
 import { parse, audit, missing } from "./core";
+import { putPrivateObject, getPrivateObject, deletePrivateObject } from "../storage";
 
 const root = () => path.join(process.cwd(), "storage", "construction");
 const categories = ["PHOTO", "DRAWING", "REPORT", "CONTRACT", "ACT", "OTHER"] as const;
@@ -20,7 +21,8 @@ export function fileType(bytes: Uint8Array): { extension: string; mime: string }
   return null;
 }
 export async function saveDocument(ctx: WorkspaceContext, projectId: string, input: { category: string; reportId?: string }, file: File) {
-  if (process.env.VERCEL) throw new AppError("Durable file storage is not configured", "C_STORAGE", 503);
+  const s3 = process.env.FILE_STORAGE === "s3";
+  if (!s3 && process.env.VERCEL) throw new AppError("Durable file storage is not configured", "C_STORAGE", 503);
   await projectAccess(ctx, projectId);
   const { category, reportId } = parse(z.object({ category: z.enum(categories), reportId: z.string().optional() }), input);
   if (!can(ctx.role, "construction.finance") && !["PHOTO", "DRAWING", "REPORT"].includes(category)) throw new AppError("Forbidden", "FORBIDDEN", 403);
@@ -28,9 +30,12 @@ export async function saveDocument(ctx: WorkspaceContext, projectId: string, inp
   const bytes = new Uint8Array(await file.arrayBuffer());
   const type = fileType(bytes);
   if (!type || (category === "PHOTO" && !type.mime.startsWith("image/"))) throw new AppError("Unsupported file", "C_FILE", 400);
-  const storageKey = `${randomUUID()}.${type.extension}`;
-  await mkdir(root(), { recursive: true });
-  await writeFile(path.join(root(), storageKey), bytes, { flag: "wx" });
+  const storageKey = `${ctx.company.id}/${randomUUID()}.${type.extension}`;
+  if (s3) await putPrivateObject(`construction/${storageKey}`, bytes, type.mime);
+  else {
+    await mkdir(path.join(root(), ctx.company.id), { recursive: true });
+    await writeFile(path.join(root(), storageKey), bytes, { flag: "wx" });
+  }
   try {
     return await prisma.$transaction(async (db) => {
       await projectAccess(ctx, projectId, db);
@@ -39,13 +44,21 @@ export async function saveDocument(ctx: WorkspaceContext, projectId: string, inp
       await audit(db, ctx, "document.uploaded", projectId);
       return document;
     });
-  } catch (error) { await unlink(path.join(root(), storageKey)); throw error; }
+  } catch (error) {
+    try { if (s3) await deletePrivateObject(`construction/${storageKey}`); else await unlink(path.join(root(), storageKey)); }
+    catch { console.error("[storage] Failed to clean up unlinked document"); }
+    throw error;
+  }
 }
 export async function readDocument(ctx: WorkspaceContext, documentId: string) {
   const document = await prisma.projectDocument.findFirst({ where: { id: documentId, companyId: ctx.company.id } });
   if (!document) missing();
   await projectAccess(ctx, document.projectId);
   if (!can(ctx.role, "construction.finance") && !["PHOTO", "DRAWING", "REPORT"].includes(document.category)) throw new AppError("Forbidden", "FORBIDDEN", 403);
-  if (!/^[\da-f-]+\.(png|jpg|webp|pdf)$/.test(document.storageKey)) missing();
-  return { document, bytes: await readFile(path.join(root(), document.storageKey)) };
+  const scoped = document.storageKey.startsWith(`${ctx.company.id}/`) && /^[a-zA-Z0-9_-]+\/[\da-f-]+\.(png|jpg|webp|pdf)$/.test(document.storageKey);
+  const legacy = /^[\da-f-]+\.(png|jpg|webp|pdf)$/.test(document.storageKey);
+  if (!scoped && !legacy) missing();
+  return { document, bytes: process.env.FILE_STORAGE === "s3"
+    ? await getPrivateObject(`construction/${document.storageKey}`, 8 * 1024 * 1024)
+    : await readFile(path.join(root(), document.storageKey)) };
 }

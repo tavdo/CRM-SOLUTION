@@ -5,6 +5,7 @@ import { Alert } from "@/components/ui";
 import Link from "next/link";
 import { isLocale } from "@/i18n/config";
 import { redirect } from "next/navigation";
+import { VerificationResend } from "@/components/VerificationResend";
 
 export default async function VerifyEmailPage({
   params,
@@ -24,9 +25,10 @@ export default async function VerifyEmailPage({
 
   return (
     <AuthShell title={t("verifyTitle")} brand={brand("name")} locale={locale}>
-      {result.ok ? <Alert tone="ok">{t("verifySuccess")}</Alert> : <Alert>{t("verifyFailed")}</Alert>}
+      {result.ok ? <Alert tone="ok">{t("verifySuccess")}</Alert> : sp.token ? <Alert>{t("verifyFailed")}</Alert> : <p>{locale === "ka" ? "სამუშაო სივრცის გასახსნელად დაადასტურე შენი ელფოსტა. გახსენი გამოგზავნილი წერილის ბმული." : "Verify your email to open your workspace. Follow the link in the email we sent."}</p>}
+      {!result.ok && <VerificationResend locale={locale} />}
       <Link href={`/${locale}/dashboard`} className="btn btn-primary">
-        Continue
+        {locale === "ka" ? "გაგრძელება" : "Continue"}
       </Link>
     </AuthShell>
   );

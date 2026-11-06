@@ -13,6 +13,7 @@ export const WORKSPACE_ACCOUNTS = [
  * Existing users, changed passwords, memberships and records are never overwritten.
  */
 export async function ensureWorkspaceAccounts(db: PrismaClient) {
+  if (["live", "preview"].includes(process.env.DEPLOYMENT_MODE || "")) throw new Error("Starter accounts are forbidden in live deployments");
   const passwordHash = await bcrypt.hash("Password123!", 10);
   await db.$transaction(async (tx) => {
     const plan = await tx.plan.upsert({ where: { code: "workspace" }, update: {}, create: {

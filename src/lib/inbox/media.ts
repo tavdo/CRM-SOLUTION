@@ -1,13 +1,12 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID, createHmac } from "node:crypto";
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { putPrivateObject, getPrivateObject } from "../storage";
 import { ChannelError } from "./types";
 import { equalDigest } from "./credentials";
 
 const MAX_SIZE = 20 * 1024 * 1024;
 const root = () => path.resolve(process.env.INBOX_STORAGE_PATH || "storage/inbox");
-function s3() { return new S3Client({ region: process.env.AWS_REGION || "us-east-1", endpoint: process.env.S3_ENDPOINT || undefined, forcePathStyle: !!process.env.S3_ENDPOINT }); }
 export function safeMediaUrl(value: string) {
   const url = new URL(value);
   const hosts = ["fbcdn.net", "fbsbx.com", "facebook.com", "cdninstagram.com", "viber.com"];
@@ -42,7 +41,7 @@ export async function storeMedia(companyId: string, bytes: Uint8Array, mime: str
   const key = `${companyId}/${randomUUID()}`;
   if (process.env.INBOX_STORAGE === "s3") {
     if (!process.env.S3_BUCKET) throw new ChannelError("STORAGE_NOT_CONFIGURED");
-    await s3().send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: `inbox/${key}`, Body: bytes, ContentType: mime }));
+    await putPrivateObject(`inbox/${key}`, bytes, mime);
   } else {
     if (process.env.VERCEL) throw new ChannelError("STORAGE_NOT_DURABLE");
     await mkdir(path.join(root(), companyId), { recursive: true });
@@ -53,8 +52,7 @@ export async function storeMedia(companyId: string, bytes: Uint8Array, mime: str
 export async function readMedia(companyId: string, key: string) {
   if (!key.startsWith(`${companyId}/`) || !/^[a-zA-Z0-9_-]+\/[\da-f-]+$/.test(key)) throw new ChannelError("MEDIA_NOT_FOUND");
   if (process.env.INBOX_STORAGE === "s3") {
-    const response = await s3().send(new GetObjectCommand({ Bucket: process.env.S3_BUCKET, Key: `inbox/${key}` }));
-    return Buffer.from(await response.Body!.transformToByteArray());
+    return getPrivateObject(`inbox/${key}`, MAX_SIZE);
   }
   return readFile(path.join(root(), key));
 }

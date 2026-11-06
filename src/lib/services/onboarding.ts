@@ -2,10 +2,11 @@ import { prisma } from "../db";
 import { hashPassword, generateToken, hashToken } from "../crypto";
 import { uniqueSlug } from "../slug";
 import { DEFAULT_PIPELINE_STAGES } from "../defaults";
-import { sendMail } from "../email";
+import { mailConfiguration, sendMail } from "../email";
 import { writeAudit } from "../audit";
 import { AppError } from "../errors";
 import { createSession, setActiveWorkspace } from "../auth/session";
+import { requirePreviewEmail } from "../release-access";
 
 export async function registerCompany(input: {
   companyName: string;
@@ -16,6 +17,8 @@ export async function registerCompany(input: {
   timezone?: string;
 }) {
   const email = input.email.trim().toLowerCase();
+  requirePreviewEmail(email);
+  mailConfiguration();
   if (input.password.length < 8) {
     throw new AppError("Password must be at least 8 characters", "WEAK_PASSWORD");
   }
@@ -122,8 +125,8 @@ export async function registerCompany(input: {
   const appUrl = process.env.APP_URL ?? "http://localhost:3000";
   await sendMail({
     to: email,
-    subject: "Verify your CRM Solution email",
-    text: `Welcome to CRM Solution.\n\nVerify your email: ${appUrl}/${input.locale}/verify-email?token=${verifyToken}\n`,
+    subject: input.locale === "ka" ? "დაადასტურე CRM Solution-ის ელფოსტა" : "Verify your CRM Solution email",
+    text: input.locale === "ka" ? `მოგესალმებით CRM Solution-ში.\n\nელფოსტის დადასტურება: ${appUrl}/ka/verify-email?token=${verifyToken}\nბმული მოქმედებს 48 საათი.` : `Welcome to CRM Solution.\n\nVerify your email: ${appUrl}/${input.locale}/verify-email?token=${verifyToken}\n`,
   });
 
   await createSession(result.user.id);
@@ -138,19 +141,29 @@ export async function verifyEmail(token: string): Promise<void> {
   if (!record || record.usedAt || record.expiresAt < new Date()) {
     throw new AppError("Invalid or expired verification link", "INVALID_TOKEN");
   }
-  await prisma.$transaction([
-    prisma.user.update({
+  await prisma.$transaction(async tx => {
+    const claimed = await tx.emailVerifyToken.updateMany({ where: { id: record.id, usedAt: null, expiresAt: { gt: new Date() } }, data: { usedAt: new Date() } });
+    if (claimed.count !== 1) throw new AppError("Invalid or expired verification link", "INVALID_TOKEN");
+    await tx.user.update({
       where: { id: record.userId },
       data: { emailVerifiedAt: new Date() },
-    }),
-    prisma.emailVerifyToken.update({
-      where: { id: record.id },
-      data: { usedAt: new Date() },
-    }),
-  ]);
+    });
+  });
+}
+
+export async function resendVerificationEmail(userId: string, locale: "en" | "ka") {
+  mailConfiguration();
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.emailVerifiedAt) return;
+  const token = generateToken(32);
+  await prisma.emailVerifyToken.create({ data: { userId, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000) } });
+  const link = `${process.env.APP_URL || "http://localhost:3000"}/${locale}/verify-email?token=${token}`;
+  await sendMail({ to: user.email, subject: locale === "ka" ? "დაადასტურე CRM Solution-ის ელფოსტა" : "Verify your CRM Solution email",
+    text: locale === "ka" ? `ელფოსტის დადასტურება: ${link}\n\nბმული მოქმედებს 48 საათი.` : `Verify your email: ${link}\n\nThis link expires in 48 hours.` });
 }
 
 export async function requestPasswordReset(emailRaw: string, locale: string) {
+  mailConfiguration();
   const email = emailRaw.trim().toLowerCase();
   const user = await prisma.user.findUnique({ where: { email } });
   // Always succeed to avoid account enumeration
@@ -168,8 +181,8 @@ export async function requestPasswordReset(emailRaw: string, locale: string) {
   const appUrl = process.env.APP_URL ?? "http://localhost:3000";
   await sendMail({
     to: email,
-    subject: "Reset your CRM Solution password",
-    text: `Reset your password: ${appUrl}/${locale}/reset-password?token=${token}\n\nThis link expires in 1 hour.`,
+    subject: locale === "ka" ? "CRM Solution-ის პაროლის აღდგენა" : "Reset your CRM Solution password",
+    text: locale === "ka" ? `პაროლის აღდგენა: ${appUrl}/ka/reset-password?token=${token}\n\nბმული მოქმედებს 1 საათი. თუ აღდგენა არ მოგითხოვიათ, უგულებელყავით წერილი.` : `Reset your password: ${appUrl}/${locale}/reset-password?token=${token}\n\nThis link expires in 1 hour.`,
   });
 }
 
@@ -184,15 +197,20 @@ export async function resetPassword(token: string, newPassword: string) {
     throw new AppError("Invalid or expired reset link", "INVALID_TOKEN");
   }
   const passwordHash = await hashPassword(newPassword);
-  await prisma.$transaction([
-    prisma.user.update({
+  await prisma.$transaction(async tx => {
+    const claimed = await tx.passwordResetToken.updateMany({
+      where: { id: record.id, usedAt: null, expiresAt: { gt: new Date() } },
+      data: { usedAt: new Date() },
+    });
+    if (claimed.count !== 1) throw new AppError("Invalid or expired reset link", "INVALID_TOKEN");
+    await tx.user.update({
       where: { id: record.userId },
       data: { passwordHash },
-    }),
-    prisma.passwordResetToken.update({
-      where: { id: record.id },
+    });
+    await tx.passwordResetToken.updateMany({
+      where: { userId: record.userId, usedAt: null },
       data: { usedAt: new Date() },
-    }),
-    prisma.session.deleteMany({ where: { userId: record.userId } }),
-  ]);
+    });
+    await tx.session.deleteMany({ where: { userId: record.userId } });
+  });
 }

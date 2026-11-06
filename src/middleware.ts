@@ -10,6 +10,7 @@ const intlMiddleware = createMiddleware({
 
 const PUBLIC = [
   /^\/(en|ka)$/,
+  /^\/(en|ka)\/(privacy|terms|contact)\/?$/,
   /^\/(en|ka)\/sign-in/,
   /^\/(en|ka)\/sign-up/,
   /^\/(en|ka)\/forgot-password/,
@@ -31,6 +32,12 @@ export default function middleware(req: NextRequest) {
   }
 
   const response = intlMiddleware(req);
+  // Public lead forms are deliberately embeddable on customer websites.
+  if (!/^\/(en|ka)\/f\//.test(pathname)) response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  if (/^\/(en|ka)\/(sign-in|sign-up|forgot-password|reset-password|verify-email|invite|f)(\/|$)/.test(pathname)) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    response.headers.set("Referrer-Policy", "no-referrer");
+  }
 
   const isPublic = PUBLIC.some((re) => re.test(pathname));
   const session = req.cookies.get("crm_session")?.value;
