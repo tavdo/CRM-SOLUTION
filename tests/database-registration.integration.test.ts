@@ -8,7 +8,8 @@ const fixture = vi.hoisted(() => ({
 
 vi.mock("../src/lib/db", async () => {
   const { PrismaClient } = await import("@prisma/client");
-  return { prisma: new PrismaClient({ datasourceUrl: `file:${fixture.file}` }) };
+  // Raw migrations use connection-local SQLite pragmas while rebuilding tables.
+  return { prisma: new PrismaClient({ datasourceUrl: `file:${fixture.file}?connection_limit=1` }) };
 });
 vi.mock("next/headers", () => ({
   headers: async () => new Headers({ "x-real-ip": "127.0.0.1" }),

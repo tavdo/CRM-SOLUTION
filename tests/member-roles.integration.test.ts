@@ -10,7 +10,7 @@ const fixture = vi.hoisted(() => ({
 
 vi.mock("../src/lib/db", async () => {
   const { PrismaClient } = await import("@prisma/client");
-  return { prisma: new PrismaClient({ datasourceUrl: `file:${fixture.file}` }) };
+  return { prisma: new PrismaClient({ datasourceUrl: `file:${fixture.file}?connection_limit=1` }) };
 });
 vi.mock("../src/lib/auth/workspace", async () => {
   const { assertCan } = await import("../src/lib/permissions");
