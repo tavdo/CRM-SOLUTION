@@ -1,4 +1,4 @@
-import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import type { WorkspaceContext } from "../../src/lib/auth/workspace";
 vi.mock("../../src/lib/auth/session", () => ({ createSession: vi.fn(), setActiveWorkspace: vi.fn() }));
 vi.mock("../../src/lib/email", () => ({ sendMail: vi.fn(), mailConfiguration: vi.fn() }));
@@ -12,6 +12,7 @@ import { enforceRateLimit } from "../../src/lib/rate-limit";
 let ctx: WorkspaceContext;
 beforeAll(() => { if (!process.env.CRM_POSTGRES_TEST || !/^postgres/.test(process.env.DATABASE_URL || "")) throw new Error("Run through the isolated PostgreSQL verification script"); });
 afterAll(async () => { await prisma.$disconnect(); });
+afterEach(() => vi.unstubAllEnvs());
 describe("PostgreSQL launch workflows on an isolated database", () => {
   it("registers a Georgian workspace without adding demo accounts", async () => {
     const result = await registerCompany({ companyName: "სატესტო კომპანია", adminName: "ადმინისტრატორი", email: "pg-owner@example.test", password: "Postgres-Test123!", locale: "ka" });
@@ -36,5 +37,15 @@ describe("PostgreSQL launch workflows on an isolated database", () => {
     const result = await Promise.allSettled(Array.from({ length: 12 }, () => enforceRateLimit("pg", "account", 3, 60000)));
     expect(result.filter(row => row.status === "fulfilled")).toHaveLength(3);
     expect(result.filter(row => row.status === "rejected")).toHaveLength(9);
+  });
+  it("persists a separate unverified account without verification tokens in database registration mode", async () => {
+    vi.stubEnv("DEPLOYMENT_MODE", "preview");
+    vi.stubEnv("REGISTRATION_MODE", "database");
+    const account = await registerCompany({ companyName: "Early access", adminName: "New admin", email: "pg-new@example.test", password: "Postgres-Test123!", locale: "en" });
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: account.userId } });
+    expect(user.emailVerifiedAt).toBeNull();
+    expect(await prisma.emailVerifyToken.count({ where: { userId: user.id } })).toBe(0);
+    expect(account.companyId).not.toBe(ctx.company.id);
+    expect(await prisma.membership.count({ where: { userId: user.id } })).toBe(1);
   });
 });

@@ -32,14 +32,17 @@ are stored in the Vercel project's **production** environment, with nonempty
 values marked sensitive. Development and branch builds do not receive these
 credentials. The public repository contains placeholders only.
 
-- `DEPLOYMENT_MODE=preview`, one `PREVIEW_EMAILS` owner, verified email required.
+- `DEPLOYMENT_MODE=preview`, `REGISTRATION_MODE=database` for open early access.
+  Each registration creates an isolated workspace and a password-authenticated
+  account immediately. Email ownership remains unverified in the database.
 - Restricted `crm_app` transaction pooler URL; the host's `DIRECT_URL` also uses
   `crm_app`, rather than the migration administrator.
 - `APP_URL=https://crm-solution-two.vercel.app`, a separate session secret and
   `TRUSTED_IP_HEADER=x-real-ip` overwritten by Vercel.
 - Existing private S3 storage via explicit `S3_*` credentials, plus Resend SMTP.
-- Social messaging and billing disabled. The owner-only Resend test sender is
-  used until a custom sender domain is verified.
+- Social messaging and billing disabled. Account emails, password-reset requests
+  and email invitations are disabled during database registration. The retained
+  Resend test sender is not used by this mode.
 
 Database administrator/backup credentials and the backup encryption key remain
 local. Existing Supabase users and records are retained, so the owner signs in
@@ -66,8 +69,18 @@ For an application-only regression, revert the offending Git commit and push
 the revert to `main`, or select a known-good Vercel deployment. A rollback does
 not undo database migrations; schema changes need their own recovery plan.
 
+The preview accepts registrations for early testing and keeps search indexing
+disabled. Passwords are hashed and existing owner data stays in its own workspace.
+Users must retain their passwords while email recovery is unavailable.
+
+To return to owner-only access, unset `REGISTRATION_MODE` or set it to `verified`,
+retain exactly one `PREVIEW_EMAILS` owner, and rebuild. Other accounts are retained
+but cannot sign in to the restricted preview. To require email verification for
+all accounts, configure a verified sender and support address, set
+`REGISTRATION_MODE=verified` and `DEPLOYMENT_MODE=live`, then rebuild. Accounts
+created during early access must verify their addresses before CRM access resumes.
+
 The current Vercel team uses Hobby, limited to personal/noncommercial evaluation.
-The single-owner preview does not open customer registration. Before commercial
-launch choose an eligible Vercel plan, configure the purchased domain, sender and
-support address, switch to `DEPLOYMENT_MODE=live` and repeat final release checks.
+Before commercial launch choose an eligible Vercel plan, configure the purchased
+domain, sender and support address, and repeat final release checks.
 No paid upgrade is activated by this setup.

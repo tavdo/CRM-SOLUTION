@@ -5,7 +5,7 @@ const fixture = vi.hoisted(() => ({ file: `${process.cwd().replaceAll("\\", "/")
   cookies: new Map<string, string>(), cookieWrites: 0 }));
 vi.mock("../src/lib/db", async () => {
   const { PrismaClient } = await import("@prisma/client");
-  return { prisma: new PrismaClient({ datasourceUrl: `file:${fixture.file}` }) };
+  return { prisma: new PrismaClient({ datasourceUrl: `file:${fixture.file}?connection_limit=1` }) };
 });
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: (name: string) => fixture.cookies.has(name) ? { value: fixture.cookies.get(name)! } : undefined,
   set: (name: string, value: string) => { fixture.cookieWrites++; fixture.cookies.set(name, value); }, delete: (name: string) => fixture.cookies.delete(name) }) }));

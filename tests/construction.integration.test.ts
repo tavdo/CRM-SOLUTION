@@ -6,7 +6,7 @@ import type { WorkspaceContext } from "../src/lib/auth/workspace";
 const fixture = vi.hoisted(() => ({ file: `${process.cwd().replaceAll("\\", "/")}/prisma/construction-test-${process.pid}-${Date.now()}.db` }));
 vi.mock("../src/lib/db", async () => {
   const { PrismaClient } = await import("@prisma/client");
-  return { prisma: new PrismaClient({ datasourceUrl: `file:${fixture.file}` }) };
+  return { prisma: new PrismaClient({ datasourceUrl: `file:${fixture.file}?connection_limit=1` }) };
 });
 import { prisma } from "../src/lib/db";
 import * as core from "../src/lib/construction/core";
