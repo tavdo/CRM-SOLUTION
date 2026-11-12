@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
-import { requirePreviewEmail } from "./release-access";
+import { isDatabaseRegistrationEnabled, requirePreviewEmail } from "./release-access";
+import { AppError } from "./errors";
 
 export type MailMessage = {
   to: string;
@@ -9,6 +10,9 @@ export type MailMessage = {
 };
 
 export function mailConfiguration() {
+  if (isDatabaseRegistrationEnabled()) {
+    throw new AppError("Email delivery is temporarily unavailable during early access", "EMAIL_UNAVAILABLE", 503);
+  }
   const transport = process.env.EMAIL_TRANSPORT ?? "console";
   const from = process.env.SMTP_FROM ?? "CRM Solution <noreply@localhost>";
   if (transport === "console") {

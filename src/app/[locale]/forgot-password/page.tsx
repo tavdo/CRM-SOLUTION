@@ -5,6 +5,7 @@ import { forgotPasswordAction } from "@/app/actions/auth";
 import { AuthShell } from "@/components/AuthShell";
 import { isLocale } from "@/i18n/config";
 import { redirect } from "next/navigation";
+import { isDatabaseRegistrationEnabled } from "@/lib/release-access";
 
 export default async function ForgotPasswordPage({
   params,
@@ -19,7 +20,13 @@ export default async function ForgotPasswordPage({
 
   return (
     <AuthShell title={t("forgotPassword")} brand={brand("name")} locale={locale}>
-      <AuthForm
+      {isDatabaseRegistrationEnabled() ? (
+        <p role="status">
+          {locale === "ka"
+            ? "პაროლის აღდგენა ელფოსტით დროებით მიუწვდომელია. თუ პაროლი გახსოვს, შედი ანგარიშში ქვემოთ მოცემული ბმულით."
+            : "Password reset emails are temporarily unavailable. If you remember your password, use the sign-in link below."}
+        </p>
+      ) : <AuthForm
         action={forgotPasswordAction}
         locale={locale}
         mode="forgot"
@@ -37,7 +44,7 @@ export default async function ForgotPasswordPage({
           language: t("language"),
           resetSent: t("resetSent"),
         }}
-      />
+      />}
       <p className="muted" style={{ marginTop: "1rem" }}>
         <Link href={`/${locale}/sign-in`}>{t("signIn")}</Link>
       </p>

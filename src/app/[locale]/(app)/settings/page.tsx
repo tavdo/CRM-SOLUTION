@@ -13,6 +13,7 @@ import {
 import { Alert, Badge, Button, Field, Input, Surface } from "@/components/ui";
 import { requireWorkspace } from "@/lib/auth/workspace";
 import { can } from "@/lib/permissions";
+import { isDatabaseRegistrationEnabled } from "@/lib/release-access";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
@@ -209,7 +210,12 @@ export default async function SettingsPage({
           </form>
         ) : null}
 
-        {isAdmin ? (
+        {isAdmin && isDatabaseRegistrationEnabled() && (
+          <p className="muted" role="status">
+            {locale === "ka" ? "მოწვევების გაგზავნა ელფოსტით დროებით მიუწვდომელია." : "Email invitations are temporarily unavailable."}
+          </p>
+        )}
+        {isAdmin && !isDatabaseRegistrationEnabled() ? (
           <form action={inviteMemberAction} className={`${styles.inlineForm} ${styles.inviteForm}`}>
             <h3 className={styles.fullRow} style={{ margin: 0 }}>{t("invite")}</h3>
             <input type="hidden" name="locale" value={locale} />

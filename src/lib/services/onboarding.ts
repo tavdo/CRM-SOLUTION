@@ -6,7 +6,8 @@ import { mailConfiguration, sendMail } from "../email";
 import { writeAudit } from "../audit";
 import { AppError } from "../errors";
 import { createSession, setActiveWorkspace } from "../auth/session";
-import { requirePreviewEmail } from "../release-access";
+import { isDatabaseRegistrationEnabled, requirePreviewEmail } from "../release-access";
+import { isBlockedDemoAccount } from "../auth/demo";
 
 export async function registerCompany(input: {
   companyName: string;
@@ -18,7 +19,8 @@ export async function registerCompany(input: {
 }) {
   const email = input.email.trim().toLowerCase();
   requirePreviewEmail(email);
-  mailConfiguration();
+  if (isBlockedDemoAccount(email)) throw new AppError("This email address is reserved", "RESERVED_EMAIL", 400);
+  if (!isDatabaseRegistrationEnabled()) mailConfiguration();
   if (input.password.length < 8) {
     throw new AppError("Password must be at least 8 characters", "WEAK_PASSWORD");
   }
@@ -54,7 +56,7 @@ export async function registerCompany(input: {
     });
   }
 
-  const verifyToken = generateToken(32);
+  const verifyToken = isDatabaseRegistrationEnabled() ? null : generateToken(32);
 
   const result = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
@@ -102,7 +104,7 @@ export async function registerCompany(input: {
       },
     });
 
-    await tx.emailVerifyToken.create({
+    if (verifyToken) await tx.emailVerifyToken.create({
       data: {
         userId: user.id,
         tokenHash: hashToken(verifyToken),
@@ -123,7 +125,7 @@ export async function registerCompany(input: {
   });
 
   const appUrl = process.env.APP_URL ?? "http://localhost:3000";
-  await sendMail({
+  if (verifyToken) await sendMail({
     to: email,
     subject: input.locale === "ka" ? "დაადასტურე CRM Solution-ის ელფოსტა" : "Verify your CRM Solution email",
     text: input.locale === "ka" ? `მოგესალმებით CRM Solution-ში.\n\nელფოსტის დადასტურება: ${appUrl}/ka/verify-email?token=${verifyToken}\nბმული მოქმედებს 48 საათი.` : `Welcome to CRM Solution.\n\nVerify your email: ${appUrl}/${input.locale}/verify-email?token=${verifyToken}\n`,

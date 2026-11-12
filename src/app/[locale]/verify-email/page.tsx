@@ -6,6 +6,7 @@ import Link from "next/link";
 import { isLocale } from "@/i18n/config";
 import { redirect } from "next/navigation";
 import { VerificationResend } from "@/components/VerificationResend";
+import { isDatabaseRegistrationEnabled } from "@/lib/release-access";
 
 export default async function VerifyEmailPage({
   params,
@@ -17,6 +18,7 @@ export default async function VerifyEmailPage({
   const { locale } = await params;
   const sp = await searchParams;
   if (!isLocale(locale)) redirect("/en/verify-email");
+  if (!sp.token && isDatabaseRegistrationEnabled()) redirect(`/${locale}/dashboard`);
   setRequestLocale(locale);
   const t = await getTranslations("auth");
   const brand = await getTranslations("brand");

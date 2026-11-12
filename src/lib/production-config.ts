@@ -1,3 +1,5 @@
+import { isDatabaseRegistrationEnabled } from "./release-access";
+
 type Environment = Record<string, string | undefined>;
 const placeholder = (value = "") => !value || /change.me|replace.me|example\.(com|invalid)|your[-_]|demo.session|dev.secret|local-development/i.test(value);
 
@@ -5,8 +7,11 @@ const placeholder = (value = "") => !value || /change.me|replace.me|example\.(co
 export function productionProblems(env: Environment): string[] {
   const problems: string[] = [];
   const preview = env.DEPLOYMENT_MODE === "preview";
+  const databaseRegistration = isDatabaseRegistrationEnabled(env);
+  if (env.REGISTRATION_MODE && !["verified", "database"].includes(env.REGISTRATION_MODE)) problems.push("REGISTRATION_MODE must be verified or database");
+  if (env.REGISTRATION_MODE === "database" && !preview) problems.push("Database-only registration is limited to preview deployments");
   if (!["live", "preview"].includes(env.DEPLOYMENT_MODE || "")) problems.push("DEPLOYMENT_MODE must be live or a restricted preview");
-  if (preview && (!/^[^\s,@]+@[^\s,@]+\.[^\s,@]+$/.test(env.PREVIEW_EMAILS || ""))) problems.push("Preview requires exactly one PREVIEW_EMAILS owner address");
+  if (preview && !databaseRegistration && (!/^[^\s,@]+@[^\s,@]+\.[^\s,@]+$/.test(env.PREVIEW_EMAILS || ""))) problems.push("Preview requires exactly one PREVIEW_EMAILS owner address");
   try {
     const db = new URL(env.DATABASE_URL || "");
     if (!["postgres:", "postgresql:"].includes(db.protocol) || db.searchParams.get("schema") !== "crm") throw new Error();
@@ -22,10 +27,12 @@ export function productionProblems(env: Environment): string[] {
   } catch { problems.push("APP_URL must be the final HTTPS origin"); }
   if (placeholder(env.SESSION_SECRET) || (env.SESSION_SECRET?.length || 0) < 32) problems.push("SESSION_SECRET must be a fresh random secret of at least 32 characters");
   if (env.SEED_DEMO_DATA !== "false") problems.push("SEED_DEMO_DATA must be false");
-  if (env.EMAIL_TRANSPORT !== "smtp" || placeholder(env.SMTP_HOST) || placeholder(env.SMTP_USER) || placeholder(env.SMTP_PASS)) problems.push("Configure real SMTP host and credentials");
-  if (placeholder(env.SMTP_FROM) || /localhost/.test(env.SMTP_FROM || "")) problems.push("SMTP_FROM must use the verified sender domain");
-  if (!preview && /@resend\.dev\b/i.test(env.SMTP_FROM || "")) problems.push("The Resend test sender is only permitted in an owner-only preview");
-  if (!["465", "587", "2587", "2465"].includes(env.SMTP_PORT || "587")) problems.push("SMTP_PORT must be a supported TLS SMTP port");
+  if (!databaseRegistration) {
+    if (env.EMAIL_TRANSPORT !== "smtp" || placeholder(env.SMTP_HOST) || placeholder(env.SMTP_USER) || placeholder(env.SMTP_PASS)) problems.push("Configure real SMTP host and credentials");
+    if (placeholder(env.SMTP_FROM) || /localhost/.test(env.SMTP_FROM || "")) problems.push("SMTP_FROM must use the verified sender domain");
+    if (!preview && /@resend\.dev\b/i.test(env.SMTP_FROM || "")) problems.push("The Resend test sender is only permitted in an owner-only preview");
+    if (!["465", "587", "2587", "2465"].includes(env.SMTP_PORT || "587")) problems.push("SMTP_PORT must be a supported TLS SMTP port");
+  }
   if (!env.TRUSTED_IP_HEADER || !/^[a-z0-9-]+$/i.test(env.TRUSTED_IP_HEADER)) problems.push("TRUSTED_IP_HEADER must identify a single-IP header overwritten by the trusted proxy");
   if (env.FILE_STORAGE !== "s3" || placeholder(env.S3_BUCKET) || placeholder(env.S3_REGION || env.AWS_REGION)) problems.push("Configure private S3-compatible file storage");
   if (env.S3_ENDPOINT) {

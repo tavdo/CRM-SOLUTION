@@ -1,11 +1,15 @@
 import { AppError } from "./errors";
 
+export function isDatabaseRegistrationEnabled(env: Record<string, string | undefined> = process.env) {
+  return env.DEPLOYMENT_MODE === "preview" && env.REGISTRATION_MODE === "database";
+}
+
 export function requiresVerifiedEmail() {
-  return ["live", "preview"].includes(process.env.DEPLOYMENT_MODE || "");
+  return !isDatabaseRegistrationEnabled() && ["live", "preview"].includes(process.env.DEPLOYMENT_MODE || "");
 }
 
 export function previewEmailAllowed(email: string) {
-  if (process.env.DEPLOYMENT_MODE !== "preview") return true;
+  if (process.env.DEPLOYMENT_MODE !== "preview" || isDatabaseRegistrationEnabled()) return true;
   const allowed = (process.env.PREVIEW_EMAILS || "").split(",").map(value => value.trim().toLowerCase()).filter(Boolean);
   return allowed.length === 1 && allowed[0] === email.trim().toLowerCase();
 }

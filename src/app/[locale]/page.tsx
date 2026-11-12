@@ -10,6 +10,7 @@ import { getSessionUser } from "@/lib/auth/session";
 import type { CSSProperties } from "react";
 import { LegalLinks } from "@/components/LegalLinks";
 import { publicMetadata } from "@/lib/metadata";
+import { isDatabaseRegistrationEnabled } from "@/lib/release-access";
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   return publicMetadata((await params).locale === "ka" ? "ka" : "en");
 }
@@ -22,6 +23,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   const c = await getTranslations("construction");
   const nav = await getTranslations("nav");
   const user = await getSessionUser();
+  const databaseRegistration = isDatabaseRegistrationEnabled();
   const workflow = [
     { key: "estimates", Icon: Ruler, color: "#0000e2" },
     { key: "work", Icon: HardHat, color: "#0003d4" },
@@ -31,7 +33,13 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
 
   return (
     <div className="landing crm-workspace landing-workspace">
-      {process.env.DEPLOYMENT_MODE === "preview" && <p role="status" className="muted" style={{ textAlign: "center", padding: "0.75rem 1rem" }}>{locale === "ka" ? "სატესტო ვერსია — რეგისტრაცია შეზღუდულია." : "Preview — registration is restricted."}</p>}
+      {process.env.DEPLOYMENT_MODE === "preview" && (
+        <p role="status" className="muted" style={{ textAlign: "center", padding: "0.75rem 1rem" }}>
+          {databaseRegistration
+            ? locale === "ka" ? "სატესტო ვერსია — რეგისტრაცია გახსნილია." : "Early access — registration is open."
+            : locale === "ka" ? "სატესტო ვერსია — რეგისტრაცია შეზღუდულია." : "Preview — registration is restricted."}
+        </p>
+      )}
       <a className="workspace-skip-link" href="#landing-content">{locale === "ka" ? "შინაარსზე გადასვლა" : "Skip to content"}</a>
       <header className="landing-nav">
         <div className="landing-nav-inner">

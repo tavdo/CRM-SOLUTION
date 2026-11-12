@@ -5,6 +5,7 @@ import { signUpAction } from "@/app/actions/auth";
 import { AuthShell } from "@/components/AuthShell";
 import { isLocale } from "@/i18n/config";
 import { redirect } from "next/navigation";
+import { isDatabaseRegistrationEnabled } from "@/lib/release-access";
 
 export default async function SignUpPage({
   params,
@@ -19,6 +20,13 @@ export default async function SignUpPage({
 
   return (
     <AuthShell title={t("signUp")} brand={brand("name")} locale={locale}>
+      {isDatabaseRegistrationEnabled() && (
+        <p role="status" className="muted" style={{ marginBottom: "1rem" }}>
+          {locale === "ka"
+            ? "რეგისტრაციის შემდეგ სამუშაო სივრცე მაშინვე გაიხსნება. ელფოსტის დადასტურება საჭირო არ არის. შეინახე პაროლი — პაროლის აღდგენა ელფოსტით და მოწვევების გაგზავნა დროებით მიუწვდომელია."
+            : "Your workspace opens immediately after registration. Email verification is not required. Keep your password safe. Password reset emails and email invitations are temporarily unavailable."}
+        </p>
+      )}
       <AuthForm
         action={signUpAction}
         locale={locale}
